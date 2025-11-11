@@ -144,19 +144,94 @@ Then re-run the clean install steps above.
 
 ## API Endpoints
 
-### Example Endpoints
+### Auth
 
-- **GET** `/api/test` - Returns a simple JSON response to verify API is working
-- **GET** `/api/test-db` - Tests MongoDB connection using Mongoose, creates and saves a test document
-- **POST** `/api/auth/signup` - Create a new user and set auth cookie
-- **POST** `/api/auth/login` - Authenticate user and set auth cookie
-- **POST** `/api/auth/logout` - Clear auth cookie
-- **GET** `/api/auth/me` - Get current authenticated user
-- **GET** `/api/users` - List users (no passwords)
-- **POST** `/api/users` - Create user (admin only)
-- **GET/PUT/DELETE** `/api/users/:id` - Read/update/delete a user (role protected)
+- **POST** `/api/auth/signup`
+  - Create a user and set HTTP-only auth cookie.
+  - Body (JSON): `{ name: string, email: string, password: string, role?: 'user'|'admin' }`
+  - Responses:
+    - 201 `{ success: true, data: { user, token } }`
+    - 400 `Missing required field(s)` / invalid email
+    - 409 `Email already registered`
+    - 500 if `JWT_SECRET` is not configured
+- **POST** `/api/auth/login`
+  - Authenticate and set HTTP-only auth cookie.
+  - Body (JSON): `{ email: string, password: string }`
+  - Responses: 200 with `{ user, token }`, 401 invalid creds, 500 if `JWT_SECRET` missing
+- **POST** `/api/auth/logout`
+  - Clears auth cookie. Response: 200 `{ message: 'Logged out' }`
+- **GET** `/api/auth/me`
+  - Returns current authenticated user from cookie or `{ user: null }` if not logged in
 
-You can extend this by adding more endpoints in `/pages/api/` following the same pattern.
+### Users
+
+- **GET** `/api/users`
+  - List users (password omitted)
+- **POST** `/api/users` (admin only)
+  - Create user. Body: `{ name, email, password, role? }`
+  - Requires an authenticated admin (via cookie)
+- **GET** `/api/users/:id`
+- **PUT** `/api/users/:id`
+  - Auth required. Non-admins cannot change `role`. Use dedicated flow to change password.
+- **DELETE** `/api/users/:id` (admin only)
+
+### Funding Opportunities
+
+- **GET** `/api/funding-opportunity/list`
+  - Query params: `limit?=number` (default 50, max 200), `offset?=number` (default 0)
+  - Response: `{ items, total, limit, offset }`
+- **GET** `/api/funding-opportunity/:id`
+  - `id` must be a valid MongoDB ObjectId
+- **POST** `/api/funding-opportunity/create`
+  - Creates a funding opportunity
+  - If an authenticated user cookie is present, `createdBy` is set automatically
+  - Body (JSON):
+    ```json
+    {
+      "title": "string (required)",
+      "description": "string",
+      "source": "string",
+      "url": "string",
+      "deadline": "ISO date string",
+      "amountMin": 0,
+      "amountMax": 10000,
+      "currency": "USD",
+      "eligibility": "string",
+      "tags": ["string"],
+      "status": "open|closed|unknown"
+    }
+    ```
+  - Validation:
+    - `title` required
+    - `amountMin`/`amountMax` must be numbers; `amountMin` ≤ `amountMax`
+    - `deadline` must be a valid date string
+    - `id` path parameters must be valid ObjectId where applicable
+
+### Utilities / Examples
+
+- **GET** `/api/test` — Simple health check JSON
+- **GET** `/api/test-db` — Connects to MongoDB, writes, and returns a test document
+
+You can extend this by adding more endpoints in `/pages/api/` following the same patterns.
+
+## API Requirements & Conventions
+
+- Content-Type: use `application/json` for request bodies
+- Authentication: JWT stored in HTTP-only cookie named `token`
+  - Set via `/api/auth/login` and `/api/auth/signup`
+  - Read via server-side helper `getUserFromRequest`
+- Environment variables:
+  - `MONGODB_URI` (required in production)
+  - `JWT_SECRET` (required; used to sign/verify auth tokens)
+- CORS:
+  - Lightweight CORS with preflight support is applied in funding routes
+  - Allowed headers: `Content-Type, Authorization`; credentials enabled
+- Error/Success Response Shape:
+  - Success: `{ success: true, message, data? }`
+  - Error: `{ success: false, message, error? }`
+  - Implemented via `lib/response.js`
+- Pagination:
+  - `limit` and `offset` query params (defaults: 50, 0; max limit: 200)
 
 ## MongoDB Setup with Mongoose
 
@@ -232,6 +307,73 @@ If you see an error, check:
 4. Extend the MongoDB connection with specific database operations
 5. Add authentication if needed
 6. Implement CRUD operations for your data models
+
+## Automation of Tasks
+
+The project includes a foundation for automating upstream funding data ingestion and normalization:
+
+- Controllers and validation for creating/listing funding opportunities
+- CORS and unified error handling for API routes
+- Placeholders for ProofScore and normalization (`utils/proofscore.js`) to evolve into the Funding Intelligence Engine
+
+### ⚡ Teams Message — Introducing Adeel (Final Polished Version)
+
+Excited to officially welcome Adeel to the Proof360 core team.
+
+He’ll be leading the new Funding Intelligence System — the upstream engine that powers every grant, rebate, and funding opportunity across both B2B and B2C.
+
+Please welcome Adeel, who’s officially leading the build of our Funding Intelligence System inside Proof360.
+
+Adeel’s mission is to build and maintain the upstream engine that constantly discovers, structures, and feeds grants, rebates, RFPs, RFQs, bursaries, co-marketing funds, and other funding opportunities into Proof360 — across both B2B and B2C markets.
+
+In simple terms:
+
+- Adeel finds and structures the money.
+- Shubham activates and monetizes it.
+- Our upcoming Monetization & Financing Architect manages credit and payment systems (BNPL, trade credit, 0% financing).
+- Yinka oversees financial inflows, reimbursements, and ROI tracking.
+
+💡 Adeel — Funding Intelligence (Upstream / Data Engine)
+
+- Automates discovery of all funding types (grants, rebates, bursaries, RFPs/RFQs, co-marketing funds).
+- Structures everything into Proof360’s schema with region, vertical, eligibility, and value scoring (ProofScore).
+- Distinguishes B2B vs B2C clearly:
+  - RFPs/RFQs/Tenders → B2B only
+  - Rebates → Both B2B & B2C
+  - Grants/Funding/Bursaries → Both B2B & B2C
+  - Co-Marketing Funds → Primarily B2B
+- Works with Manjiri (schema), Abhinav (AI tagging), and Yinka (financial classification) to ensure every opportunity is structured, accurate, and ready to activate.
+
+💰 Shubham — Funding Monetization (Midstream / Activation Layer)
+
+- Turns Adeel’s structured data into active offers visible across our ecosystem.
+- Works with Aastha & Rahman to deploy dynamic funding and rebate offers across the website, landing pages, and ad campaigns.
+- Partners with Jeremy to align vendors with relevant RFPs and RFQs.
+- Coordinates with Yinka for financial validation and ROI tracking.
+- Hands all financing-related items to our Monetization & Financing Architect for credit and payment design.
+
+🏗️ Monetization & Financing Architect (Upcoming Role)
+
+- Owns all repayable and credit-based programs — BNPL, vendor credit, 0% financing, lease-to-own, etc.
+- Works closely with Yinka to integrate repayment, financing, and ROI systems into Proof360.
+
+🧭 The Flow
+
+| Stage                    | Owner                            | Description                                                                 |
+|--------------------------|----------------------------------|-----------------------------------------------------------------------------|
+| Discovery (Upstream)     | Adeel                            | Finds, structures, and scores all funding and rebate opportunities.        |
+| Activation (Midstream)   | Shubham                          | Validates, activates, and deploys offers to marketing, vendors, customers. |
+| Financing (Parallel)     | Monetization & Financing Architect | Designs and manages all credit and payment systems.                         |
+| Finance Oversight        | Yinka                            | Tracks ROI, inflows, reimbursements, and lifecycle credits.                |
+
+📊 Adeel’s 12-Week Phased Approach
+
+| Phase  | Timeline   | Focus                                   | Collaborators                 | Example Deliverables |
+|--------|------------|-----------------------------------------|-------------------------------|----------------------|
+| Phase 1| Week 1     | Transition FVG Global Assist → Proof Response | Anne, Lynne, Manjiri       | Move automations to `recruit.proofresponse.com`; wire APIs (`/api/newCandidate`, `/api/requestIntro`, `/api/jobComplete`); create city + service URLs (`/ab/calgary/electrician/high-voltage-electrician/`). |
+| Phase 2| Weeks 2–5  | Build the Funding Intelligence Engine   | Shubham, Abhinav, Yinka      | Automate grants, rebates, RFPs; normalize data into `OffersCanonical`; apply ProofScore tagging (value, eligibility, urgency); QA accuracy ≥ 95%. |
+| Phase 3| Weeks 6–9  | Integrate with Proof360 + launch across 5 cities | Yinka, Jeremy, Manjiri | Link Recruiting + Funding data; create unified dashboards; activate Calgary → Winnipeg → Edmonton → Saskatoon → Regina; train ProofScore on closed wins. |
+| Phase 4| Weeks 10–12| Optimize & Globalize                    | Yinka, Manjiri, Seun         | Add global fields (country, FX rate); refactor pipelines; finalize performance reports; document runbooks in Proof360 Registry. |
 
 ## License
 
