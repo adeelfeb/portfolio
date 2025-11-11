@@ -1,6 +1,58 @@
-# Proof Response Funding Intelligence Engine
+# Proof Response Funding Intelligence Engine ⚡
+
+> This platform extends PipeProof’s main website by automating the discovery and structuring of grants, rebates, RFPs, RFQs, bursaries, and co-marketing funds across B2B and B2C markets. It ensures every opportunity is structured, scored, and ready for activation by the Proof360 ecosystem.
 
 A clean, minimal, and scalable Next.js application that will power the Proof Response Funding Intelligence Engine. It ships with MongoDB (via Mongoose), basic authentication, and a protected dashboard, ready to extend with future automation.
+
+## Highlights
+
+- **Automated discovery**: pipelines to ingest and create funding opportunities
+- **Structured intelligence**: region, vertical, eligibility, amounts, deadline, tags, status
+- **B2B vs B2C ready**: supports RFPs/RFQs/Tenders (B2B), rebates (Both), grants/bursaries (Both), co‑marketing funds (Primarily B2B)
+- **Activation‑ready**: unified responses, CORS, and auth for Proof360 activation
+- **Simple auth**: JWT in HTTP‑only cookie (`token`) with `/auth/login`, `/auth/signup`, `/auth/me`, `/auth/logout`
+- **MongoDB via Mongoose**: clean models for `User` and `FundingOpportunity`
+- **Consistent API**: `jsonSuccess` / `jsonError` helpers and standard validation
+
+## Table of Contents
+
+- Core Concepts & Terminology
+- System Roles & Flow (Summary)
+- API Overview (TL;DR)
+- API Endpoints (Detailed)
+- API Requirements & Conventions
+- Automation of Tasks (Roles, Flow, 12‑Week Plan)
+- Installation & Setup
+- Project Structure
+- Development Notes
+- Next Steps
+- License
+
+## Core Concepts & Terminology
+
+- Funding Opportunity: grant, rebate, RFP/RFQ/tender, bursary, or co‑marketing fund discoverable by the upstream engine.
+- OffersCanonical: normalized schema (title, amounts, currency, region, vertical, eligibility, deadline, tags, status).
+- ProofScore: per‑opportunity scoring of value, eligibility, and urgency to guide activation.
+- Upstream (Discovery / Data Engine): automated discovery, parsing, normalization, deduplication, scoring.
+- Midstream (Activation Layer): validates and deploys opportunities to sites, landing pages, campaigns, vendor workflows.
+- Parallel (Financing Systems): BNPL, vendor credit, 0% financing, lease‑to‑own programs attachable to offers.
+- Downstream (Finance Oversight): ROI tracking, reimbursements, inflows, lifecycle credits.
+- B2B vs B2C mapping:
+  - B2B only: RFPs/RFQs/Tenders
+  - Both: Rebates; Grants/Funding/Bursaries
+  - Primarily B2B: Co‑Marketing Funds
+- Eligibility: rules for who qualifies (industry, company size, consumer profile, region).
+- Status: open, closed, or unknown.
+- Lifecycle: Discovery → Normalization → Scoring → Activation → Measurement.
+
+## System Roles & Flow (Summary)
+
+| Stage                  | Owner                              | Output                                      |
+|------------------------|------------------------------------|---------------------------------------------|
+| Discovery (Upstream)   | Adeel                              | Normalized, scored opportunities (ProofScore)|
+| Activation (Midstream) | Shubham                            | Live offers across web, vendors, campaigns  |
+| Financing (Parallel)   | Monetization & Financing Architect | Credit/payment programs linked to offers    |
+| Finance (Downstream)   | Yinka                              | ROI, reimbursements, lifecycle credits      |
 
 ## Project Structure
 
@@ -142,7 +194,14 @@ Then re-run the clean install steps above.
 - `npm run build` - Build for production
 - `npm start` - Start production server
 
-## API Endpoints
+## API Overview (TL;DR)
+
+- Auth: `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- Users: `GET /api/users`, `POST /api/users` (admin), `GET/PUT/DELETE /api/users/:id`
+- Funding: `GET /api/funding-opportunity/list`, `GET /api/funding-opportunity/:id`, `POST /api/funding-opportunity/create`
+- Utilities: `GET /api/test`, `GET /api/test-db`
+
+## API Endpoints (Detailed)
 
 ### Auth
 
@@ -231,7 +290,7 @@ You can extend this by adding more endpoints in `/pages/api/` following the same
   - Error: `{ success: false, message, error? }`
   - Implemented via `lib/response.js`
 - Pagination:
-  - `limit` and `offset` query params (defaults: 50, 0; max limit: 200)
+  - `limit` and `offset` query params (defaults: 50, 0; max limit: 200) where applicable
 
 ## MongoDB Setup with Mongoose
 
@@ -310,7 +369,7 @@ If you see an error, check:
 
 ## Automation of Tasks
 
-The project includes a foundation for automating upstream funding data ingestion and normalization:
+The project includes a foundation for automating upstream funding data ingestion and normalization. It reflects the upstream → activation → financing flow required by Proof360:
 
 - Controllers and validation for creating/listing funding opportunities
 - CORS and unified error handling for API routes
@@ -374,6 +433,8 @@ In simple terms:
 | Phase 2| Weeks 2–5  | Build the Funding Intelligence Engine   | Shubham, Abhinav, Yinka      | Automate grants, rebates, RFPs; normalize data into `OffersCanonical`; apply ProofScore tagging (value, eligibility, urgency); QA accuracy ≥ 95%. |
 | Phase 3| Weeks 6–9  | Integrate with Proof360 + launch across 5 cities | Yinka, Jeremy, Manjiri | Link Recruiting + Funding data; create unified dashboards; activate Calgary → Winnipeg → Edmonton → Saskatoon → Regina; train ProofScore on closed wins. |
 | Phase 4| Weeks 10–12| Optimize & Globalize                    | Yinka, Manjiri, Seun         | Add global fields (country, FX rate); refactor pipelines; finalize performance reports; document runbooks in Proof360 Registry. |
+
+In practice, Adeel’s system powers both sides of the business — **B2B** (RFPs, RFQs, vendor grants, co‑marketing funds) and **B2C** (rebates, residential funding, bursaries, consumer energy programs). It ensures Proof360 always knows what funding exists, who it applies to, and how to activate it.
 
 ## License
 
