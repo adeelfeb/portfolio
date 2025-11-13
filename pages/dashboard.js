@@ -323,7 +323,15 @@ export default function Dashboard({ user }) {
   const router = useRouter();
 
   const primaryNav = useMemo(() => navItems, [navItems]);
-  const initialSection = useMemo(() => primaryNav[0]?.key || FALLBACK_NAV[0].key, [primaryNav]);
+  const initialSection = useMemo(() => {
+    if (normalizedRole === 'hr') {
+      const loxoNav = primaryNav.find((item) => item.key === 'loxo');
+      if (loxoNav) {
+        return loxoNav.key;
+      }
+    }
+    return primaryNav[0]?.key || FALLBACK_NAV[0].key;
+  }, [normalizedRole, primaryNav]);
   const [activeSection, setActiveSection] = useState(initialSection);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 

@@ -304,27 +304,6 @@ export default function LoxoPanel() {
     resetJobScopedData();
   }, [resetJobScopedData]);
 
-  const confirmSetActive = useCallback(
-    (jobId) => {
-      const job = jobsState.items.find((item) => extractJobId(item) === jobId) || null;
-      const formatted = job ? formatJob(job) : null;
-      const title = formatted?.title || jobId || 'selected job';
-      return window.confirm(`Set "${title}" as the active job?`);
-    },
-    [jobsState.items]
-  );
-
-  const handleConfirmSelectJob = useCallback(
-    (jobId) => {
-      if (!jobId) return;
-      if (!confirmSetActive(jobId)) {
-        return;
-      }
-      handleSelectJob(jobId);
-    },
-    [confirmSetActive, handleSelectJob]
-  );
-
   const handleSelectJobFromEvent = useCallback(
     (event) => {
       const nextJobId = event.target.value;
@@ -332,13 +311,9 @@ export default function LoxoPanel() {
         handleUnsetActive();
         return;
       }
-      if (!confirmSetActive(nextJobId)) {
-        event.target.value = selectedJobId;
-        return;
-      }
       handleSelectJob(nextJobId);
     },
-    [confirmSetActive, handleSelectJob, handleUnsetActive, selectedJobId]
+    [handleSelectJob, handleUnsetActive]
   );
 
   const handleJobIdInputChange = useCallback((event) => {
@@ -351,11 +326,8 @@ export default function LoxoPanel() {
       handleUnsetActive();
       return;
     }
-    if (!confirmSetActive(trimmed)) {
-      return;
-    }
     handleSelectJob(trimmed);
-  }, [confirmSetActive, handleSelectJob, handleUnsetActive, jobIdInput]);
+  }, [handleSelectJob, handleUnsetActive, jobIdInput]);
 
   const handleFetchJobDetail = useCallback(async () => {
     if (!selectedJobId) {
@@ -634,27 +606,18 @@ export default function LoxoPanel() {
                                   <button
                                     type="button"
                                     className="loxo-panel__button loxo-panel__button--ghost"
-                                    onClick={() => handleConfirmSelectJob(job.id)}
+                                    onClick={() => handleSelectJob(job.id)}
                                   >
                                     Set active
                                   </button>
                                 ) : (
-                                  <div className="loxo-panel__inline loxo-panel__inline--gap">
-                                    <button
-                                      type="button"
-                                      className="loxo-panel__button loxo-panel__button--ghost"
-                                      disabled
-                                    >
-                                      Active
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="loxo-panel__button loxo-panel__button--ghost"
-                                      onClick={handleUnsetActive}
-                                    >
-                                      Unset active
-                                    </button>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    className="loxo-panel__button loxo-panel__button--ghost"
+                                    disabled
+                                  >
+                                    Active
+                                  </button>
                                 )}
                               </td>
                             </tr>
