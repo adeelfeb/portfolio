@@ -1,30 +1,66 @@
-import dotenv from 'dotenv';
+import { env } from '../lib/config.js';
 
 const DEFAULT_BASE_DOMAIN = 'app.loxo.co';
+const LOXO_ENV_PREFIXES = ['LOXO', 'NEXT_PUBLIC_LOXO'];
 
-if (!process.env.LOXO_API_KEY || !process.env.LOXO_SLUG) {
-  dotenv.config({ path: '.env.local' });
-  dotenv.config();
+let hasLoggedMissingConfig = false;
+
+function readProcessEnv(key) {
+  const value = process.env[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function resolveValue({ keys, fallback }) {
+  for (const key of keys) {
+    const value = readProcessEnv(key);
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  if (typeof fallback === 'string' && fallback.trim()) {
+    return fallback.trim();
+  }
+
+  return '';
+}
+
+function logMissingConfigOnce(name, keysTried) {
+  if (hasLoggedMissingConfig) return;
+  hasLoggedMissingConfig = true;
+
+  const availableKeys = Object.keys(process.env || {}).filter((key) =>
+    LOXO_ENV_PREFIXES.some((prefix) => key.toUpperCase().includes(prefix))
+  );
+
+  console.error(
+    `❌ [LoxoClient] Missing ${name}. Checked keys: ${keysTried.join(
+      ', '
+    )}. Available LOXO env keys: ${availableKeys.length ? availableKeys.join(', ') : 'none'}`
+  );
 }
 
 function getLoxoConfig() {
-  const apiKey =
-    process.env.LOXO_API_KEY ||
-    process.env.NEXT_PUBLIC_LOXO_API_KEY ||
-    '';
-  const slug =
-    process.env.LOXO_SLUG ||
-    process.env.NEXT_PUBLIC_LOXO_SLUG ||
-    '';
+  const apiKey = resolveValue({
+    keys: ['LOXO_API_KEY', 'NEXT_PUBLIC_LOXO_API_KEY'],
+    fallback: env.LOXO_API_KEY,
+  });
+  const slug = resolveValue({
+    keys: ['LOXO_SLUG', 'NEXT_PUBLIC_LOXO_SLUG'],
+    fallback: env.LOXO_SLUG,
+  });
   const domain =
-    process.env.LOXO_DOMAIN ||
-    process.env.NEXT_PUBLIC_LOXO_DOMAIN ||
-    DEFAULT_BASE_DOMAIN;
+    resolveValue({
+      keys: ['LOXO_DOMAIN', 'NEXT_PUBLIC_LOXO_DOMAIN'],
+      fallback: env.LOXO_DOMAIN,
+    }) || DEFAULT_BASE_DOMAIN;
 
   if (!apiKey) {
+    logMissingConfigOnce('LOXO_API_KEY', ['LOXO_API_KEY', 'NEXT_PUBLIC_LOXO_API_KEY']);
     throw new Error('Missing Loxo config: LOXO_API_KEY must be defined');
   }
   if (!slug) {
+    logMissingConfigOnce('LOXO_SLUG', ['LOXO_SLUG', 'NEXT_PUBLIC_LOXO_SLUG']);
     throw new Error('Missing Loxo config: LOXO_SLUG must be defined');
   }
 

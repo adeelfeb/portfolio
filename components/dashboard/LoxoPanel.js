@@ -43,24 +43,69 @@ function extractJobId(job) {
   return id != null ? String(id) : '';
 }
 
+function toDisplayText(value, fallback = '—') {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
+  }
+
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    return String(value);
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value
+      .map((item) => toDisplayText(item, ''))
+      .filter(Boolean)
+      .join(', ');
+    return joined || fallback;
+  }
+
+  if (typeof value === 'object') {
+    const candidate =
+      value.name ??
+      value.title ??
+      value.label ??
+      value.value ??
+      value.description ??
+      value.display ??
+      value.text ??
+      value.city ??
+      value.state ??
+      value.country;
+    if (candidate !== undefined) {
+      return toDisplayText(candidate, fallback);
+    }
+    return fallback;
+  }
+
+  return String(value);
+}
+
 function formatJob(job) {
   const id = extractJobId(job);
-  const title = job?.title || job?.published_name || job?.name || job?.jobTitle || id || 'Untitled job';
-  const status =
-    job?.status ||
-    job?.workflow_status ||
-    job?.state ||
-    job?.job_status ||
-    job?.job?.status ||
-    '—';
-  const location = job?.location || job?.city || job?.country || job?.job?.location || '—';
-  const updatedAt =
-    job?.updated_at ||
-    job?.updatedAt ||
-    job?.last_modified ||
-    job?.modified_at ||
-    job?.job?.updated_at ||
-    '—';
+  const title = toDisplayText(
+    job?.title || job?.published_name || job?.name || job?.jobTitle || id || 'Untitled job'
+  );
+  const status = toDisplayText(
+    job?.status || job?.workflow_status || job?.state || job?.job_status || job?.job?.status
+  );
+  const location = toDisplayText(job?.location || job?.city || job?.country || job?.job?.location);
+  const updatedAt = toDisplayText(
+    job?.updated_at || job?.updatedAt || job?.last_modified || job?.modified_at || job?.job?.updated_at
+  );
 
   return {
     id,
@@ -74,33 +119,46 @@ function formatJob(job) {
 function buildJobSummary(job) {
   if (!job) return [];
   return [
-    { label: 'Job ID', value: extractJobId(job) || '—' },
-    { label: 'Title', value: job?.title || job?.published_name || job?.name || '—' },
-    { label: 'Status', value: job?.status || job?.workflow_status || job?.state || '—' },
-    { label: 'Updated', value: job?.updated_at || job?.updatedAt || job?.last_modified || '—' },
-    { label: 'Location', value: job?.location || job?.city || job?.country || '—' },
-    { label: 'Owner', value: job?.owner?.name || job?.owner_name || '—' },
+    { label: 'Job ID', value: toDisplayText(extractJobId(job)) },
+    {
+      label: 'Title',
+      value: toDisplayText(job?.title || job?.published_name || job?.name || job?.jobTitle),
+    },
+    {
+      label: 'Status',
+      value: toDisplayText(job?.status || job?.workflow_status || job?.state || job?.job_status),
+    },
+    {
+      label: 'Updated',
+      value: toDisplayText(job?.updated_at || job?.updatedAt || job?.last_modified || job?.modified_at),
+    },
+    { label: 'Location', value: toDisplayText(job?.location || job?.city || job?.country) },
+    { label: 'Owner', value: toDisplayText(job?.owner?.name || job?.owner_name) },
   ];
 }
 
 function formatCandidate(candidate) {
   const person = candidate?.person || {};
-  const name = person?.name || candidate?.name || 'Unknown candidate';
-  const stage =
-    candidate?.workflow_stage_name ||
-    candidate?.workflow_stage_id ||
-    candidate?.stage ||
-    '—';
+  const name = toDisplayText(person?.name || candidate?.name || 'Unknown candidate');
+  const stage = toDisplayText(
+    candidate?.workflow_stage_name || candidate?.workflow_stage_id || candidate?.stage
+  );
   const emailEntry = Array.isArray(person?.emails)
     ? person.emails.find((item) => item?.value)
     : null;
+  const email = emailEntry?.value || candidate?.email;
+  const phoneEntry = Array.isArray(person?.phones)
+    ? person.phones.find((item) => item?.value)
+    : null;
+  const phone = phoneEntry?.value || candidate?.phone;
 
   return {
-    id: candidate?.id || candidate?.person?.id || candidate?.loxoCandidateId || 'n/a',
+    id: candidate?.id || person?.id || candidate?.loxoCandidateId || 'n/a',
     name,
     stage,
-    email: emailEntry?.value || candidate?.email || '—',
-    jobTitle: candidate?.jobTitle || candidate?.job?.title || candidate?.jobPublishedName || '—',
+    email: toDisplayText(email),
+    jobTitle: toDisplayText(candidate?.jobTitle || candidate?.job?.title || candidate?.jobPublishedName),
+    phone: toDisplayText(phone),
   };
 }
 
@@ -115,14 +173,20 @@ function buildCandidateDetail(candidate) {
     : null;
 
   return [
-    { label: 'Candidate ID', value: candidate?.id || person?.id || '—' },
-    { label: 'Name', value: person?.name || candidate?.name || '—' },
-    { label: 'Stage', value: candidate?.workflow_stage_name || candidate?.workflow_stage_id || '—' },
-    { label: 'Job ID', value: candidate?.jobId || candidate?.job_id || '—' },
-    { label: 'Job title', value: candidate?.jobTitle || candidate?.jobPublishedName || '—' },
-    { label: 'Email', value: emailEntry?.value || candidate?.email || '—' },
-    { label: 'Phone', value: phoneEntry?.value || '—' },
-    { label: 'Updated', value: candidate?.updated_at || candidate?.updatedAt || '—' },
+    { label: 'Candidate ID', value: toDisplayText(candidate?.id || person?.id) },
+    { label: 'Name', value: toDisplayText(person?.name || candidate?.name) },
+    {
+      label: 'Stage',
+      value: toDisplayText(candidate?.workflow_stage_name || candidate?.workflow_stage_id || candidate?.stage),
+    },
+    { label: 'Job ID', value: toDisplayText(candidate?.jobId || candidate?.job_id) },
+    {
+      label: 'Job title',
+      value: toDisplayText(candidate?.jobTitle || candidate?.job?.title || candidate?.jobPublishedName),
+    },
+    { label: 'Email', value: toDisplayText(emailEntry?.value || candidate?.email) },
+    { label: 'Phone', value: toDisplayText(phoneEntry?.value || candidate?.phone) },
+    { label: 'Updated', value: toDisplayText(candidate?.updated_at || candidate?.updatedAt) },
   ];
 }
 
@@ -218,11 +282,48 @@ export default function LoxoPanel() {
     [resetJobScopedData]
   );
 
+  const handleUnsetActive = useCallback(() => {
+    setSelectedJobId('');
+    setJobIdInput('');
+    setCandidateIdInput('');
+    resetJobScopedData();
+  }, [resetJobScopedData]);
+
+  const confirmSetActive = useCallback(
+    (jobId) => {
+      const job = jobsState.items.find((item) => extractJobId(item) === jobId) || null;
+      const formatted = job ? formatJob(job) : null;
+      const title = formatted?.title || jobId || 'selected job';
+      return window.confirm(`Set "${title}" as the active job?`);
+    },
+    [jobsState.items]
+  );
+
+  const handleConfirmSelectJob = useCallback(
+    (jobId) => {
+      if (!jobId) return;
+      if (!confirmSetActive(jobId)) {
+        return;
+      }
+      handleSelectJob(jobId);
+    },
+    [confirmSetActive, handleSelectJob]
+  );
+
   const handleSelectJobFromEvent = useCallback(
     (event) => {
-      handleSelectJob(event.target.value);
+      const nextJobId = event.target.value;
+      if (!nextJobId) {
+        handleUnsetActive();
+        return;
+      }
+      if (!confirmSetActive(nextJobId)) {
+        event.target.value = selectedJobId;
+        return;
+      }
+      handleSelectJob(nextJobId);
     },
-    [handleSelectJob]
+    [confirmSetActive, handleSelectJob, handleUnsetActive, selectedJobId]
   );
 
   const handleJobIdInputChange = useCallback((event) => {
@@ -231,10 +332,15 @@ export default function LoxoPanel() {
 
   const handleApplyJobId = useCallback(() => {
     const trimmed = jobIdInput.trim();
-    setSelectedJobId(trimmed);
-    setCandidateIdInput('');
-    resetJobScopedData();
-  }, [jobIdInput, resetJobScopedData]);
+    if (!trimmed) {
+      handleUnsetActive();
+      return;
+    }
+    if (!confirmSetActive(trimmed)) {
+      return;
+    }
+    handleSelectJob(trimmed);
+  }, [confirmSetActive, handleSelectJob, handleUnsetActive, jobIdInput]);
 
   const handleFetchJobDetail = useCallback(async () => {
     if (!selectedJobId) {
@@ -485,14 +591,32 @@ export default function LoxoPanel() {
                           <td>{job.status}</td>
                           <td>{job.updatedAt}</td>
                           <td>
-                            <button
-                              type="button"
-                              className="loxo-panel__button loxo-panel__button--ghost"
-                              onClick={() => handleSelectJob(job.id)}
-                              disabled={isActive}
-                            >
-                              {isActive ? 'Active' : 'Set active'}
-                            </button>
+                            {!isActive ? (
+                              <button
+                                type="button"
+                                className="loxo-panel__button loxo-panel__button--ghost"
+                                onClick={() => handleConfirmSelectJob(job.id)}
+                              >
+                                Set active
+                              </button>
+                            ) : (
+                              <div className="loxo-panel__inline loxo-panel__inline--gap">
+                                <button
+                                  type="button"
+                                  className="loxo-panel__button loxo-panel__button--ghost"
+                                  disabled
+                                >
+                                  Active
+                                </button>
+                                <button
+                                  type="button"
+                                  className="loxo-panel__button loxo-panel__button--ghost"
+                                  onClick={handleUnsetActive}
+                                >
+                                  Unset active
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -511,6 +635,7 @@ export default function LoxoPanel() {
                     value={selectedJobId}
                     onChange={handleSelectJobFromEvent}
                   >
+                    <option value="">-- No active job --</option>
                     {jobsTableRows.map((job) => (
                       <option key={job.id || job.title} value={job.id}>
                         {job.title}

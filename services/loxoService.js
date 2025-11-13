@@ -22,7 +22,7 @@ export async function fetchJobs() {
 
     return { jobs: { results: allJobs } };
   } catch (error) {
-    console.error('❌ Error fetching jobs from Loxo:', error.message || error);
+    console.error('❌ Error fetching jobs from Loxo:', error);
     throw new Error('Failed to fetch jobs from Loxo');
   }
 }
@@ -31,7 +31,7 @@ export async function fetchJobById(jobId) {
   try {
     return await loxoClient.get(`/jobs/${jobId}`);
   } catch (error) {
-    console.error(`❌ Error fetching job ${jobId} from Loxo:`, error.message || error);
+    console.error(`❌ Error fetching job ${jobId} from Loxo:`, error);
     throw new Error('Failed to fetch job by ID');
   }
 }
@@ -42,7 +42,7 @@ export async function applyToJob(jobId, candidateData) {
       data: { person: candidateData },
     });
   } catch (error) {
-    console.error(`❌ Error applying candidate to job ${jobId}:`, error.message || error);
+    console.error(`❌ Error applying candidate to job ${jobId}:`, error);
     throw new Error(`Failed to apply to job with ID ${jobId}`);
   }
 }
@@ -69,7 +69,7 @@ export async function fetchCandidatesByJob(jobId) {
 
     return allCandidates;
   } catch (error) {
-    console.error(`❌ Error fetching candidates for job ${jobId}:`, error.message || error);
+    console.error(`❌ Error fetching candidates for job ${jobId}:`, error);
     throw new Error(`Failed to fetch candidates for job ID ${jobId}`);
   }
 }
@@ -80,7 +80,7 @@ export async function fetchCandidateById(jobId, candidateId) {
   } catch (error) {
     console.error(
       `❌ Error fetching candidate ${candidateId} for job ${jobId}:`,
-      error.message || error
+      error
     );
     throw new Error(`Failed to fetch candidate ${candidateId} for job ID ${jobId}`);
   }
@@ -97,7 +97,7 @@ export async function fetchAllWorkflowStages() {
     }
     return [];
   } catch (error) {
-    console.error('❌ Error fetching Loxo workflow stages:', error.message || error);
+    console.error('❌ Error fetching Loxo workflow stages:', error);
     throw new Error('Failed to fetch workflow stages');
   }
 }
@@ -126,13 +126,13 @@ export async function fetchAllCandidatesFromAllJobs() {
         }));
         allCandidates.push(...enriched);
       } catch (innerError) {
-        console.warn(`⚠️ Failed to fetch candidates for job ID ${job.id}:`, innerError.message || innerError);
+        console.warn(`⚠️ Failed to fetch candidates for job ID ${job.id}:`, innerError);
       }
     }
 
     return allCandidates;
   } catch (error) {
-    console.error('❌ Error fetching candidates from all jobs:', error.message || error);
+    console.error('❌ Error fetching candidates from all jobs:', error);
     throw new Error('Failed to fetch candidates from all jobs');
   }
 }

@@ -11,11 +11,16 @@ import { jsonError, jsonSuccess } from '../lib/response.js';
 
 const PRE_QUALIFIED_STAGE_NAME = 'Pre Qualified';
 
+function logControllerError(context, error) {
+  console.error(`❌ [LoxoController] ${context}:`, error);
+}
+
 export async function getJobs(req, res) {
   try {
     const jobs = await fetchJobs();
     return jsonSuccess(res, 200, 'Jobs fetched successfully', jobs);
   } catch (error) {
+    logControllerError('Failed to fetch jobs', error);
     return jsonError(res, 500, 'Failed to fetch jobs', error.message);
   }
 }
@@ -32,6 +37,7 @@ export async function getJobById(req, res, jobId) {
     }
     return jsonSuccess(res, 200, 'Job fetched successfully', job);
   } catch (error) {
+    logControllerError(`Failed to fetch job ${jobId}`, error);
     return jsonError(res, 500, 'Failed to fetch job', error.message);
   }
 }
@@ -47,6 +53,7 @@ export async function applyToLoxoJob(req, res) {
     const response = await applyToJob(jobId, candidate);
     return jsonSuccess(res, 200, 'Candidate applied successfully', response);
   } catch (error) {
+    logControllerError(`Failed to apply candidate to job ${jobId}`, error);
     return jsonError(res, 500, 'Failed to apply candidate to job', error.message);
   }
 }
@@ -71,6 +78,7 @@ export async function getSelectedCandidates(req, res, jobId) {
       candidates: selected,
     });
   } catch (error) {
+    logControllerError(`Failed to fetch selected candidates for job ${jobId}`, error);
     return jsonError(res, 500, 'Failed to fetch selected candidates', error.message);
   }
 }
@@ -87,6 +95,7 @@ export async function getAllCandidatesInAJob(req, res, jobId) {
       candidates,
     });
   } catch (error) {
+    logControllerError(`Failed to fetch candidates for job ${jobId}`, error);
     return jsonError(res, 500, 'Failed to fetch candidates for job', error.message);
   }
 }
@@ -106,6 +115,7 @@ export async function getCandidateById(req, res, jobId, candidateId) {
     }
     return jsonSuccess(res, 200, 'Candidate fetched successfully', candidate);
   } catch (error) {
+    logControllerError(`Failed to fetch candidate ${candidateId} for job ${jobId}`, error);
     return jsonError(res, 500, 'Failed to fetch candidate', error.message);
   }
 }
@@ -147,6 +157,7 @@ export async function getPreQualifiedCandidates(req, res) {
       candidates: preQualifiedCandidates,
     });
   } catch (error) {
+    logControllerError('Failed to fetch pre-qualified candidates', error);
     return jsonError(res, 500, 'Failed to fetch pre-qualified candidates', error.message);
   }
 }
@@ -165,6 +176,7 @@ export async function getStagingIds(req, res) {
     const stages = await fetchAllWorkflowStages();
     return jsonSuccess(res, 200, 'Workflow stages fetched successfully', { stages });
   } catch (error) {
+    logControllerError('Failed to fetch workflow stages', error);
     return jsonError(res, 500, 'Failed to fetch workflow stages', error.message);
   }
 }
@@ -182,6 +194,7 @@ export async function getAllCandidatesInEveryStage(req, res) {
       }
     );
   } catch (error) {
+    logControllerError('Failed to fetch all candidates', error);
     return jsonError(res, 500, 'Failed to fetch all candidates', error.message);
   }
 }

@@ -6,6 +6,7 @@ export function withErrorHandling(handler) {
     try {
       await handler(req, res);
     } catch (err) {
+      console.error('❌ Unhandled API error:', err);
       return jsonError(res, 500, 'Internal server error', err?.message || 'Unknown error');
     }
   };
