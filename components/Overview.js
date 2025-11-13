@@ -5,7 +5,7 @@ export default function Overview() {
     <section className={styles.section}>
       <div className="container">
         <section id="centralization" className={styles.diagramSection}>
-          <h2 className={styles.diagramHeading}>Centralized Automation Platform</h2>
+          <h2 className={styles.diagramHeading}>Funding Intelligence System</h2>
           <div className={styles.centralizationDiagram}>
             <div className={styles.centerHub}>
               <div className={`${styles.hubIcon} ${styles.iconGear}`}></div>
