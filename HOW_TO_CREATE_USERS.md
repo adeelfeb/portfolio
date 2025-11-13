@@ -37,28 +37,44 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/setup/create-user" -Method POS
 
 ---
 
-## 🐧 Ubuntu/Droplet Commands
+## 🐧 Ubuntu/Droplet Local Endpoint
+
+When you SSH into the droplet, you can call the `/api/setup/internal-create-user` endpoint. It only accepts requests from `localhost`, so it cannot be triggered externally.
 
 **Make sure your server is running on port `8000`**
 
 ### Create Admin User:
 ```bash
-curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"admin","email":"a@a.com","password":"temp123","role":"admin"}'
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"admin","email":"a@a.com","password":"temp123","role":"admin"}'
 ```
 
 ### Create HR User:
 ```bash
-curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"hr","email":"h@h.com","password":"temp123","role":"hr"}'
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"hr","email":"h@h.com","password":"temp123","role":"hr"}'
 ```
 
 ### Create Superadmin User:
 ```bash
-curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"super admin","email":"s@s.com","password":"temp123","role":"superadmin"}'
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"super admin","email":"s@s.com","password":"temp123","role":"superadmin"}'
 ```
 
 ### Create All Users at Once:
 ```bash
-curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"admin","email":"a@a.com","password":"temp123","role":"admin"}' && curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"hr","email":"h@h.com","password":"temp123","role":"hr"}' && curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"super admin","email":"s@s.com","password":"temp123","role":"superadmin"}'
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"admin","email":"a@a.com","password":"temp123","role":"admin"}' && \
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"hr","email":"h@h.com","password":"temp123","role":"hr"}' && \
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"super admin","email":"s@s.com","password":"temp123","role":"superadmin"}'
 ```
 
 ---
@@ -74,7 +90,19 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/setup/create-user" -Method POS
 
 ### Ubuntu/Droplet:
 ```bash
-curl -X POST http://localhost:8000/api/setup/create-user -H "Content-Type: application/json" -d '{"name":"Your Name","email":"user@example.com","password":"yourpassword","role":"your_role"}'
+curl -X POST http://localhost:8000/api/setup/internal-create-user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Your Name","email":"user@example.com","password":"yourpassword","role":"your_role"}'
+```
+
+---
+
+## 📜 Automated Script (Droplet)
+
+Run the helper script to create the default HR user (`Hr`, `h@h.com`, `temp123`). Execute from the project root:
+
+```bash
+bash scripts/createUser.sh
 ```
 
 ---
@@ -102,7 +130,7 @@ After running the commands, you should see a JSON response like:
 
 ## 📝 Notes
 
-- **Token**: The setup token is optional in development mode. You don't need to provide it.
+- **Local only**: The `/api/setup/internal-create-user` endpoint rejects non-localhost requests.
 - **Port**: 
   - Windows local: `3000`
   - Ubuntu/Droplet: `8000`
