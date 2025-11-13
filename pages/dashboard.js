@@ -6,6 +6,7 @@ import UserOverviewTable from '../components/dashboard/UserOverviewTable';
 import JobManager from '../components/dashboard/JobManager';
 import TranscriptManager from '../components/dashboard/TranscriptManager';
 import VendorManager from '../components/dashboard/VendorManager';
+import PerformanceDashboard from '../components/dashboard/reports/PerformanceDashboard';
 
 export async function getServerSideProps(context) {
   const { req } = context;
@@ -194,18 +195,8 @@ const SECTION_DESCRIPTORS = {
     ],
   },
   reports: {
-    subtitle: 'Measure performance and share insights with stakeholders.',
     hideHeader: true,
-    panels: [
-      {
-        title: 'Performance dashboard',
-        description: 'Monitor KPIs and trends across your organization.',
-      },
-      {
-        title: 'Export center',
-        description: 'Generate CSV and presentation-ready snapshots.',
-      },
-    ],
+    body: () => <PerformanceDashboard />,
   },
   submissions: {
     subtitle: 'Oversee incoming submissions and coordinate reviews.',
