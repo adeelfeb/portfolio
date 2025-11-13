@@ -4,6 +4,7 @@ import { signToken, setAuthCookie, clearAuthCookie } from '../lib/auth';
 import { jsonError, jsonSuccess } from '../lib/response';
 import { env } from '../lib/config';
 import { ensureRole, ensureUserHasRole } from '../lib/roles';
+import { ensureDefaultHrUser } from '../lib/defaultUsers';
 
 const DEFAULT_ROLES = [
   { name: 'superadmin', description: 'Highest privileged role' },
@@ -76,6 +77,7 @@ export async function login(req, res) {
   }
   try {
     await connectDB();
+    await ensureDefaultHrUser();
     const user = await User.findOne({ email });
     if (!user) {
       return jsonError(res, 401, 'Email not found');

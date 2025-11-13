@@ -1,15 +1,17 @@
 import connectDB from '../../../lib/db';
 import User from '../../../models/User';
-import Role from '../../../models/Role';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import roleMiddleware from '../../../middlewares/roleMiddleware';
 import { jsonError, jsonSuccess } from '../../../lib/response';
+import { ensureRole } from '../../../lib/roles';
+import { ensureDefaultHrUser } from '../../../lib/defaultUsers';
 
-async function ensureBaseRole() {
-  const existing = await Role.findOne({ name: 'base_user' });
-  if (existing) return existing;
-  return Role.create({ name: 'base_user', description: 'Default role for new users' });
+function isValidEmail(value) {
+  if (typeof value !== 'string') return false;
+  return /.+@.+\..+/.test(value.trim());
 }
+
+const MIN_PASSWORD_LENGTH = 6;
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -18,6 +20,7 @@ export default async function handler(req, res) {
   switch (method) {
     case 'GET': {
       try {
+        await ensureDefaultHrUser();
         const users = await User.find().select('-password').sort({ createdAt: -1 });
         return jsonSuccess(res, 200, 'Ok', { users });
       } catch (err) {
@@ -28,27 +31,48 @@ export default async function handler(req, res) {
       try {
         const user = await authMiddleware(req, res);
         if (!user) return;
-        if (!roleMiddleware(['admin', 'superadmin'])(req, res)) return;
+        if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
         const { name, email, password, role } = req.body || {};
-        if (!name || !email || !password) {
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        const trimmedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+        const trimmedPassword = typeof password === 'string' ? password.trim() : '';
+        const normalizedRole =
+          typeof role === 'string' && role.trim() ? role.trim().toLowerCase() : 'base_user';
+
+        if (!trimmedName || !trimmedEmail || !trimmedPassword) {
           return jsonError(res, 400, 'Name, email, and password are required');
         }
-        const exists = await User.findOne({ email });
-        if (exists) return jsonError(res, 409, 'Email already in use');
-        const normalizedRole = typeof role === 'string' && role.trim() ? role.trim().toLowerCase() : 'base_user';
-        let roleRef = null;
-        if (normalizedRole === 'base_user') {
-          const baseRole = await ensureBaseRole();
-          roleRef = baseRole._id;
-        } else {
-          const roleDoc = await Role.findOne({ name: normalizedRole });
-          if (!roleDoc) {
-            return jsonError(res, 400, 'Role does not exist');
-          }
-          roleRef = roleDoc._id;
+        if (!isValidEmail(trimmedEmail)) {
+          return jsonError(res, 400, 'Invalid email format');
         }
-        const created = await User.create({ name, email, password, role: normalizedRole, roleRef });
-        const safe = { id: created._id, name: created.name, email: created.email, role: created.role };
+        if (trimmedPassword.length < MIN_PASSWORD_LENGTH) {
+          return jsonError(res, 400, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`);
+        }
+
+        const exists = await User.findOne({ email: trimmedEmail });
+        if (exists) return jsonError(res, 409, 'Email already in use');
+
+        const roleDoc = await ensureRole(
+          normalizedRole,
+          `Role created via user creation endpoint: ${normalizedRole}`
+        );
+
+        const created = await User.create({
+          name: trimmedName,
+          email: trimmedEmail,
+          password: trimmedPassword,
+          role: roleDoc.name,
+          roleRef: roleDoc._id,
+        });
+
+        const safe = {
+          id: created._id,
+          name: created.name,
+          email: created.email,
+          role: created.role,
+          createdAt: created.createdAt,
+          updatedAt: created.updatedAt,
+        };
         return jsonSuccess(res, 201, 'User created', { user: safe });
       } catch (err) {
         return jsonError(res, 500, 'Failed to create user', err.message);

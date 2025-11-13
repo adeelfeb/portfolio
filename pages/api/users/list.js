@@ -3,6 +3,7 @@ import User from '../../../models/User';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import roleMiddleware from '../../../middlewares/roleMiddleware';
 import { jsonError, jsonSuccess } from '../../../lib/response';
+import { ensureDefaultHrUser } from '../../../lib/defaultUsers';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -12,11 +13,12 @@ export default async function handler(req, res) {
 
   const sessionUser = await authMiddleware(req, res);
   if (!sessionUser) return;
-  if (!roleMiddleware(['admin', 'superadmin', 'hr'])(req, res)) return;
+  if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
 
   try {
     await connectDB();
-    const users = await User.find({ role: { $ne: 'base_user' } })
+    await ensureDefaultHrUser();
+    const users = await User.find()
       .select('name email role createdAt updatedAt')
       .sort({ createdAt: -1 });
 

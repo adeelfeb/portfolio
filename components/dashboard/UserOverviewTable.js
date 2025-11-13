@@ -25,6 +25,12 @@ const ROLE_OPTIONS = [
   { value: 'simple_user', label: 'Simple User' },
 ];
 const DEFAULT_ROLE = 'base_user';
+const MIN_PASSWORD_LENGTH = 6;
+
+function isValidEmail(value) {
+  if (typeof value !== 'string') return false;
+  return /.+@.+\..+/.test(value.trim());
+}
 
 function formatDateCell(value, formatter) {
   if (!value) return '—';
@@ -99,6 +105,11 @@ export default function UserOverviewTable({ currentUser = null }) {
   const [roleOptions, setRoleOptions] = useState(ROLE_OPTIONS);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [roleLoadError, setRoleLoadError] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', email: '', role: DEFAULT_ROLE, password: '' });
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, DATE_FORMAT_OPTIONS), []);
 
@@ -304,6 +315,12 @@ export default function UserOverviewTable({ currentUser = null }) {
       if (!canEditUsers || !user) return;
       setActionError('');
       setActionMessage('');
+      if (isCreateOpen) {
+        setIsCreateOpen(false);
+        setCreateForm({ name: '', email: '', role: DEFAULT_ROLE, password: '' });
+        setCreateError('');
+        setCreateSuccess('');
+      }
       const snapshot = { ...user };
       const normalizedRole =
         typeof snapshot.role === 'string' && snapshot.role.trim()
@@ -317,7 +334,7 @@ export default function UserOverviewTable({ currentUser = null }) {
         newPassword: '',
       });
     },
-    [canEditUsers]
+    [canEditUsers, isCreateOpen]
   );
 
   const handleEditFieldChange = useCallback((event) => {
@@ -464,6 +481,94 @@ export default function UserOverviewTable({ currentUser = null }) {
     [canEditUsers, editingUser]
   );
 
+  const handleCreateFieldChange = useCallback((event) => {
+    const { name, value } = event.target;
+    setCreateForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setCreateError('');
+    setCreateSuccess('');
+  }, []);
+
+  const handleToggleCreate = useCallback(() => {
+    setCreateError('');
+    setCreateSuccess('');
+    setActionMessage('');
+    setActionError('');
+    if (!isCreateOpen) {
+      setEditingUser(null);
+      setEditForm({ name: '', email: '', role: DEFAULT_ROLE, newPassword: '' });
+    }
+    setCreateForm({ name: '', email: '', role: DEFAULT_ROLE, password: '' });
+    setIsCreateOpen((prev) => !prev);
+  }, [isCreateOpen]);
+
+  const handleSubmitCreate = useCallback(
+    async (event) => {
+      event.preventDefault();
+      if (!canEditUsers) return;
+
+      const trimmedName = createForm.name.trim();
+      const trimmedEmail = createForm.email.trim().toLowerCase();
+      const trimmedPassword = createForm.password.trim();
+      const normalizedRoleValue = ((createForm.role || '').trim() || DEFAULT_ROLE).toLowerCase();
+
+      if (!trimmedName) {
+        setCreateError('Name is required');
+        return;
+      }
+      if (!trimmedEmail || !isValidEmail(trimmedEmail)) {
+        setCreateError('A valid email is required');
+        return;
+      }
+      if (!trimmedPassword || trimmedPassword.length < MIN_PASSWORD_LENGTH) {
+        setCreateError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long`);
+        return;
+      }
+
+      setIsCreating(true);
+      setCreateError('');
+      setCreateSuccess('');
+      setActionMessage('');
+      setActionError('');
+
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: trimmedName,
+            email: trimmedEmail,
+            password: trimmedPassword,
+            role: normalizedRoleValue,
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) {
+          const message = payload?.message || 'Failed to create user';
+          throw new Error(message);
+        }
+        const createdUser = payload?.data?.user || null;
+        if (createdUser) {
+          const normalized = normalizeUser({ ...createdUser, id: createdUser.id || createdUser._id });
+          if (normalized) {
+            setRowData((prev) => [normalized, ...prev.filter((row) => row.id !== normalized.id)]);
+          }
+        }
+        setCreateSuccess('User created successfully');
+        setCreateForm({ name: '', email: '', role: DEFAULT_ROLE, password: '' });
+        loadRoles();
+      } catch (err) {
+        setCreateError(err.message || 'Unable to create user');
+      } finally {
+        setIsCreating(false);
+      }
+    },
+    [canEditUsers, createForm, loadRoles, normalizeUser]
+  );
+
   const isEmpty = !isLoading && !error && rowData.length === 0;
   const editingId = editingUser?.id || null;
 
@@ -475,10 +580,113 @@ export default function UserOverviewTable({ currentUser = null }) {
       )}
       {actionMessage && <div className={`${styles.feedback} ${styles.feedbackSuccess}`}>{actionMessage}</div>}
       {actionError && <div className={`${styles.feedback} ${styles.feedbackError}`}>{actionError}</div>}
-      {canEditUsers && roleLoadError && !editingUser && (
+      {canEditUsers && roleLoadError && !editingUser && !isCreateOpen && (
         <div className={`${styles.feedback} ${styles.feedbackError}`}>{roleLoadError}</div>
       )}
       {isEmpty && <div className={`${styles.feedback} ${styles.feedbackInfo}`}>No users found yet.</div>}
+
+      {canEditUsers && (
+        <div className={styles.toolbar}>
+          <button
+            type="button"
+            className={styles.toolbarButton}
+            onClick={handleToggleCreate}
+            disabled={isCreating}
+          >
+            {isCreateOpen ? 'Close Create Form' : 'New User'}
+          </button>
+        </div>
+      )}
+
+      {canEditUsers && isCreateOpen && (
+        <form className={`${styles.editPanel} ${styles.createPanel}`} onSubmit={handleSubmitCreate}>
+          <div className={styles.editPanelHeader}>
+            <div className={styles.editPanelHeaderText}>
+              <span className={styles.editPanelTitle}>Create New User</span>
+              <p className={styles.panelDescription}>
+                Add a teammate by assigning their role and temporary password. They can update their
+                details after logging in.
+              </p>
+            </div>
+          </div>
+          {createError && (
+            <div className={`${styles.inlineFeedback} ${styles.inlineFeedbackError}`}>{createError}</div>
+          )}
+          {createSuccess && (
+            <div className={`${styles.inlineFeedback} ${styles.inlineFeedbackSuccess}`}>{createSuccess}</div>
+          )}
+          {isCreating && (
+            <div className={`${styles.inlineFeedback} ${styles.inlineFeedbackInfo}`}>
+              Creating user…
+            </div>
+          )}
+          <div className={styles.editFormGrid}>
+            <label className={styles.editField}>
+              <span>Name</span>
+              <input
+                type="text"
+                name="name"
+                value={createForm.name}
+                onChange={handleCreateFieldChange}
+                disabled={isCreating}
+                required
+              />
+            </label>
+            <label className={styles.editField}>
+              <span>Email</span>
+              <input
+                type="email"
+                name="email"
+                value={createForm.email}
+                onChange={handleCreateFieldChange}
+                disabled={isCreating}
+                required
+              />
+            </label>
+            <label className={styles.editField}>
+              <span>Role</span>
+              <select
+                name="role"
+                value={createForm.role}
+                onChange={handleCreateFieldChange}
+                disabled={isCreating}
+              >
+                {roleOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.editField}>
+              <span>Password</span>
+              <input
+                type="password"
+                name="password"
+                value={createForm.password}
+                onChange={handleCreateFieldChange}
+                disabled={isCreating}
+                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+                required
+                minLength={MIN_PASSWORD_LENGTH}
+              />
+            </label>
+          </div>
+          <div className={styles.editActions}>
+            <button type="submit" className={styles.primaryButton} disabled={isCreating}>
+              Create user
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={handleToggleCreate}
+              disabled={isCreating}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       {isCompact ? (
         <div className={styles.cardListWrapper} aria-live="polite">

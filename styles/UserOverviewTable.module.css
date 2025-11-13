@@ -12,6 +12,42 @@
   box-sizing: border-box;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.toolbarButton {
+  border: none;
+  border-radius: 0.65rem;
+  padding: 0.55rem 1.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.toolbarButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
+}
+
+.toolbarButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.toolbarButton:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+
 .tableHeading {
   margin: 0;
   padding: 0.35rem 0 0.4rem;
@@ -263,6 +299,12 @@
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
 }
 
+.createPanel {
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 .editPanelHeader {
   display: flex;
   align-items: center;
@@ -271,10 +313,23 @@
   flex-wrap: wrap;
 }
 
+.editPanelHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 .editPanelTitle {
   font-size: 1.05rem;
   font-weight: 600;
   color: #0f172a;
+}
+
+.panelDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  max-width: 60ch;
 }
 
 .editFormGrid {
@@ -327,6 +382,11 @@
 .inlineFeedbackInfo {
   background: rgba(37, 99, 235, 0.12);
   color: #1d4ed8;
+}
+
+.inlineFeedbackSuccess {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
 }
 
 .inlineRetryButton {
