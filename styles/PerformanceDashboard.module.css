@@ -137,10 +137,11 @@
 .card {
   background: #ffffff;
   border-radius: 1.25rem;
-  padding: 1.6rem;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .cardHeader {
@@ -152,16 +153,18 @@
 
 .cardTitle {
   margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
   color: #0f172a;
+  line-height: 1.3;
 }
 
 .cardSubtitle {
-  margin: 0.35rem 0 0;
-  color: #607089;
+  margin: 0.5rem 0 0;
+  color: #475569;
   line-height: 1.6;
   max-width: 48ch;
+  font-size: 0.95rem;
 }
 
 .cardMeta {
@@ -178,11 +181,12 @@
   place-items: center;
   min-height: 140px;
   border-radius: 1rem;
-  background: rgba(148, 163, 184, 0.18);
-  color: #334155;
+  background: #f8fafc;
+  color: #475569;
   text-align: center;
   font-weight: 500;
-  padding: 1rem;
+  padding: 1.5rem;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
 }
 
 /* KPI grid */
@@ -197,13 +201,14 @@
 }
 
 .kpiItem {
-  padding: 1.2rem;
+  padding: 1.5rem;
   border-radius: 1.1rem;
   background: linear-gradient(160deg, rgba(14, 165, 233, 0.12), rgba(37, 99, 235, 0.18));
   display: grid;
-  gap: 0.8rem;
+  gap: 1rem;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(37, 99, 235, 0.15);
 }
 
 .kpiItem::after {
@@ -224,8 +229,9 @@
 
 .kpiLabel {
   color: #0f172a;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
+  letter-spacing: 0.01em;
 }
 
 .delta {
@@ -234,10 +240,11 @@
   gap: 0.35rem;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.3rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.18);
-  color: #166534;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(34, 197, 94, 0.15);
+  color: #14532d;
+  border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 .deltaUp::before {
@@ -251,8 +258,9 @@
 }
 
 .deltaDown {
-  background: rgba(248, 113, 113, 0.16);
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 .deltaDown::before {
@@ -282,15 +290,16 @@
 }
 
 .kpiValue {
-  font-size: 1.65rem;
-  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
   color: #0f172a;
+  line-height: 1.2;
 }
 
 .kpiTarget {
   font-size: 0.85rem;
-  font-weight: 500;
-  color: #1e293b;
+  font-weight: 600;
+  color: #475569;
 }
 
 .kpiSparkline {
@@ -352,10 +361,12 @@
   display: grid;
   place-items: center;
   min-height: 200px;
-  background: rgba(203, 213, 225, 0.2);
+  background: #f8fafc;
   border-radius: 1rem;
   color: #475569;
   font-weight: 500;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  padding: 1.5rem;
 }
 
 .trendChart {
@@ -401,25 +412,27 @@
 }
 
 .summaryStat {
-  background: rgba(226, 232, 240, 0.45);
+  background: #f8fafc;
   border-radius: 1rem;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.25rem;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .summaryLabel {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #0f172a;
-  opacity: 0.7;
+  color: #475569;
+  font-weight: 600;
 }
 
 .summaryValue {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #0f172a;
+  line-height: 1.2;
 }
 
 .summaryDelta {
@@ -433,13 +446,15 @@
 }
 
 .summaryDeltaUp {
-  background: rgba(34, 197, 94, 0.18);
-  color: #15803d;
+  background: rgba(34, 197, 94, 0.15);
+  color: #14532d;
+  border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 .summaryDeltaDown {
-  background: rgba(248, 113, 113, 0.16);
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .summaryDeltaLabel {
@@ -457,12 +472,13 @@
   grid-auto-flow: column;
   gap: 0.75rem;
   align-items: center;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  background: rgba(59, 130, 246, 0.12);
-  color: #1d4ed8;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgba(59, 130, 246, 0.15);
+  color: #1e40af;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .funnelTotalLabel {
@@ -636,12 +652,14 @@
 
 .regionDeltaUp {
   background: rgba(34, 197, 94, 0.15);
-  color: #15803d;
+  color: #14532d;
+  border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 .regionDeltaDown {
-  background: rgba(248, 113, 113, 0.15);
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 /* Export */
@@ -650,11 +668,12 @@
 }
 
 .exportMessage {
-  padding: 0.85rem 1.1rem;
+  padding: 1rem 1.25rem;
   border-radius: 1rem;
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.15);
+  color: #1e40af;
   font-weight: 600;
+  border: 1px solid rgba(37, 99, 235, 0.25);
 }
 
 .exportList {
@@ -667,12 +686,13 @@
 
 .exportItem {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
   grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
-  padding: 1.25rem;
+  padding: 1.5rem;
   border-radius: 1.1rem;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .exportDetails {
@@ -681,15 +701,17 @@
 }
 
 .exportTitle {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #0f172a;
+  line-height: 1.3;
 }
 
 .exportDescription {
   margin: 0;
   color: #475569;
   line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .exportMetaRow {
@@ -701,11 +723,13 @@
 }
 
 .exportFormat {
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
   background: rgba(14, 165, 233, 0.15);
   color: #0369a1;
   font-weight: 600;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  font-size: 0.85rem;
 }
 
 .exportEta {
@@ -720,18 +744,21 @@
 
 .exportButton {
   border: none;
-  border-radius: 999px;
-  padding: 0.6rem 1.4rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
   font-weight: 600;
-  background: #1d4ed8;
-  color: #fff;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
 }
 
-.exportButton:hover {
+.exportButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.25);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -2px rgba(37, 99, 235, 0.3);
 }
 
 .exportButton:disabled {

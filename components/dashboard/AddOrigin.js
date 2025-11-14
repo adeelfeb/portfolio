@@ -486,15 +486,17 @@ export default function AddOrigin() {
 
         .origins-heading h2 {
           margin: 0;
-          font-size: 1.25rem;
-          font-weight: 600;
+          font-size: clamp(1.5rem, 2.5vw, 2rem);
+          font-weight: 700;
           color: #0f172a;
+          line-height: 1.2;
         }
 
         .origins-heading p {
           margin: 0;
           color: #475569;
-          font-size: 0.95rem;
+          font-size: 1rem;
+          line-height: 1.6;
         }
 
         .origins-meta {
@@ -508,32 +510,35 @@ export default function AddOrigin() {
           display: inline-flex;
           align-items: center;
           gap: 0.35rem;
-          padding: 0.35rem 0.65rem;
-          border-radius: 999px;
-          background: rgba(37, 99, 235, 0.12);
-          color: #1d4ed8;
+          padding: 0.4rem 0.75rem;
+          border-radius: 0.5rem;
+          background: rgba(37, 99, 235, 0.15);
+          color: #1e40af;
           font-weight: 600;
-          font-size: 0.82rem;
+          font-size: 0.85rem;
+          border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
         .refresh {
           border: none;
-          border-radius: 0.65rem;
-          padding: 0.45rem 1rem;
-          background: rgba(37, 99, 235, 0.12);
-          color: #1d4ed8;
+          border-radius: 0.75rem;
+          padding: 0.65rem 1.25rem;
+          background: #ffffff;
+          border: 1.5px solid rgba(148, 163, 184, 0.4);
+          color: #0f172a;
           font-weight: 600;
-          font-size: 0.85rem;
+          font-size: 0.95rem;
           cursor: pointer;
-          transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+          transition: all 0.2s ease;
         }
 
         .refresh:hover:not(:disabled),
         .refresh:focus-visible:not(:disabled) {
-          background: rgba(37, 99, 235, 0.2);
-          color: #1e3a8a;
+          background: #f8fafc;
+          border-color: rgba(148, 163, 184, 0.6);
           transform: translateY(-1px);
           outline: none;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .refresh:disabled {
@@ -543,11 +548,12 @@ export default function AddOrigin() {
 
         .create-form {
           display: grid;
-          gap: 1rem;
-          padding: 1rem;
-          border: 1px solid rgba(148, 163, 184, 0.3);
-          border-radius: 1rem;
-          background: rgba(248, 250, 252, 0.8);
+          gap: 1.25rem;
+          padding: 1.75rem;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+          border-radius: 1.25rem;
+          background: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
           min-width: 0;
         }
 
@@ -566,34 +572,57 @@ export default function AddOrigin() {
 
         .field span {
           font-size: 0.9rem;
-          font-weight: 500;
+          font-weight: 600;
           color: #1e293b;
+          letter-spacing: 0.01em;
         }
 
         input,
         textarea {
           width: 100%;
           max-width: 100%;
-          border-radius: 0.8rem;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          padding: 0.7rem 0.9rem;
+          border-radius: 0.75rem;
+          border: 1.5px solid rgba(148, 163, 184, 0.4);
+          padding: 0.75rem 1rem;
           font-size: 0.95rem;
-          background: white;
-          transition: border 0.2s ease, box-shadow 0.2s ease;
+          background: #ffffff;
+          color: #0f172a;
+          transition: all 0.2s ease;
           box-sizing: border-box;
           min-width: 0;
+          font-family: inherit;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+          color: #94a3b8;
+          opacity: 0.8;
+        }
+
+        input:hover:not(:disabled),
+        textarea:hover:not(:disabled) {
+          border-color: rgba(148, 163, 184, 0.6);
         }
 
         input:focus,
         textarea:focus {
           outline: none;
-          border-color: rgba(37, 99, 235, 0.6);
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+          border-color: #2563eb;
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+          background: #ffffff;
+        }
+
+        input:disabled,
+        textarea:disabled {
+          background: #f1f5f9;
+          color: #64748b;
+          cursor: not-allowed;
+          opacity: 0.7;
         }
 
         textarea {
           resize: vertical;
-          min-height: 72px;
+          min-height: 90px;
         }
 
         .actions {
@@ -606,68 +635,84 @@ export default function AddOrigin() {
         .actions button {
           border: none;
           border-radius: 0.75rem;
-          padding: 0.6rem 1.2rem;
+          padding: 0.75rem 1.5rem;
           background: linear-gradient(135deg, #2563eb, #1d4ed8);
-          color: #fff;
+          color: #ffffff;
           font-weight: 600;
+          font-size: 0.95rem;
           cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
         }
 
         .actions button:hover:not(:disabled),
         .actions button:focus-visible:not(:disabled) {
+          background: linear-gradient(135deg, #1d4ed8, #1e40af);
           transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+          box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -2px rgba(37, 99, 235, 0.3);
           outline: none;
         }
 
         .actions button:disabled {
           cursor: not-allowed;
-          opacity: 0.65;
+          opacity: 0.6;
+          transform: none;
+          box-shadow: none;
         }
 
         .message {
           margin: 0;
-          font-size: 0.9rem;
+          font-size: 0.95rem;
+          padding: 0.85rem 1rem;
+          border-radius: 0.9rem;
+          font-weight: 500;
+          border: 1px solid transparent;
         }
 
         .message--success {
-          color: #047857;
+          color: #14532d;
+          background: rgba(34, 197, 94, 0.15);
+          border-color: rgba(34, 197, 94, 0.3);
         }
 
         .message--error {
-          color: #dc2626;
+          color: #991b1b;
+          background: rgba(239, 68, 68, 0.15);
+          border-color: rgba(239, 68, 68, 0.3);
         }
 
         .empty-state {
-          border: 1px dashed rgba(148, 163, 184, 0.5);
+          border: 1px dashed rgba(148, 163, 184, 0.4);
           border-radius: 1rem;
-          padding: 1.1rem;
+          padding: 1.5rem;
           text-align: center;
-          background: rgba(248, 250, 252, 0.6);
+          background: #f8fafc;
           color: #475569;
           display: grid;
-          gap: 0.35rem;
+          gap: 0.5rem;
+          font-weight: 500;
         }
 
         .origin-list {
           display: grid;
-          gap: 1rem;
+          gap: 1.25rem;
           min-width: 0;
         }
 
         .origin-item {
           display: grid;
-          gap: 0.75rem;
-          border: 1px solid rgba(148, 163, 184, 0.3);
-          border-radius: 1rem;
-          padding: 1rem 1.1rem;
-          background: white;
+          gap: 1rem;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+          border-radius: 1.25rem;
+          padding: 1.5rem;
+          background: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
           min-width: 0;
         }
 
         .origin-item--inactive {
-          background: rgba(248, 250, 252, 0.9);
+          background: #f8fafc;
+          opacity: 0.9;
         }
 
         .origin-summary {
@@ -693,20 +738,23 @@ export default function AddOrigin() {
         .status-chip {
           display: inline-flex;
           align-items: center;
-          padding: 0.25rem 0.6rem;
-          border-radius: 999px;
-          font-size: 0.78rem;
+          padding: 0.35rem 0.75rem;
+          border-radius: 0.5rem;
+          font-size: 0.85rem;
           font-weight: 600;
+          border: 1px solid transparent;
         }
 
         .status-chip--active {
-          background: rgba(22, 163, 74, 0.18);
-          color: #15803d;
+          background: rgba(22, 163, 74, 0.15);
+          color: #14532d;
+          border-color: rgba(22, 163, 74, 0.3);
         }
 
         .status-chip--inactive {
-          background: rgba(148, 163, 184, 0.3);
+          background: rgba(148, 163, 184, 0.15);
           color: #475569;
+          border-color: rgba(148, 163, 184, 0.3);
         }
 
         .origin-label {
@@ -734,37 +782,44 @@ export default function AddOrigin() {
 
         .origin-actions button {
           border: none;
-          border-radius: 0.7rem;
-          padding: 0.5rem 0.9rem;
-          background: rgba(37, 99, 235, 0.12);
-          color: #1d4ed8;
+          border-radius: 0.5rem;
+          padding: 0.6rem 1rem;
+          background: rgba(37, 99, 235, 0.1);
+          color: #2563eb;
           font-weight: 600;
+          font-size: 0.9rem;
           cursor: pointer;
-          transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+          transition: all 0.2s ease;
+          border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
         .origin-actions button:hover:not(:disabled),
         .origin-actions button:focus-visible:not(:disabled) {
           background: rgba(37, 99, 235, 0.2);
-          color: #1e3a8a;
+          color: #1e40af;
           outline: none;
           transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
         .origin-actions button:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .origin-actions button:last-child {
-          background: rgba(220, 38, 38, 0.1);
-          color: #b91c1c;
+          background: rgba(239, 68, 68, 0.1);
+          color: #dc2626;
+          border-color: rgba(239, 68, 68, 0.2);
         }
 
         .origin-actions button:last-child:hover:not(:disabled),
         .origin-actions button:last-child:focus-visible:not(:disabled) {
-          background: rgba(220, 38, 38, 0.18);
-          color: #7f1d1d;
+          background: rgba(239, 68, 68, 0.2);
+          color: #b91c1c;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
         }
 
         .origin-edit {
@@ -776,24 +831,50 @@ export default function AddOrigin() {
         .checkbox {
           display: inline-flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.65rem;
           font-size: 0.9rem;
           color: #1e293b;
+          cursor: pointer;
+        }
+
+        .checkbox input[type="checkbox"] {
+          width: 1.25rem;
+          height: 1.25rem;
+          cursor: pointer;
+          accent-color: #2563eb;
+          border-radius: 0.375rem;
         }
 
         .actions--inline {
           justify-content: flex-start;
-          gap: 0.6rem;
+          gap: 0.75rem;
         }
 
         .actions--inline button:first-of-type {
           background: linear-gradient(135deg, #2563eb, #1d4ed8);
-          color: #fff;
+          color: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .actions--inline button:first-of-type:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1d4ed8, #1e40af);
         }
 
         .actions--inline button:last-of-type {
-          background: rgba(148, 163, 184, 0.2);
-          color: #475569;
+          background: #f1f5f9;
+          color: #0f172a;
+          border: 1.5px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .actions--inline button:last-of-type:hover:not(:disabled) {
+          background: #e2e8f0;
+          border-color: rgba(148, 163, 184, 0.5);
+        }
+
+        @media (max-width: 960px) {
+          .field-group {
+            grid-template-columns: 1fr;
+          }
         }
 
         @media (max-width: 720px) {
@@ -801,17 +882,70 @@ export default function AddOrigin() {
             gap: 1.25rem;
           }
 
+          .origins-heading h2 {
+            font-size: 1.5rem;
+          }
+
           .create-form {
-            padding: 0.9rem;
+            padding: 1.25rem;
+            border-radius: 1rem;
+          }
+
+          .field-group {
+            gap: 1rem;
+          }
+
+          input,
+          textarea {
+            padding: 0.7rem 0.9rem;
+            font-size: 16px; /* Prevents zoom on iOS */
+          }
+
+          .origin-item {
+            padding: 1.25rem;
+            border-radius: 1rem;
           }
 
           .origin-actions {
             flex-direction: column;
+            gap: 0.5rem;
           }
 
           .origin-actions button {
             width: 100%;
             text-align: center;
+            padding: 0.65rem;
+          }
+
+          .actions {
+            flex-direction: column;
+          }
+
+          .actions button {
+            width: 100%;
+          }
+
+          .actions--inline {
+            flex-direction: column;
+          }
+
+          .actions--inline button {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .origins-header {
+            flex-direction: column;
+          }
+
+          .origins-meta {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .create-form {
+            padding: 1rem;
           }
         }
       `}</style>
