@@ -306,23 +306,26 @@ export default function CandidateManager({ user }) {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.heading}>Candidates</h2>
-      <p className={styles.subtitle}>
-        Manage candidate and vendor lead intake. Track onboarding status and service information.
-      </p>
-
-      {canEdit && (
-        <div className={styles.toolbar}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={resetForm}
-            disabled={isSubmitting}
-          >
-            New Candidate
-          </button>
+      <div className={styles.header}>
+        <div className={styles.headingGroup}>
+          <h2 className={styles.heading}>Candidates</h2>
+          <p className={styles.subtitle}>
+            Manage candidate and vendor lead intake. Track onboarding status and service information.
+          </p>
         </div>
-      )}
+        <div className={styles.headerMeta}>
+          {canEdit && (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={resetForm}
+              disabled={isSubmitting}
+            >
+              New Candidate
+            </button>
+          )}
+        </div>
+      </div>
 
       {statusMessage && (
         <div className={styles.feedback + ' ' + styles.feedbackSuccess}>{statusMessage}</div>

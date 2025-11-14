@@ -11,6 +11,7 @@ import CandidateManager from '../components/dashboard/CandidateManager';
 import PerformanceDashboard from '../components/dashboard/reports/PerformanceDashboard';
 import LoxoPanel from '../components/dashboard/LoxoPanel';
 import CityServiceManager from '../components/dashboard/CityServiceManager';
+import ApiEndpointsPanel from '../components/dashboard/ApiEndpointsPanel';
 
 export async function getServerSideProps(context) {
   const { req } = context;
@@ -50,6 +51,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'funding', label: 'Funding Opportunities' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'reports', label: 'Reports & Analytics' },
+    { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   admin: [
     { key: 'overview', label: 'Overview' },
@@ -63,6 +65,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'submissions', label: 'Submissions' },
     { key: 'team', label: 'Team Insights' },
     { key: 'add-origin', label: 'Add Origin' },
+    { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr: [
     { key: 'overview', label: 'Overview' },
@@ -74,6 +77,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'city-service-routes', label: 'City Service Routes' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'reports', label: 'Reports & Analytics' },
+    { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr_admin: [
     { key: 'overview', label: 'Overview' },
@@ -85,6 +89,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'city-service-routes', label: 'City Service Routes' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'reports', label: 'Reports & Analytics' },
+    { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   base_user: [
     { key: 'overview', label: 'My Applications' },
@@ -289,6 +294,10 @@ const SECTION_DESCRIPTORS = {
   'add-origin': {
     hideHeader: true,
     body: () => <AddOrigin />,
+  },
+  'api-endpoints': {
+    hideHeader: true,
+    body: () => <ApiEndpointsPanel />,
   },
   submissions: {
     subtitle: 'Oversee incoming submissions and coordinate reviews.',

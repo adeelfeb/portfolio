@@ -223,23 +223,26 @@ export default function CityServiceManager({ user }) {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.heading}>City Service Routes</h2>
-      <p style={{ marginBottom: '1.5rem', color: '#666' }}>
-        Manage dynamic city + service URL routes. Test routes before creating them.
-      </p>
-
-      {canEdit && (
-        <div className={styles.toolbar}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={resetForm}
-            disabled={isSubmitting}
-          >
-            New Route
-          </button>
+      <div className={styles.header}>
+        <div className={styles.headingGroup}>
+          <h2 className={styles.heading}>City Service Routes</h2>
+          <p className={styles.subtitle}>
+            Manage dynamic city + service URL routes. Test routes before creating them.
+          </p>
         </div>
-      )}
+        <div className={styles.headerMeta}>
+          {canEdit && (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={resetForm}
+              disabled={isSubmitting}
+            >
+              New Route
+            </button>
+          )}
+        </div>
+      </div>
 
       {statusMessage && (
         <div className={`${styles.feedback} ${styles.feedbackSuccess}`}>{statusMessage}</div>
@@ -248,7 +251,7 @@ export default function CityServiceManager({ user }) {
 
       {canEdit && (
         <form className={styles.form} onSubmit={handleSubmit}>
-          <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>
+          <h3 className={styles.formTitle}>
             {editingId ? 'Edit Route' : 'Create New Route'}
           </h3>
 
@@ -387,6 +390,17 @@ export default function CityServiceManager({ user }) {
           )}
         </form>
       )}
+
+      <div className={styles.listHeader}>
+        <button
+          type="button"
+          onClick={loadRoutes}
+          className={styles.refreshButton}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
 
       <div className={styles.tableContainer}>
         {isLoading ? (

@@ -301,18 +301,23 @@ export default function VendorManager({ user }) {
 
   return (
     <div className={styles.container}>
-      {canEdit && (
-        <div className={styles.toolbar}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={resetForm}
-            disabled={isSubmitting}
-          >
-            New Compliance Record
-          </button>
+      <div className={styles.header}>
+        <div className={styles.headingGroup}>
+          <h2 className={styles.heading}>Vendors</h2>
         </div>
-      )}
+        <div className={styles.headerMeta}>
+          {canEdit && (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={resetForm}
+              disabled={isSubmitting}
+            >
+              New Compliance Record
+            </button>
+          )}
+        </div>
+      </div>
 
       {statusMessage && (
         <div className={`${styles.feedback} ${styles.feedbackSuccess}`}>{statusMessage}</div>
