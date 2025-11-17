@@ -1,20 +1,21 @@
 #!/bin/bash
 # -------------------------------
 # rollback.sh - Manual rollback script for Proof project
+# No .env dependency - works independently
 # -------------------------------
 
 set -euo pipefail
 
-# Configuration
+# Configuration - all paths use localhost only
 PROJECT_DIR="/root/proof"
 BACKUP_DIR="/root/proof-backups"
 PM2_PROCESS="proof-server"
 ECOSYSTEM_FILE="${PROJECT_DIR}/ecosystem.config.js"
-HEALTH_CHECK_URL="http://localhost:8000/api/test"
+HEALTH_CHECK_URL="http://localhost:8000/health"
 HEALTH_CHECK_TIMEOUT=10
 HEALTH_CHECK_RETRIES=3
 
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -26,40 +27,40 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 warn() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 
-# Health check - server runs on port 8000
+# Health check - checks http://localhost:8000/health
 check_health() {
     local retries=0
-    local actual_port="8000"
-    local health_url="http://localhost:8000/api/test"
     
-    log "Checking health at ${health_url} (port: ${actual_port})..."
+    log "Checking health at ${HEALTH_CHECK_URL}..."
     
     while [ $retries -lt ${HEALTH_CHECK_RETRIES} ]; do
-        # Try port 8000 first (server runs on 8000)
-        local http_code=$(curl -s -o /dev/null -w "%{http_code}" -m ${HEALTH_CHECK_TIMEOUT} "${health_url}" 2>&1 || echo "000")
-        
-        # If port 8000 failed, try port 3000 as fallback
-        if [ "$http_code" != "200" ] && [ "$http_code" = "000" ]; then
-            warn "Port 8000 failed, trying port 3000 as fallback..."
-            actual_port="3000"
-            health_url="http://localhost:3000/api/test"
-            http_code=$(curl -s -o /dev/null -w "%{http_code}" -m ${HEALTH_CHECK_TIMEOUT} "${health_url}" 2>&1 || echo "000")
-        else
-            actual_port="8000"
+        # Check if PM2 process is running
+        if ! pm2 describe "${PM2_PROCESS}" > /dev/null 2>&1; then
+            warn "PM2 process not running"
+            retries=$((retries + 1))
+            [ $retries -lt ${HEALTH_CHECK_RETRIES} ] && sleep 5
+            continue
         fi
+        
+        # Check health endpoint on port 8000
+        local http_code=$(curl -s -o /dev/null -w "%{http_code}" -m ${HEALTH_CHECK_TIMEOUT} "${HEALTH_CHECK_URL}" 2>&1 || echo "000")
         
         if [ "$http_code" = "200" ]; then
-            log "Health check passed! (port ${actual_port})"
+            log "Health check passed! (HTTP 200)"
             return 0
+        else
+            warn "Health check failed (HTTP $http_code, attempt $((retries + 1))/${HEALTH_CHECK_RETRIES})"
         fi
+        
         retries=$((retries + 1))
         [ $retries -lt ${HEALTH_CHECK_RETRIES} ] && sleep 5
     done
-    error "Health check failed"
+    
+    error "Health check failed after ${HEALTH_CHECK_RETRIES} attempts"
     return 1
 }
 
-# Rollback to backup
+# Rollback to a specific backup
 rollback_to_backup() {
     local backup_name=$1
     
@@ -77,7 +78,7 @@ rollback_to_backup() {
     log "Rolling back to: ${backup_name}"
     cd "${PROJECT_DIR}" || return 1
     
-    # Restore .next
+    # Step 1: Restore .next directory
     if [ -d "${backup_path}/.next" ]; then
         rm -rf "${PROJECT_DIR}/.next"
         cp -r "${backup_path}/.next" "${PROJECT_DIR}/.next"
@@ -86,7 +87,7 @@ rollback_to_backup() {
         warn "No .next in backup, skipping restore"
     fi
     
-    # Restore package.json if different
+    # Step 2: Restore package.json if different
     if [ -f "${backup_path}/package.json" ]; then
         if ! cmp -s "${PROJECT_DIR}/package.json" "${backup_path}/package.json"; then
             warn "Restoring package.json"
@@ -96,26 +97,51 @@ rollback_to_backup() {
         fi
     fi
     
-    # Restore git commit
+    # Step 3: Restore git commit
     if [ -f "${backup_path}/git-commit.txt" ]; then
         local commit_hash=$(cat "${backup_path}/git-commit.txt")
         log "Restoring git commit: ${commit_hash}"
         git checkout "${commit_hash}" 2>/dev/null || warn "Could not restore git commit"
     fi
     
-    # Restart PM2
+    # Step 4: Restart PM2 process
     log "Restarting PM2..."
-    if [ -f "${ECOSYSTEM_FILE}" ]; then
-        pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
-    else
-        pm2 restart "${PM2_PROCESS}" --update-env || pm2 start "${PM2_PROCESS}" --update-env
+    
+    # Delete old process if it exists
+    if pm2 describe "${PM2_PROCESS}" > /dev/null 2>&1; then
+        pm2 delete "${PM2_PROCESS}" 2>/dev/null || true
+        sleep 2
     fi
     
+    # Start with ecosystem.config.js if it exists
+    if [ -f "${ECOSYSTEM_FILE}" ]; then
+        cd "${PROJECT_DIR}"
+        pm2 start ecosystem.config.js --update-env || {
+            error "PM2 start failed"
+            return 1
+        }
+    else
+        cd "${PROJECT_DIR}"
+        pm2 start npm --name "${PM2_PROCESS}" -- start --update-env || {
+            error "PM2 start failed"
+            return 1
+        }
+    fi
+    
+    # Step 5: Wait for application to start
     sleep 10
-    check_health && log "Rollback successful!" || error "Rollback health check failed"
+    
+    # Step 6: Verify with health check on http://localhost:8000/health
+    if check_health; then
+        log "Rollback successful!"
+        return 0
+    else
+        error "Rollback health check failed"
+        return 1
+    fi
 }
 
-# List backups
+# List available backups
 list_backups() {
     info "Available backups:"
     echo ""
@@ -150,7 +176,7 @@ list_backups() {
     done
 }
 
-# Main
+# Main function
 main() {
     if [ "$1" == "list" ] || [ -z "$1" ]; then
         list_backups
