@@ -196,13 +196,13 @@
 }
 
 .categoryToggleExpand {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
 }
 
 .categoryToggleExpand:hover {
-  background: rgba(15, 118, 110, 0.2);
-  color: #115e59;
+  background: rgba(239, 68, 68, 0.2);
+  color: #b91c1c;
 }
 
 .categoryToggleText {
@@ -423,16 +423,16 @@
 }
 
 .endpointToggleExpand {
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.15), rgba(5, 150, 105, 0.12));
-  color: #0f766e;
-  border: 1px solid rgba(15, 118, 110, 0.3);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.12));
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .endpointToggleExpand:hover {
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.25), rgba(5, 150, 105, 0.2));
-  color: #115e59;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.2));
+  color: #b91c1c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(15, 118, 110, 0.2);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 .endpointToggleText {

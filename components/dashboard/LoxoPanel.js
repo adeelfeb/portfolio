@@ -1149,13 +1149,13 @@ export default function LoxoPanel() {
         }
 
         .loxo-panel__toggle--expand {
-          background: rgba(15, 118, 110, 0.12);
-          color: #0f766e;
+          background: rgba(239, 68, 68, 0.12);
+          color: #dc2626;
         }
 
         .loxo-panel__toggle--expand:hover {
-          background: rgba(15, 118, 110, 0.2);
-          color: #115e59;
+          background: rgba(239, 68, 68, 0.2);
+          color: #b91c1c;
         }
 
         .loxo-panel__toggle-text {
