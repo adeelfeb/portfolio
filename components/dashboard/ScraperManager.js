@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import styles from '../../styles/AdminDataManager.module.css';
+import styles from '../../styles/ScraperManager.module.css';
 
 const FULL_ACCESS_ROLES = new Set(['superadmin', 'hr_admin', 'hr', 'admin']);
 
@@ -166,7 +166,11 @@ export default function ScraperManager({ user }) {
   if (!canAccess) {
     return (
       <div className={styles.container}>
-        <h2 className={styles.heading}>Web Scraper</h2>
+        <div className={styles.header}>
+          <div className={styles.headingGroup}>
+            <h2 className={styles.heading}>Web Scraper</h2>
+          </div>
+        </div>
         <div className={styles.feedback + ' ' + styles.feedbackError}>
           You do not have permission to access the web scraper.
         </div>
@@ -176,15 +180,13 @@ export default function ScraperManager({ user }) {
 
   return (
     <div className={styles.container}>
-      <div className={styles.toolbar}>
-        <button
-          type="button"
-          onClick={loadSavedItems}
-          className={styles.refreshButton}
-          disabled={isLoading}
-        >
-          Refresh
-        </button>
+      <div className={styles.header}>
+        <div className={styles.headingGroup}>
+          <h2 className={styles.heading}>Web Scraper</h2>
+          <p className={styles.subtitle}>
+            Scrape websites and extract structured data. Save important information for future reference.
+          </p>
+        </div>
       </div>
 
       {statusMessage && (
@@ -221,8 +223,8 @@ export default function ScraperManager({ user }) {
 
       {/* Scraped Data Preview */}
       {scrapedData && (
-        <div className={styles.form} style={{ marginTop: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className={styles.previewSection}>
+          <div className={styles.previewHeader}>
             <h3 className={styles.formTitle}>Scraped Data Preview</h3>
             <button
               type="button"
@@ -234,38 +236,36 @@ export default function ScraperManager({ user }) {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className={styles.previewContent}>
             {scrapedData.title && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Title:</strong>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#475569' }}>{scrapedData.title}</p>
+                <p>{scrapedData.title}</p>
               </div>
             )}
 
             {scrapedData.description && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Description:</strong>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#475569' }}>{scrapedData.description}</p>
+                <p>{scrapedData.description}</p>
               </div>
             )}
 
             {scrapedData.keywords && scrapedData.keywords.length > 0 && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Keywords:</strong>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#475569' }}>
-                  {scrapedData.keywords.join(', ')}
-                </p>
+                <p>{scrapedData.keywords.join(', ')}</p>
               </div>
             )}
 
             {scrapedData.headings && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Headings:</strong>
-                <div style={{ margin: '0.5rem 0 0 0', color: '#475569' }}>
+                <div>
                   {scrapedData.headings.h1 && scrapedData.headings.h1.length > 0 && (
                     <div style={{ marginBottom: '0.5rem' }}>
                       <strong style={{ fontSize: '0.9rem' }}>H1:</strong>
-                      <ul style={{ margin: '0.25rem 0 0 1.5rem', padding: 0 }}>
+                      <ul className={styles.previewList}>
                         {scrapedData.headings.h1.slice(0, 5).map((h, i) => (
                           <li key={i}>{h}</li>
                         ))}
@@ -275,7 +275,7 @@ export default function ScraperManager({ user }) {
                   {scrapedData.headings.h2 && scrapedData.headings.h2.length > 0 && (
                     <div>
                       <strong style={{ fontSize: '0.9rem' }}>H2:</strong>
-                      <ul style={{ margin: '0.25rem 0 0 1.5rem', padding: 0 }}>
+                      <ul className={styles.previewList}>
                         {scrapedData.headings.h2.slice(0, 10).map((h, i) => (
                           <li key={i}>{h}</li>
                         ))}
@@ -287,17 +287,17 @@ export default function ScraperManager({ user }) {
             )}
 
             {scrapedData.links && scrapedData.links.length > 0 && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Links ({scrapedData.links.length} found):</strong>
-                <div style={{ margin: '0.5rem 0 0 0', maxHeight: '200px', overflowY: 'auto' }}>
-                  <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  <ul className={styles.previewList}>
                     {scrapedData.links.slice(0, 20).map((link, i) => (
-                      <li key={i} style={{ marginBottom: '0.25rem' }}>
+                      <li key={i}>
                         <a
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: '#2563eb', textDecoration: 'none' }}
+                          className={styles.previewLink}
                         >
                           {link.text || link.href}
                         </a>
@@ -309,24 +309,19 @@ export default function ScraperManager({ user }) {
             )}
 
             {scrapedData.images && scrapedData.images.length > 0 && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Images ({scrapedData.images.length} found):</strong>
-                <div style={{ margin: '0.5rem 0 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.5rem' }}>
+                <div className={styles.previewImages}>
                   {scrapedData.images.slice(0, 6).map((img, i) => (
-                    <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                    <div key={i} className={styles.previewImage}>
                       <img
                         src={img.src}
                         alt={img.alt || 'Image'}
-                        style={{ width: '100%', height: '100px', objectFit: 'cover' }}
                         onError={(e) => {
                           e.target.style.display = 'none';
                         }}
                       />
-                      {img.alt && (
-                        <p style={{ margin: '0.25rem', fontSize: '0.75rem', color: '#64748b' }}>
-                          {img.alt.substring(0, 50)}
-                        </p>
-                      )}
+                      {img.alt && <p>{img.alt.substring(0, 50)}</p>}
                     </div>
                   ))}
                 </div>
@@ -334,21 +329,9 @@ export default function ScraperManager({ user }) {
             )}
 
             {scrapedData.text && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Text Preview:</strong>
-                <div
-                  style={{
-                    margin: '0.5rem 0 0 0',
-                    padding: '1rem',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '0.5rem',
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    color: '#475569',
-                    fontSize: '0.9rem',
-                    lineHeight: '1.6',
-                  }}
-                >
+                <div className={styles.previewText}>
                   {scrapedData.text.substring(0, 2000)}
                   {scrapedData.text.length > 2000 && '...'}
                 </div>
@@ -356,19 +339,9 @@ export default function ScraperManager({ user }) {
             )}
 
             {scrapedData.metadata && Object.keys(scrapedData.metadata).length > 0 && (
-              <div>
+              <div className={styles.previewItem}>
                 <strong>Metadata:</strong>
-                <pre
-                  style={{
-                    margin: '0.5rem 0 0 0',
-                    padding: '1rem',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '0.5rem',
-                    overflowX: 'auto',
-                    fontSize: '0.85rem',
-                    color: '#475569',
-                  }}
-                >
+                <pre className={styles.previewMetadata}>
                   {JSON.stringify(scrapedData.metadata, null, 2)}
                 </pre>
               </div>
@@ -378,74 +351,86 @@ export default function ScraperManager({ user }) {
       )}
 
       {/* Saved Items List */}
-      <div style={{ marginTop: '1.5rem' }}>
-        <h3 className={styles.heading} style={{ marginBottom: '1rem' }}>
+      <div className={styles.savedListHeader}>
+        <h3 className={styles.heading}>
           Saved Scraped Data ({savedItems.length})
         </h3>
-        <div className={styles.tableWrapper}>
-          {isLoading ? (
-            <div className={`${styles.feedback} ${styles.feedbackInfo}`}>
-              Loading saved scraped data…
-            </div>
-          ) : savedItems.length === 0 ? (
-            <div className={`${styles.feedback} ${styles.feedbackInfo}`}>
-              No saved scraped data yet. Scrape a website and save it to see it here.
-            </div>
-          ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>URL</th>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Images</th>
-                  <th>Links</th>
-                  <th>Scraped At</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {savedItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#2563eb', textDecoration: 'none' }}
+      </div>
+
+      <div className={styles.listHeader}>
+        <button
+          type="button"
+          onClick={loadSavedItems}
+          className={styles.refreshButton}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+
+      <div className={styles.tableWrapper}>
+        {isLoading ? (
+          <div className={`${styles.feedback} ${styles.feedbackInfo}`}>
+            Loading saved scraped data…
+          </div>
+        ) : savedItems.length === 0 ? (
+          <div className={`${styles.feedback} ${styles.feedbackInfo}`}>
+            No saved scraped data yet. Scrape a website and save it to see it here.
+          </div>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>URL</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Images</th>
+                <th>Links</th>
+                <th>Scraped At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {savedItems.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.previewLink}
+                    >
+                      {item.url.length > 50 ? `${item.url.substring(0, 50)}...` : item.url}
+                    </a>
+                  </td>
+                  <td>{item.title || '—'}</td>
+                  <td>
+                    {item.description
+                      ? item.description.length > 100
+                        ? `${item.description.substring(0, 100)}...`
+                        : item.description
+                      : '—'}
+                  </td>
+                  <td>{item.imageCount || 0}</td>
+                  <td>{item.importantLinks?.length || 0}</td>
+                  <td>{formatDateForDisplay(item.scrapedAt)}</td>
+                  <td>
+                    <div className={styles.actionGroup}>
+                      <button
+                        type="button"
+                        className={styles.linkButtonDanger}
+                        onClick={() => handleDelete(item.id)}
+                        disabled={isSaving}
                       >
-                        {item.url.length > 50 ? `${item.url.substring(0, 50)}...` : item.url}
-                      </a>
-                    </td>
-                    <td>{item.title || '—'}</td>
-                    <td>
-                      {item.description
-                        ? item.description.length > 100
-                          ? `${item.description.substring(0, 100)}...`
-                          : item.description
-                        : '—'}
-                    </td>
-                    <td>{item.imageCount || 0}</td>
-                    <td>{item.importantLinks?.length || 0}</td>
-                    <td>{formatDateForDisplay(item.scrapedAt)}</td>
-                    <td>
-                      <div className={styles.actionGroup}>
-                        <button
-                          type="button"
-                          className={styles.linkButtonDanger}
-                          onClick={() => handleDelete(item.id)}
-                          disabled={isSaving}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
