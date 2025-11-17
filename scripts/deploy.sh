@@ -102,16 +102,58 @@ rollback() {
         fi
     fi
     
-    # Restart PM2
+    # Restart PM2 - ensure we use ecosystem.config.js
     log "Restarting PM2..."
+    
+    # Delete old process if it exists
+    if pm2 describe "${PM2_PROCESS}" > /dev/null 2>&1; then
+        pm2 delete "${PM2_PROCESS}" 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # Start with ecosystem.config.js if it exists
     if [ -f "${ECOSYSTEM_FILE}" ]; then
-        pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+        cd "${PROJECT_DIR}"
+        pm2 start ecosystem.config.js --update-env || {
+            error "PM2 start failed"
+            return 1
+        }
     else
-        pm2 restart "${PM2_PROCESS}" --update-env || pm2 start "${PM2_PROCESS}" --update-env
+        cd "${PROJECT_DIR}"
+        pm2 start npm --name "${PM2_PROCESS}" -- start --update-env || {
+            error "PM2 start failed"
+            return 1
+        }
     fi
     
     sleep 10
     check_health && log "Rollback successful!" || error "Rollback health check failed"
+}
+
+# Detect actual port from PM2 logs
+detect_port() {
+    # Try to get port from PM2 logs (Next.js shows "Local: http://localhost:PORT")
+    local port_line=$(pm2 logs "${PM2_PROCESS}" --out --lines 50 --nostream 2>/dev/null | grep -o "Local:.*http://localhost:[0-9]*" | tail -1 | grep -o "[0-9]*" || echo "")
+    
+    if [ -n "$port_line" ]; then
+        echo "$port_line"
+        return 0
+    fi
+    
+    # Fallback: check if port 3000 is listening
+    if lsof -i :3000 > /dev/null 2>&1; then
+        echo "3000"
+        return 0
+    fi
+    
+    # Fallback: check if port 8000 is listening
+    if lsof -i :8000 > /dev/null 2>&1; then
+        echo "8000"
+        return 0
+    fi
+    
+    # Default to 3000
+    echo "3000"
 }
 
 # Health check
@@ -119,7 +161,11 @@ check_health() {
     local retries=0
     local max_retries=${HEALTH_CHECK_RETRIES}
     
-    log "Checking health at ${HEALTH_CHECK_URL}..."
+    # Detect actual port
+    local actual_port=$(detect_port)
+    local health_url="http://localhost:${actual_port}/api/test"
+    
+    log "Checking health at ${health_url} (detected port: ${actual_port})..."
     
     while [ $retries -lt $max_retries ]; do
         # Check PM2 process
@@ -131,12 +177,12 @@ check_health() {
         fi
         
         # Check HTTP endpoint
-        local http_code=$(curl -s -o /tmp/hc_response.txt -w "%{http_code}" -m ${HEALTH_CHECK_TIMEOUT} "${HEALTH_CHECK_URL}" 2>&1 || echo "000")
+        local http_code=$(curl -s -o /tmp/hc_response.txt -w "%{http_code}" -m ${HEALTH_CHECK_TIMEOUT} "${health_url}" 2>&1 || echo "000")
         local response=$(cat /tmp/hc_response.txt 2>/dev/null || echo "")
         
         if [ "$http_code" = "200" ]; then
             if echo "$response" | grep -q '"success"'; then
-                log "Health check passed! (HTTP 200)"
+                log "Health check passed! (HTTP 200 on port ${actual_port})"
                 rm -f /tmp/hc_response.txt
                 return 0
             else
@@ -148,6 +194,12 @@ check_health() {
             if [ -n "$response" ]; then
                 log "Response: $(echo "$response" | head -c 200)"
             fi
+            # Try alternative port if 3000 failed
+            if [ "$actual_port" = "3000" ] && [ "$http_code" = "000" ]; then
+                warn "Trying alternative port 8000..."
+                actual_port="8000"
+                health_url="http://localhost:8000/api/test"
+            fi
         fi
         
         retries=$((retries + 1))
@@ -157,8 +209,13 @@ check_health() {
     error "Health check failed after ${max_retries} attempts"
     log "PM2 status:"
     pm2 describe "${PM2_PROCESS}" || true
+    log "PM2 output logs (last 20 lines) - checking for port info:"
+    pm2 logs "${PM2_PROCESS}" --out --lines 20 --nostream || true
     log "PM2 error logs (last 10 lines):"
     pm2 logs "${PM2_PROCESS}" --err --lines 10 --nostream || true
+    log "Checking ports:"
+    lsof -i :3000 2>/dev/null || echo "Port 3000: not in use"
+    lsof -i :8000 2>/dev/null || echo "Port 8000: not in use"
     rm -f /tmp/hc_response.txt
     return 1
 }
@@ -230,18 +287,40 @@ main() {
         exit 1
     fi
     
-    # Restart PM2
+    # Check .env file for PORT setting
+    if [ -f "${PROJECT_DIR}/.env" ]; then
+        if grep -q "^PORT=8000" "${PROJECT_DIR}/.env" 2>/dev/null; then
+            warn ".env file contains PORT=8000, but ecosystem.config.js sets PORT=3000"
+            warn "PM2 env variables should override, but if issues persist, update .env to PORT=3000"
+        fi
+    fi
+    
+    # Restart PM2 - ensure we use ecosystem.config.js
     log "Restarting PM2 process..."
+    
+    # Delete old process if it exists (to ensure clean start with ecosystem config)
+    if pm2 describe "${PM2_PROCESS}" > /dev/null 2>&1; then
+        log "Stopping existing PM2 process..."
+        pm2 delete "${PM2_PROCESS}" 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # Start with ecosystem.config.js if it exists
     if [ -f "${ECOSYSTEM_FILE}" ]; then
-        pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+        log "Starting PM2 with ecosystem.config.js (PORT=3000)..."
+        cd "${PROJECT_DIR}"
+        pm2 start ecosystem.config.js --update-env || {
+            error "PM2 start with ecosystem.config.js failed"
+            [ -n "$current_backup" ] && rollback "$current_backup"
+            exit 1
+        }
     else
-        pm2 restart "${PM2_PROCESS}" --update-env || {
-            warn "PM2 restart failed, trying start..."
-            pm2 start "${PM2_PROCESS}" --update-env || {
-                error "PM2 start failed"
-                [ -n "$current_backup" ] && rollback "$current_backup"
-                exit 1
-            }
+        warn "ecosystem.config.js not found, starting with process name..."
+        cd "${PROJECT_DIR}"
+        pm2 start npm --name "${PM2_PROCESS}" -- start --update-env || {
+            error "PM2 start failed"
+            [ -n "$current_backup" ] && rollback "$current_backup"
+            exit 1
         }
     fi
     

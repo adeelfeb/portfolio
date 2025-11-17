@@ -13,6 +13,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
       },
+      // PM2 env variables override .env file values
       error_file: '/root/.pm2/logs/proof-server-error.log',
       out_file: '/root/.pm2/logs/proof-server-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
