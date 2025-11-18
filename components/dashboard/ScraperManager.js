@@ -59,6 +59,39 @@ export default function ScraperManager({ user }) {
     loadSavedItems();
   }, [canAccess, loadSavedItems]);
 
+  // Normalize URL to add protocol if missing
+  const normalizeUrl = useCallback((inputUrl) => {
+    if (!inputUrl || typeof inputUrl !== 'string') return '';
+    
+    let normalized = inputUrl.trim();
+    
+    // Remove any leading/trailing whitespace and slashes
+    normalized = normalized.replace(/^\/+|\/+$/g, '');
+    
+    // If it already has http:// or https://, return as is
+    if (/^https?:\/\//i.test(normalized)) {
+      return normalized;
+    }
+    
+    // If it starts with //, add https:
+    if (/^\/\//.test(normalized)) {
+      return `https:${normalized}`;
+    }
+    
+    // If it looks like a domain (contains a dot and no spaces), add https://
+    if (/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}/.test(normalized)) {
+      return `https://${normalized}`;
+    }
+    
+    // If it's a localhost or IP address, add http://
+    if (/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/.test(normalized)) {
+      return `http://${normalized}`;
+    }
+    
+    // Default: try with https://
+    return `https://${normalized}`;
+  }, []);
+
   const handleScrape = useCallback(
     async (e) => {
       e.preventDefault();
@@ -70,11 +103,14 @@ export default function ScraperManager({ user }) {
       setScrapedData(null);
 
       try {
+        // Normalize the URL before sending
+        const normalizedUrl = normalizeUrl(url.trim());
+        
         const response = await fetch('/api/scraper/scrape', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: url.trim() }),
+          body: JSON.stringify({ url: normalizedUrl }),
         });
 
         const data = await response.json().catch(() => ({}));
@@ -92,7 +128,7 @@ export default function ScraperManager({ user }) {
         setIsScraping(false);
       }
     },
-    [canAccess, url]
+    [canAccess, url, normalizeUrl]
   );
 
   const handleSave = useCallback(async () => {
@@ -199,12 +235,12 @@ export default function ScraperManager({ user }) {
         <h3 className={styles.formTitle}>Scrape Website</h3>
         <div className={styles.formGrid}>
           <label className={`${styles.formField} ${styles.formFieldFullWidth}`}>
-            <span>Website URL *</span>
+            <span>Website URL or Domain *</span>
             <input
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
+              placeholder="example.com or https://example.com"
               required
               disabled={isScraping}
             />
@@ -251,18 +287,18 @@ export default function ScraperManager({ user }) {
               </div>
             )}
 
-            {scrapedData.keywords && scrapedData.keywords.length > 0 && (
+            {Array.isArray(scrapedData.keywords) && scrapedData.keywords.length > 0 && (
               <div className={styles.previewItem}>
                 <strong>Keywords:</strong>
                 <p>{scrapedData.keywords.join(', ')}</p>
               </div>
             )}
 
-            {scrapedData.headings && (
+            {scrapedData.headings && typeof scrapedData.headings === 'object' && (
               <div className={styles.previewItem}>
                 <strong>Headings:</strong>
                 <div>
-                  {scrapedData.headings.h1 && scrapedData.headings.h1.length > 0 && (
+                  {Array.isArray(scrapedData.headings.h1) && scrapedData.headings.h1.length > 0 && (
                     <div style={{ marginBottom: '0.5rem' }}>
                       <strong style={{ fontSize: '0.9rem' }}>H1:</strong>
                       <ul className={styles.previewList}>
@@ -272,7 +308,7 @@ export default function ScraperManager({ user }) {
                       </ul>
                     </div>
                   )}
-                  {scrapedData.headings.h2 && scrapedData.headings.h2.length > 0 && (
+                  {Array.isArray(scrapedData.headings.h2) && scrapedData.headings.h2.length > 0 && (
                     <div>
                       <strong style={{ fontSize: '0.9rem' }}>H2:</strong>
                       <ul className={styles.previewList}>
@@ -286,7 +322,7 @@ export default function ScraperManager({ user }) {
               </div>
             )}
 
-            {scrapedData.links && scrapedData.links.length > 0 && (
+            {Array.isArray(scrapedData.links) && scrapedData.links.length > 0 && (
               <div className={styles.previewItem}>
                 <strong>Links ({scrapedData.links.length} found):</strong>
                 <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -294,12 +330,12 @@ export default function ScraperManager({ user }) {
                     {scrapedData.links.slice(0, 20).map((link, i) => (
                       <li key={i}>
                         <a
-                          href={link.href}
+                          href={link?.href || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={styles.previewLink}
                         >
-                          {link.text || link.href}
+                          {link?.text || link?.href || 'Link'}
                         </a>
                       </li>
                     ))}
@@ -308,27 +344,27 @@ export default function ScraperManager({ user }) {
               </div>
             )}
 
-            {scrapedData.images && scrapedData.images.length > 0 && (
+            {Array.isArray(scrapedData.images) && scrapedData.images.length > 0 && (
               <div className={styles.previewItem}>
                 <strong>Images ({scrapedData.images.length} found):</strong>
                 <div className={styles.previewImages}>
                   {scrapedData.images.slice(0, 6).map((img, i) => (
                     <div key={i} className={styles.previewImage}>
                       <img
-                        src={img.src}
-                        alt={img.alt || 'Image'}
+                        src={img?.src || ''}
+                        alt={img?.alt || 'Image'}
                         onError={(e) => {
                           e.target.style.display = 'none';
                         }}
                       />
-                      {img.alt && <p>{img.alt.substring(0, 50)}</p>}
+                      {img?.alt && <p>{img.alt.substring(0, 50)}</p>}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {scrapedData.text && (
+            {scrapedData.text && typeof scrapedData.text === 'string' && (
               <div className={styles.previewItem}>
                 <strong>Text Preview:</strong>
                 <div className={styles.previewText}>
@@ -338,7 +374,7 @@ export default function ScraperManager({ user }) {
               </div>
             )}
 
-            {scrapedData.metadata && Object.keys(scrapedData.metadata).length > 0 && (
+            {scrapedData.metadata && typeof scrapedData.metadata === 'object' && Object.keys(scrapedData.metadata).length > 0 && (
               <div className={styles.previewItem}>
                 <strong>Metadata:</strong>
                 <pre className={styles.previewMetadata}>

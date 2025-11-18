@@ -1,5 +1,7 @@
 import axios from 'axios';
-import cheerio from 'cheerio';
+
+// Use require for cheerio in server-side Next.js code to avoid module resolution issues
+const cheerio = require('cheerio');
 
 /**
  * Normalizes a URL to ensure it has a protocol
@@ -72,6 +74,25 @@ export async function scrapeWebsite(url) {
       };
     }
 
+    // Validate cheerio is available
+    if (!cheerio) {
+      console.error('Cheerio is not available. Please ensure cheerio is installed: npm install cheerio');
+      return {
+        success: false,
+        error: 'Scraping library is not available. Please ensure cheerio is installed.',
+        data: null,
+      };
+    }
+
+    if (typeof cheerio.load !== 'function') {
+      console.error('Cheerio.load is not a function. Cheerio object:', cheerio);
+      return {
+        success: false,
+        error: 'Scraping library error. Please contact support.',
+        data: null,
+      };
+    }
+
     // Fetch the webpage with timeout and user agent
     const response = await axios.get(normalizedUrl, {
       timeout: 30000, // 30 second timeout
@@ -83,23 +104,57 @@ export async function scrapeWebsite(url) {
       },
       maxRedirects: 5,
       validateStatus: (status) => status >= 200 && status < 400,
+      responseType: 'text', // Ensure we get text/html response
     });
 
-    // Load HTML into cheerio
-    const $ = cheerio.load(response.data);
+    // Validate response data
+    if (!response || !response.data) {
+      return {
+        success: false,
+        error: 'No data received from the website',
+        data: null,
+      };
+    }
 
-    // Extract structured data
+    // Ensure response.data is a string
+    const htmlContent = typeof response.data === 'string' ? response.data : String(response.data);
+    
+    if (!htmlContent || htmlContent.trim().length === 0) {
+      return {
+        success: false,
+        error: 'Empty response received from the website',
+        data: null,
+      };
+    }
+
+    // Load HTML into cheerio
+    let $;
+    try {
+      $ = cheerio.load(htmlContent);
+      if (!$) {
+        throw new Error('Failed to load HTML into cheerio');
+      }
+    } catch (loadError) {
+      console.error('Error loading HTML into cheerio:', loadError);
+      return {
+        success: false,
+        error: `Failed to parse website HTML: ${loadError.message}`,
+        data: null,
+      };
+    }
+
+    // Extract structured data with safe fallbacks
     const scrapedData = {
       url: normalizedUrl,
-      title: extractTitle($),
-      description: extractDescription($),
-      keywords: extractKeywords($),
-      headings: extractHeadings($),
-      links: extractLinks($, normalizedUrl),
-      images: extractImages($, normalizedUrl),
-      text: extractMainText($),
-      metadata: extractMetadata($),
-      structuredData: extractStructuredData($),
+      title: extractTitle($) || '',
+      description: extractDescription($) || '',
+      keywords: extractKeywords($) || [],
+      headings: extractHeadings($) || { h1: [], h2: [], h3: [], h4: [], h5: [], h6: [] },
+      links: extractLinks($, normalizedUrl) || [],
+      images: extractImages($, normalizedUrl) || [],
+      text: extractMainText($) || '',
+      metadata: extractMetadata($) || {},
+      structuredData: extractStructuredData($) || [],
       scrapedAt: new Date().toISOString(),
     };
 
@@ -163,6 +218,8 @@ function extractKeywords($) {
  * Extract all headings (h1-h6)
  */
 function extractHeadings($) {
+  if (!$) return { h1: [], h2: [], h3: [], h4: [], h5: [], h6: [] };
+  
   const headings = {
     h1: [],
     h2: [],
@@ -172,13 +229,19 @@ function extractHeadings($) {
     h6: [],
   };
 
-  $('h1, h2, h3, h4, h5, h6').each((_, element) => {
-    const tag = element.tagName.toLowerCase();
-    const text = $(element).text().trim();
-    if (text) {
-      headings[tag].push(text);
-    }
-  });
+  try {
+    $('h1, h2, h3, h4, h5, h6').each((_, element) => {
+      if (!element || !element.tagName) return;
+      const tag = element.tagName.toLowerCase();
+      if (!headings[tag]) return;
+      const text = $(element).text().trim();
+      if (text) {
+        headings[tag].push(text);
+      }
+    });
+  } catch (error) {
+    console.warn('Error extracting headings:', error.message);
+  }
 
   return headings;
 }
@@ -187,25 +250,32 @@ function extractHeadings($) {
  * Extract all links with their text and href
  */
 function extractLinks($, baseUrl) {
+  if (!$ || !baseUrl) return [];
+  
   const links = [];
-  $('a[href]').each((_, element) => {
-    const href = $(element).attr('href');
-    const text = $(element).text().trim();
-    if (href) {
-      // Resolve relative URLs
-      let absoluteUrl = href;
-      try {
-        absoluteUrl = new URL(href, baseUrl).href;
-      } catch {
-        // Invalid URL, skip
-        return;
+  try {
+    $('a[href]').each((_, element) => {
+      if (!element) return;
+      const href = $(element).attr('href');
+      const text = $(element).text().trim();
+      if (href) {
+        // Resolve relative URLs
+        let absoluteUrl = href;
+        try {
+          absoluteUrl = new URL(href, baseUrl).href;
+        } catch {
+          // Invalid URL, skip
+          return;
+        }
+        links.push({
+          text: text || href,
+          href: absoluteUrl,
+        });
       }
-      links.push({
-        text: text || href,
-        href: absoluteUrl,
-      });
-    }
-  });
+    });
+  } catch (error) {
+    console.warn('Error extracting links:', error.message);
+  }
   return links.slice(0, 100); // Limit to first 100 links
 }
 
@@ -213,25 +283,32 @@ function extractLinks($, baseUrl) {
  * Extract all images with their alt text and src
  */
 function extractImages($, baseUrl) {
+  if (!$ || !baseUrl) return [];
+  
   const images = [];
-  $('img[src]').each((_, element) => {
-    const src = $(element).attr('src');
-    const alt = $(element).attr('alt') || '';
-    if (src) {
-      // Resolve relative URLs
-      let absoluteUrl = src;
-      try {
-        absoluteUrl = new URL(src, baseUrl).href;
-      } catch {
-        // Invalid URL, skip
-        return;
+  try {
+    $('img[src]').each((_, element) => {
+      if (!element) return;
+      const src = $(element).attr('src');
+      const alt = $(element).attr('alt') || '';
+      if (src) {
+        // Resolve relative URLs
+        let absoluteUrl = src;
+        try {
+          absoluteUrl = new URL(src, baseUrl).href;
+        } catch {
+          // Invalid URL, skip
+          return;
+        }
+        images.push({
+          alt,
+          src: absoluteUrl,
+        });
       }
-      images.push({
-        alt,
-        src: absoluteUrl,
-      });
-    }
-  });
+    });
+  } catch (error) {
+    console.warn('Error extracting images:', error.message);
+  }
   return images.slice(0, 50); // Limit to first 50 images
 }
 
@@ -239,48 +316,63 @@ function extractImages($, baseUrl) {
  * Extract main text content (removes script and style tags)
  */
 function extractMainText($) {
-  // Clone to avoid modifying original
-  const $clone = $.root().clone();
-  $clone.find('script, style, nav, footer, header, aside').remove();
-  const text = $clone.text();
-  // Clean up whitespace
-  return text
-    .replace(/\s+/g, ' ')
-    .trim()
-    .substring(0, 10000); // Limit to 10000 characters
+  if (!$) return '';
+  
+  try {
+    // Clone to avoid modifying original
+    const $clone = $.root().clone();
+    $clone.find('script, style, nav, footer, header, aside').remove();
+    const text = $clone.text();
+    // Clean up whitespace
+    return text
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 10000); // Limit to 10000 characters
+  } catch (error) {
+    console.warn('Error extracting main text:', error.message);
+    return '';
+  }
 }
 
 /**
  * Extract additional metadata
  */
 function extractMetadata($) {
+  if (!$) return {};
+  
   const metadata = {};
 
-  // Open Graph tags
-  $('meta[property^="og:"]').each((_, element) => {
-    const property = $(element).attr('property');
-    const content = $(element).attr('content');
-    if (property && content) {
-      metadata[property] = content;
-    }
-  });
+  try {
+    // Open Graph tags
+    $('meta[property^="og:"]').each((_, element) => {
+      if (!element) return;
+      const property = $(element).attr('property');
+      const content = $(element).attr('content');
+      if (property && content) {
+        metadata[property] = content;
+      }
+    });
 
-  // Twitter Card tags
-  $('meta[name^="twitter:"]').each((_, element) => {
-    const name = $(element).attr('name');
-    const content = $(element).attr('content');
-    if (name && content) {
-      metadata[name] = content;
-    }
-  });
+    // Twitter Card tags
+    $('meta[name^="twitter:"]').each((_, element) => {
+      if (!element) return;
+      const name = $(element).attr('name');
+      const content = $(element).attr('content');
+      if (name && content) {
+        metadata[name] = content;
+      }
+    });
 
-  // Author
-  const author =
-    $('meta[name="author"]').attr('content') ||
-    $('meta[property="article:author"]').attr('content') ||
-    '';
-  if (author) {
-    metadata.author = author;
+    // Author
+    const author =
+      $('meta[name="author"]').attr('content') ||
+      $('meta[property="article:author"]').attr('content') ||
+      '';
+    if (author) {
+      metadata.author = author;
+    }
+  } catch (error) {
+    console.warn('Error extracting metadata:', error.message);
   }
 
   return metadata;
@@ -290,21 +382,28 @@ function extractMetadata($) {
  * Extract structured data (JSON-LD, microdata)
  */
 function extractStructuredData($) {
+  if (!$) return [];
+  
   const structuredData = [];
 
-  // Extract JSON-LD
-  $('script[type="application/ld+json"]').each((_, element) => {
-    try {
-      const jsonText = $(element).html();
-      if (jsonText) {
-        const parsed = JSON.parse(jsonText);
-        structuredData.push(parsed);
+  try {
+    // Extract JSON-LD
+    $('script[type="application/ld+json"]').each((_, element) => {
+      if (!element) return;
+      try {
+        const jsonText = $(element).html();
+        if (jsonText) {
+          const parsed = JSON.parse(jsonText);
+          structuredData.push(parsed);
+        }
+      } catch (error) {
+        // Invalid JSON, skip
+        console.warn('Failed to parse JSON-LD:', error.message);
       }
-    } catch (error) {
-      // Invalid JSON, skip
-      console.warn('Failed to parse JSON-LD:', error.message);
-    }
-  });
+    });
+  } catch (error) {
+    console.warn('Error extracting structured data:', error.message);
+  }
 
   return structuredData;
 }
@@ -320,33 +419,54 @@ export function refineScrapedData(scrapedData) {
 
   const data = scrapedData.data;
 
+  // Safely extract headings with null checks
+  const headings = data.headings || {};
+  const h1Array = Array.isArray(headings.h1) ? headings.h1 : [];
+  const h2Array = Array.isArray(headings.h2) ? headings.h2 : [];
+
+  // Safely extract links with null checks
+  const links = Array.isArray(data.links) ? data.links : [];
+  const importantLinks = links.slice(0, 20).map((link) => ({
+    text: (link?.text || '').substring(0, 100), // Limit text length
+    href: link?.href || '',
+  }));
+
+  // Safely extract images with null checks
+  const images = Array.isArray(data.images) ? data.images : [];
+  const mainImages = images.slice(0, 5).map((img) => ({
+    alt: (img?.alt || '').substring(0, 200),
+    src: img?.src || '',
+  }));
+
+  // Safely extract text with null checks
+  const text = typeof data.text === 'string' ? data.text : '';
+  const textPreview = text.substring(0, 2000); // First 2000 characters
+
+  // Safely extract metadata with null checks
+  const metadata = data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  const structuredData = Array.isArray(data.structuredData) ? data.structuredData : [];
+
   return {
-    url: data.url,
-    title: data.title,
-    description: data.description,
-    keywords: data.keywords,
+    url: data.url || '',
+    title: data.title || '',
+    description: data.description || '',
+    keywords: Array.isArray(data.keywords) ? data.keywords : [],
     mainHeadings: {
-      h1: data.headings.h1.slice(0, 5), // First 5 h1 tags
-      h2: data.headings.h2.slice(0, 10), // First 10 h2 tags
+      h1: h1Array.slice(0, 5), // First 5 h1 tags
+      h2: h2Array.slice(0, 10), // First 10 h2 tags
     },
-    importantLinks: data.links.slice(0, 20).map((link) => ({
-      text: link.text.substring(0, 100), // Limit text length
-      href: link.href,
-    })),
-    imageCount: data.images.length,
-    mainImages: data.images.slice(0, 5).map((img) => ({
-      alt: img.alt.substring(0, 200),
-      src: img.src,
-    })),
-    textPreview: data.text.substring(0, 2000), // First 2000 characters
+    importantLinks,
+    imageCount: images.length,
+    mainImages,
+    textPreview,
     metadata: {
-      author: data.metadata.author || null,
-      ogTitle: data.metadata['og:title'] || null,
-      ogDescription: data.metadata['og:description'] || null,
-      ogImage: data.metadata['og:image'] || null,
+      author: metadata.author || null,
+      ogTitle: metadata['og:title'] || null,
+      ogDescription: metadata['og:description'] || null,
+      ogImage: metadata['og:image'] || null,
     },
-    structuredDataCount: data.structuredData.length,
-    scrapedAt: data.scrapedAt,
+    structuredDataCount: structuredData.length,
+    scrapedAt: data.scrapedAt || new Date().toISOString(),
   };
 }
 
