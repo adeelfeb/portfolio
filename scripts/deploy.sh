@@ -13,12 +13,18 @@ npm install
 # Build application
 npm run build
 
+# Verify build succeeded
+if [ ! -d ".next" ]; then
+  echo "Error: Build failed - .next directory not found"
+  exit 1
+fi
+
 # Make start script executable
 chmod +x scripts/start-server.sh
 
-# Reload PM2 with zero-downtime (or start if not running)
+# Restart PM2 (restart is more reliable than reload for config changes)
 if pm2 list | grep -q "proof-server"; then
-  pm2 reload proof-server --update-env
+  pm2 restart proof-server --update-env
 else
   pm2 start ecosystem.config.js
 fi
