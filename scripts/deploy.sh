@@ -31,7 +31,8 @@ rollback() {
     local commit_hash=$(cat "${backup_path}/git-commit.txt")
     git -C "${PROJECT_DIR}" checkout "${commit_hash}" 2>/dev/null || true
     pm2 delete "${PM2_PROCESS}" 2>/dev/null || true
-    pm2 start npm --name "${PM2_PROCESS}" -- start -- -p 8000
+    # Use ecosystem.config.js to ensure proper configuration (hostname, port, etc.)
+    pm2 start ecosystem.config.js
 }
 
 # Health check
@@ -64,8 +65,12 @@ main() {
     npm install
     npm run build
 
+    # Ensure start script is executable
+    chmod +x "${PROJECT_DIR}/scripts/start-server.sh" 2>/dev/null || true
+
     pm2 delete "${PM2_PROCESS}" 2>/dev/null || true
-    pm2 start npm --name "${PM2_PROCESS}" -- start -- -p 8000
+    # Use ecosystem.config.js to ensure proper configuration (hostname, port, etc.)
+    pm2 start ecosystem.config.js
 
     log "Waiting $STARTUP_WAIT seconds for server to start..."
     sleep $STARTUP_WAIT
