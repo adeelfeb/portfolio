@@ -41,6 +41,11 @@ export default function SignupPage() {
     if (isDisabled) return;
     setLoading(true);
     setError('');
+    console.log('[Signup] Submit pressed', {
+      name: name.trim(),
+      email: email.trim(),
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       const res = await fetch('/api/auth/signup', {
@@ -49,8 +54,15 @@ export default function SignupPage() {
         credentials: 'include', // Include cookies for session management
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
       });
+      console.log('[Signup] Response received', {
+        status: res.status,
+        ok: res.ok,
+        redirected: res.redirected,
+        url: res.url,
+      });
       
       const text = await res.text();
+      console.log('[Signup] Raw response body', text);
       let data = {};
       if (text && text.trim()) {
         try {
@@ -62,16 +74,24 @@ export default function SignupPage() {
       }
       
       if (!res.ok || !data.success) {
+        console.warn('[Signup] API reported failure', {
+          status: res.status,
+          payload: data,
+        });
         throw new Error(formatErrorMessage(data, "We couldn't create your account. Please try again."));
       }
       
       // Small delay to ensure cookie is set before redirect
       await new Promise(resolve => setTimeout(resolve, 150));
+      console.log('[Signup] Cookie delay complete, navigating to dashboard');
       // Use replace instead of push to avoid adding to browser history
       await router.replace('/dashboard');
+      console.log('[Signup] Navigation to dashboard requested');
     } catch (err) {
+      console.error('[Signup] Error during signup flow', err);
       setError(err.message || "We couldn't create your account. Please try again.");
     } finally {
+      console.log('[Signup] Resetting loading state');
       setLoading(false);
     }
   }
@@ -97,6 +117,8 @@ export default function SignupPage() {
               <input
                 type="text"
                 autoComplete="name"
+                id="signup-name"
+                name="name"
                 placeholder="Alex Johnson"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -110,6 +132,8 @@ export default function SignupPage() {
                 type="email"
                 inputMode="email"
                 autoComplete="email"
+                id="signup-email"
+                name="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -122,6 +146,8 @@ export default function SignupPage() {
               <input
                 type="password"
                 autoComplete="new-password"
+                id="signup-password"
+                name="password"
                 placeholder="Create a secure password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -144,15 +170,6 @@ export default function SignupPage() {
             </Link>
           </footer>
 
-          <div className="internal-notice">
-            <p>
-              <strong>Internal Tool Only</strong>
-            </p>
-            <p>
-              This dashboard and authentication system is reserved for internal team members only. 
-              If you are not part of the internal team, you do not need to access these pages.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -276,27 +293,6 @@ export default function SignupPage() {
         .cta-link:hover {
           text-decoration: underline;
         }
-        .internal-notice {
-          margin-top: 1.5rem;
-          padding: 1rem 1.25rem;
-          border-radius: 0.75rem;
-          background: rgba(251, 191, 36, 0.1);
-          border: 1px solid rgba(251, 191, 36, 0.3);
-          text-align: center;
-        }
-        .internal-notice p {
-          margin: 0;
-          font-size: 0.875rem;
-          line-height: 1.5;
-          color: #78350f;
-        }
-        .internal-notice p:first-child {
-          margin-bottom: 0.5rem;
-        }
-        .internal-notice strong {
-          font-weight: 600;
-          color: #92400e;
-        }
         @keyframes spin {
           to {
             transform: rotate(360deg);
@@ -326,13 +322,6 @@ export default function SignupPage() {
           .card-header p {
             font-size: 0.9rem;
           }
-          .internal-notice {
-            padding: 0.875rem 1rem;
-            margin-top: 1.25rem;
-          }
-          .internal-notice p {
-            font-size: 0.8rem;
-          }
         }
         @media (max-width: 480px) {
           .auth-shell {
@@ -355,13 +344,6 @@ export default function SignupPage() {
           button {
             padding: 0.95rem 1.2rem;
             font-size: 0.95rem;
-          }
-          .internal-notice {
-            padding: 0.75rem 0.875rem;
-            margin-top: 1rem;
-          }
-          .internal-notice p {
-            font-size: 0.75rem;
           }
         }
         @media (prefers-reduced-motion: reduce) {

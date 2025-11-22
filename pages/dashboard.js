@@ -13,73 +13,36 @@ import LoxoPanel from '../components/dashboard/LoxoPanel';
 import CityServiceManager from '../components/dashboard/CityServiceManager';
 import ApiEndpointsPanel from '../components/dashboard/ApiEndpointsPanel';
 import ScraperManager from '../components/dashboard/ScraperManager';
-import { env } from '../lib/config';
+import { getUserFromRequest } from '../lib/auth';
+
+function serializeUser(user) {
+  if (!user) return null;
+  return {
+    id: user._id?.toString?.() || user.id || null,
+    name: user.name || '',
+    email: user.email || '',
+    role: user.role || 'base_user',
+    roleRef: user.roleRef?.toString?.() || user.roleRef || null,
+    createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
+  };
+}
 
 export async function getServerSideProps(context) {
   const { req } = context;
-  const cookie = req.headers.cookie || '';
+  const user = await getUserFromRequest(req);
 
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const rawHost = forwardedHost || req.headers.host;
-  const host = Array.isArray(rawHost) ? rawHost[0] : rawHost;
-  const proto = Array.isArray(forwardedProto)
-    ? forwardedProto[0] || 'http'
-    : forwardedProto || 'http';
-
-  let baseUrl;
-  if (host) {
-    baseUrl = `${proto}://${host}`;
-  } else {
-    baseUrl = env.NEXT_PUBLIC_BASE_URL || 'http://127.0.0.1:8000';
-  }
-
-  console.log('SSR dashboard auth check', {
-    baseUrl,
-    host,
-    forwardedHost,
-    forwardedProto,
-  });
-
-  try {
-    const res = await fetch(`${baseUrl}/api/auth/me`, {
-      headers: { cookie },
-    });
-    const contentType = res.headers.get('content-type') || '';
-    if (!res.ok || !contentType.includes('application/json')) {
-      console.error('Dashboard auth check failed (status or content-type)', {
-        status: res.status,
-        contentType,
-        baseUrl,
-      });
-      return { redirect: { destination: '/login', permanent: false } };
-    }
-    const text = await res.text();
-    if (!text || !text.trim()) {
-      console.error('Dashboard auth check received empty body', { baseUrl });
-      return { redirect: { destination: '/login', permanent: false } };
-    }
-    try {
-      const data = JSON.parse(text);
-      const user = data?.user || data?.data?.user || null;
-      if (!user) {
-        console.error('Dashboard auth check parsed JSON but found no user', {
-          baseUrl,
-        });
-        return { redirect: { destination: '/login', permanent: false } };
-      }
-      return { props: { user } };
-    } catch (parseError) {
-      console.error('Dashboard auth check JSON parse error', {
-        parseError,
-        baseUrl,
-      });
-      return { redirect: { destination: '/login', permanent: false } };
-    }
-  } catch (error) {
-    console.error('Dashboard auth check fetch error', { error, baseUrl });
+  if (!user) {
+    console.warn('SSR dashboard: no user session, redirecting to /login');
     return { redirect: { destination: '/login', permanent: false } };
   }
+
+  const serializedUser = serializeUser(user);
+  console.log('SSR dashboard: user session detected', {
+    userId: serializedUser.id,
+    role: serializedUser.role,
+  });
+
+  return { props: { user: serializedUser } };
 }
 
 const NAVIGATION_BY_ROLE = {
