@@ -15,7 +15,660 @@ function formatDateForDisplay(value) {
   if (!value) return '—';
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString();
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+const SECTION_TONE_CLASS = {
+  success: 'sectionCardToneSuccess',
+  warning: 'sectionCardToneWarning',
+  danger: 'sectionCardToneDanger',
+  info: 'sectionCardToneInfo',
+  neutral: 'sectionCardToneNeutral',
+};
+
+const SECTION_BADGE_CLASS = {
+  success: 'sectionBadgeSuccess',
+  warning: 'sectionBadgeWarning',
+  danger: 'sectionBadgeDanger',
+  info: 'sectionBadgeInfo',
+  neutral: 'sectionBadgeNeutral',
+};
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function deriveOutlineForView(entry) {
+  if (Array.isArray(entry?.contentOutline) && entry.contentOutline.length) {
+    return entry.contentOutline;
+  }
+
+  const headings = entry?.headings || entry?.mainHeadings || {};
+  const h1 = safeArray(headings.h1);
+  const h2 = safeArray(headings.h2);
+
+  if (!h1.length && !h2.length) {
+    return [];
+  }
+
+  if (!h1.length) {
+    return h2.slice(0, 6).map((title, index) => ({
+      id: `outline-h2-${index}`,
+      title,
+      level: 2,
+      summary: '',
+      paragraphs: [],
+      bullets: [],
+      links: [],
+      images: [],
+      subSections: [],
+    }));
+  }
+
+  return h1.slice(0, 5).map((title, index) => ({
+    id: `outline-h1-${index}`,
+    title,
+    level: 1,
+    summary: '',
+    paragraphs: [],
+    bullets: [],
+    links: [],
+    images: [],
+    subSections: h2.slice(index * 3, index * 3 + 3).map((childTitle, childIndex) => ({
+      id: `outline-h2-${index}-${childIndex}`,
+      title: childTitle,
+      level: 2,
+      summary: '',
+      paragraphs: [],
+      bullets: [],
+      links: [],
+      images: [],
+      subSections: [],
+    })),
+  }));
+}
+
+function deriveSectionsForView(entry, outline) {
+  if (Array.isArray(entry?.contentSections) && entry.contentSections.length) {
+    return entry.contentSections;
+  }
+
+  if (!Array.isArray(outline) || !outline.length) {
+    return [];
+  }
+
+  return outline.map((node) => ({
+    id: `section-${node.id}`,
+    heading: node.title,
+    subheading: node.subSections?.[0]?.title || null,
+    summary: node.summary || '',
+    paragraphs: node.paragraphs || [],
+    listItems: [],
+    links: node.links || [],
+    images: node.images || [],
+    hasCallToAction: false,
+    tag: 'section',
+    classes: [],
+  }));
+}
+
+function convertTextBlockToSection(block, index = 0) {
+  const paragraphArray = safeArray(block?.paragraphs);
+  let normalizedParagraphs = paragraphArray;
+  if (!normalizedParagraphs.length && typeof block?.body === 'string') {
+    normalizedParagraphs = block.body
+      .split(/\n+/)
+      .map((fragment) => fragment.trim())
+      .filter(Boolean);
+  }
+
+  return {
+    id: block?.id || `text-block-${index}`,
+    heading: block?.heading || block?.summary || `Section ${index + 1}`,
+    subheading: block?.subheading || '',
+    summary: block?.summary || normalizedParagraphs[0] || '',
+    paragraphs: normalizedParagraphs,
+    listItems: [],
+    links: [],
+    images: [],
+    hasCallToAction: false,
+    tag: block?.tag || 'section',
+    classes: [],
+  };
+}
+
+function deriveLinkPool(entry) {
+  if (Array.isArray(entry?.links) && entry.links.length) {
+    return entry.links;
+  }
+  if (Array.isArray(entry?.importantLinks) && entry.importantLinks.length) {
+    return entry.importantLinks;
+  }
+  return [];
+}
+
+function deriveNavigationLinks(entry) {
+  if (Array.isArray(entry?.navigationLinks) && entry.navigationLinks.length) {
+    return entry.navigationLinks;
+  }
+  if (Array.isArray(entry?.navigation) && entry.navigation.length) {
+    return entry.navigation;
+  }
+  return [];
+}
+
+function deriveMetadataPairs(metadata) {
+  if (!metadata || typeof metadata !== 'object') return [];
+  return Object.entries(metadata)
+    .filter(([_, value]) => Boolean(value))
+    .map(([key, value]) => ({ key, value }))
+    .slice(0, 24);
+}
+
+function deriveTextContent(entry) {
+  const candidates = [entry?.fullText, entry?.text, entry?.textPreview];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length) {
+      return candidate;
+    }
+  }
+  return '';
+}
+
+function deriveStructuredSamples(entry) {
+  if (Array.isArray(entry?.structuredDataSamples) && entry.structuredDataSamples.length) {
+    return entry.structuredDataSamples.slice(0, 6);
+  }
+  if (Array.isArray(entry?.structuredData) && entry.structuredData.length) {
+    return entry.structuredData.slice(0, 6);
+  }
+  return [];
+}
+
+function OutlineTree({ nodes }) {
+  if (!Array.isArray(nodes) || nodes.length === 0) return null;
+  return (
+    <ul className={styles.outlineList}>
+      {nodes.map((node) => (
+        <li key={node.id || node.title} className={styles.outlineItem}>
+          <div className={styles.outlineNode}>
+            <span className={styles.outlineBadge}>H{node.level || 1}</span>
+            <span className={styles.outlineTitle}>{node.title}</span>
+          </div>
+          {node.summary && <p className={styles.outlineSummary}>{node.summary}</p>}
+          {Array.isArray(node.subSections) && node.subSections.length > 0 && (
+            <OutlineTree nodes={node.subSections} />
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function getSectionCount(entry) {
+  if (!entry) return 0;
+  if (Array.isArray(entry.contentSections)) return entry.contentSections.length;
+  if (entry.stats && typeof entry.stats.sectionCount === 'number') return entry.stats.sectionCount;
+  const headings = entry.mainHeadings || entry.headings || {};
+  const h1 = Array.isArray(headings.h1) ? headings.h1.length : 0;
+  const h2 = Array.isArray(headings.h2) ? headings.h2.length : 0;
+  return h1 + h2;
+}
+
+function getImportantLinkCount(entry) {
+  if (!entry) return 0;
+  if (Array.isArray(entry.importantLinks)) return entry.importantLinks.length;
+  if (Array.isArray(entry.links)) return Math.min(20, entry.links.length);
+  if (entry.stats && typeof entry.stats.totalLinks === 'number') return entry.stats.totalLinks;
+  return 0;
+}
+
+function getImageCount(entry) {
+  if (!entry) return 0;
+  if (typeof entry.imageCount === 'number') return entry.imageCount;
+  if (Array.isArray(entry.images)) return entry.images.length;
+  if (Array.isArray(entry.mainImages)) return entry.mainImages.length;
+  if (entry.stats && typeof entry.stats.totalImages === 'number') return entry.stats.totalImages;
+  return 0;
+}
+
+function getTextLength(entry) {
+  if (!entry) return 0;
+  if (typeof entry.fullText === 'string' && entry.fullText.length) return entry.fullText.length;
+  if (typeof entry.text === 'string' && entry.text.length) return entry.text.length;
+  if (typeof entry.textPreview === 'string' && entry.textPreview.length) return entry.textPreview.length;
+  return 0;
+}
+
+function SectionCard({ section, index = 0, isExpanded, onToggle }) {
+  const paragraphs = safeArray(section?.paragraphs);
+  const listItems = safeArray(section?.listItems);
+  const links = safeArray(section?.links);
+  const images = safeArray(section?.images);
+  const fallbackBody =
+    (!paragraphs.length || paragraphs.join('').length < 200) && typeof section?.body === 'string'
+      ? section.body
+          .split(/\n+/)
+          .map((fragment) => fragment.trim())
+          .filter(Boolean)
+      : [];
+  const displayedParagraphs = paragraphs.length ? paragraphs : fallbackBody;
+
+  const shouldShowToggle =
+    displayedParagraphs.length > 4 || listItems.length > 4 || links.length > 4 || images.length > 4;
+  const toneClass =
+    section?.tone && SECTION_TONE_CLASS[section.tone] ? styles[SECTION_TONE_CLASS[section.tone]] : '';
+  const accentStyle = section?.accentColor ? { borderLeftColor: section.accentColor } : undefined;
+
+  return (
+    <article key={section.id} className={`${styles.sectionCard} ${toneClass}`.trim()} style={accentStyle}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionNumber}>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+        </div>
+        <div>
+          {section.tag && <span className={styles.sectionTag}>{section.tag}</span>}
+          {section.heading && <h5 className={styles.sectionTitle}>{section.heading}</h5>}
+          {section.subheading && <p className={styles.sectionSubtitle}>{section.subheading}</p>}
+        </div>
+        <div className={styles.sectionMeta}>
+          {section.tone && (
+            <span
+              className={`${styles.sectionBadge} ${
+                SECTION_BADGE_CLASS[section.tone] ? styles[SECTION_BADGE_CLASS[section.tone]] : ''
+              }`.trim()}
+            >
+              {section.tone.charAt(0).toUpperCase() + section.tone.slice(1)}
+            </span>
+          )}
+          {section.hasCallToAction && <span className={styles.sectionBadge}>CTA</span>}
+          {images.length > 0 && <span className={styles.sectionBadge}>{images.length} images</span>}
+          {links.length > 0 && <span className={styles.sectionBadge}>{links.length} links</span>}
+        </div>
+      </div>
+
+      <div className={styles.sectionBody}>
+        {displayedParagraphs.slice(0, isExpanded ? displayedParagraphs.length : 4).map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
+
+        {listItems.length > 0 && (
+          <ul>
+            {listItems.slice(0, isExpanded ? listItems.length : 3).map((item, index) => (
+              <li key={index}>{Array.isArray(item) ? item.join(' ') : item}</li>
+            ))}
+          </ul>
+        )}
+
+        {images.length > 0 && (
+          <div className={styles.sectionImages}>
+            {images.slice(0, isExpanded ? images.length : 3).map((image, index) => (
+              <div key={index} className={styles.sectionImage}>
+                <img src={image?.src || ''} alt={image?.alt || 'Section image'} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {isExpanded && links.length > 0 && (
+        <div className={styles.sectionLinks}>
+          {links.map((link, index) => (
+            <a
+              key={index}
+              href={link?.href || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.linkItem}
+            >
+              {link?.text || link?.href || 'Link'}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {shouldShowToggle && (
+        <button type="button" className={styles.toggleButton} onClick={onToggle}>
+          {isExpanded ? 'Show less' : 'See more'}
+        </button>
+      )}
+    </article>
+  );
+}
+
+function ScrapedDataset({ data, variant = 'inline' }) {
+  const [expandedSections, setExpandedSections] = useState({});
+  const [showAllLinks, setShowAllLinks] = useState(false);
+
+  useEffect(() => {
+    setExpandedSections({});
+    setShowAllLinks(false);
+  }, [data]);
+
+  const outline = useMemo(() => deriveOutlineForView(data), [data]);
+  const storedBlocks = useMemo(() => safeArray(data?.textBlocks), [data?.textBlocks]);
+  const sections = useMemo(() => {
+    const derivedSections = deriveSectionsForView(data, outline);
+    if (derivedSections.length > 0) {
+      return derivedSections;
+    }
+    if (storedBlocks.length > 0) {
+      return storedBlocks.map((block, index) => convertTextBlockToSection(block, index));
+    }
+    return [];
+  }, [data, outline, storedBlocks]);
+  const linkPool = useMemo(() => deriveLinkPool(data), [data]);
+  const navigationLinks = useMemo(() => deriveNavigationLinks(data), [data]);
+  const metadataPairs = useMemo(() => deriveMetadataPairs(data?.metadata), [data?.metadata]);
+  const structuredSamples = useMemo(() => deriveStructuredSamples(data), [data]);
+  const textContent = useMemo(() => deriveTextContent(data), [data]);
+
+  const linksToRender = showAllLinks ? linkPool : linkPool.slice(0, 20);
+  const hasMoreLinks = linkPool.length > linksToRender.length;
+
+  const schemaTypes = structuredSamples
+    .map((schema) => {
+      if (!schema) return null;
+      if (Array.isArray(schema['@type'])) return schema['@type'].join(', ');
+      return schema['@type'] || schema.type || null;
+    })
+    .filter(Boolean)
+    .slice(0, 10);
+
+  const keywords = safeArray(data?.keywords);
+  const domainInfo = data?.domainInfo;
+  const stats = data?.stats || {};
+  const sectionsToRender = sections;
+
+  const toggleSection = (id) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const summaryStats = [
+    { label: 'Sections', value: stats.sectionCount ?? sections.length ?? 0 },
+    { label: 'Words', value: stats.wordCount ?? (textContent ? textContent.split(/\s+/).filter(Boolean).length : 0) },
+    {
+      label: 'Read Time',
+      value: stats.readingTimeMinutes
+        ? `${stats.readingTimeMinutes} min`
+        : textContent
+        ? `≈ ${Math.max(1, Math.round(textContent.split(/\s+/).filter(Boolean).length / 200))} min`
+        : '—',
+    },
+    { label: 'Links', value: stats.totalLinks ?? linkPool.length ?? 0 },
+    {
+      label: 'Images',
+      value:
+        stats.totalImages ??
+        data?.imageCount ??
+        safeArray(data?.images).length ??
+        safeArray(data?.mainImages).length ??
+        0,
+    },
+    { label: 'Nav Links', value: stats.navLinkCount ?? navigationLinks.length ?? 0 },
+  ];
+
+  return (
+    <div className={styles.datasetRoot}>
+      <section className={styles.sectionCluster}>
+        <div className={styles.sectionClusterHeader}>
+          <div>
+            <h4 className={styles.sectionHeading}>Content Sections</h4>
+            <p className={styles.sectionDescription}>
+              Structured blocks pulled straight from the page—perfect for reviewing long-form content without
+              leaving the dashboard.
+            </p>
+          </div>
+        </div>
+        {sectionsToRender.length > 0 ? (
+          <div className={styles.sectionColumn} role="list">
+            {sectionsToRender.map((section, idx) => (
+              <SectionCard
+                key={section.id}
+                section={section}
+                index={idx}
+                isExpanded={Boolean(expandedSections[section.id])}
+                onToggle={() => toggleSection(section.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={`${styles.feedback} ${styles.feedbackInfo}`}>
+            No structured sections detected for this page.
+          </div>
+        )}
+      </section>
+
+      <section className={styles.dataStack}>
+        <div className={styles.dataStackHeader}>
+          <h4 className={styles.sectionHeading}>Page Insights & Metadata</h4>
+          <p className={styles.sectionDescription}>Supporting context, navigation cues, and media live here.</p>
+        </div>
+        <div className={styles.dataColumn}>
+          {domainInfo && (
+            <div className={`${styles.previewCard} ${styles.cardDomain}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Domain Information</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Domain:</span>
+                  <span className={styles.infoValue}>{domainInfo.domain || '—'}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Protocol:</span>
+                  <span className={styles.infoValue}>{domainInfo.protocol || '—'}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Host:</span>
+                  <span className={styles.infoValue}>{domainInfo.host || '—'}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Path:</span>
+                  <span className={styles.infoValue}>{domainInfo.path || '/'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={`${styles.previewCard} ${styles.cardStats}`}>
+            <div className={styles.cardHeader}>
+              <h4 className={styles.cardTitle}>Summary Statistics</h4>
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.statsGrid}>
+                {summaryStats.map((stat) => (
+                  <div key={stat.label} className={styles.statItem}>
+                    <span className={styles.statValue}>{stat.value ?? '—'}</span>
+                    <span className={styles.statLabel}>{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {data?.title && (
+            <div className={`${styles.previewCard} ${styles.cardTitle}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Page Title</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <p className={styles.cardText}>{data.title}</p>
+              </div>
+            </div>
+          )}
+
+          {data?.description && (
+            <div className={`${styles.previewCard} ${styles.cardDescription}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Description</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <p className={styles.cardText}>{data.description}</p>
+              </div>
+            </div>
+          )}
+
+          {keywords.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardKeywords}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Keywords</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <div className={styles.keywordsList}>
+                  {keywords.map((keyword, index) => (
+                    <span key={`${keyword}-${index}`} className={styles.keywordTag}>
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {metadataPairs.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardMetadata}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Metadata</h4>
+              </div>
+              <div className={`${styles.cardContent} ${styles.metadataGrid}`}>
+                {metadataPairs.map(({ key, value }) => (
+                  <div key={key} className={styles.metadataItem}>
+                    <span className={styles.metadataKey}>{key}</span>
+                    <span className={styles.metadataValue}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {outline.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardOutline}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Content Outline</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <OutlineTree nodes={outline} />
+              </div>
+            </div>
+          )}
+
+          {navigationLinks.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardNavigation}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Navigation Links</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <div className={styles.navigationList}>
+                  {navigationLinks.map((link, index) => (
+                    <a
+                      key={`${link.href}-${index}`}
+                      href={link?.href || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.navItem}
+                    >
+                      <span className={styles.navLabel}>{link?.area || 'nav'}</span>
+                      <span>{link?.text || link?.href || 'Link'}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {linkPool.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardLinks}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Links ({linkPool.length})</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <div className={styles.linksList}>
+                  {linksToRender.map((link, index) => (
+                    <a
+                      key={`${link.href}-${index}`}
+                      href={link?.href || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.linkItem}
+                    >
+                      {link?.text || link?.href || 'Link'}
+                    </a>
+                  ))}
+                </div>
+                {hasMoreLinks && (
+                  <button
+                    type="button"
+                    className={styles.toggleButton}
+                    onClick={() => setShowAllLinks(!showAllLinks)}
+                  >
+                    {showAllLinks ? 'Show fewer links' : 'See more links'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(Array.isArray(data?.images) ? data.images : data?.mainImages)?.length > 0 && (
+            <div className={`${styles.previewCard} ${styles.cardImages}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Images</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <div className={styles.previewImages}>
+                {safeArray(data.images?.length ? data.images : data.mainImages)
+                  .slice(0, 8)
+                  .map((img, index) => (
+                    <div key={index} className={styles.previewImage}>
+                      <img
+                        src={img?.src || ''}
+                        alt={img?.alt || 'Image'}
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(schemaTypes.length > 0 || data?.structuredDataCount) && (
+            <div className={`${styles.previewCard} ${styles.cardStructured}`}>
+              <div className={styles.cardHeader}>
+                <h4 className={styles.cardTitle}>Structured Data</h4>
+              </div>
+              <div className={styles.cardContent}>
+                <p className={styles.cardText}>
+                  {data?.structuredDataCount ?? structuredSamples.length} snippets detected
+                </p>
+                {schemaTypes.length > 0 && (
+                  <div className={styles.keywordsList}>
+                    {schemaTypes.map((type, index) => (
+                      <span key={`${type}-${index}`} className={styles.schemaTag}>
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export default function ScraperManager({ user }) {
@@ -31,6 +684,14 @@ export default function ScraperManager({ user }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [sortState, setSortState] = useState({ key: 'scrapedAt', direction: 'desc' });
+  const [rescrapedData, setRescrapedData] = useState(null);
+  const [isRescrapingSelected, setIsRescrapingSelected] = useState(false);
+  const [isUpdatingSelected, setIsUpdatingSelected] = useState(false);
+  const [modalStatusMessage, setModalStatusMessage] = useState('');
+  const [modalErrorMessage, setModalErrorMessage] = useState('');
+  const [changeSummary, setChangeSummary] = useState([]);
+  const [hasDetectedChanges, setHasDetectedChanges] = useState(false);
 
   const loadSavedItems = useCallback(async () => {
     if (!canAccess) return;
@@ -60,6 +721,14 @@ export default function ScraperManager({ user }) {
     if (!canAccess) return;
     loadSavedItems();
   }, [canAccess, loadSavedItems]);
+
+  useEffect(() => {
+    setRescrapedData(null);
+    setModalStatusMessage('');
+    setModalErrorMessage('');
+    setChangeSummary([]);
+    setHasDetectedChanges(false);
+  }, [selectedItem?.id]);
 
   // Normalize URL to add protocol if missing
   const normalizeUrl = useCallback((inputUrl) => {
@@ -232,6 +901,175 @@ export default function ScraperManager({ user }) {
     [canAccess]
   );
 
+  const handleCloseModal = useCallback(() => {
+    setSelectedItem(null);
+    setRescrapedData(null);
+    setModalStatusMessage('');
+    setModalErrorMessage('');
+  }, []);
+
+  const buildChangeSummary = useCallback((previousData, nextData) => {
+    if (!previousData || !nextData) {
+      return { hasChanges: false, summary: ['Unable to compare content.'] };
+    }
+    const summary = [];
+
+    if ((previousData.title || '') !== (nextData.title || '')) {
+      summary.push('Page title changed.');
+    }
+    if ((previousData.description || '') !== (nextData.description || '')) {
+      summary.push('Description text updated.');
+    }
+    const prevKeywords = Array.isArray(previousData.keywords) ? previousData.keywords.length : 0;
+    const nextKeywords = Array.isArray(nextData.keywords) ? nextData.keywords.length : 0;
+    if (prevKeywords !== nextKeywords) {
+      summary.push(`Keywords count changed (${prevKeywords} → ${nextKeywords}).`);
+    }
+
+    const prevSections = getSectionCount(previousData);
+    const nextSections = getSectionCount(nextData);
+    if (prevSections !== nextSections) {
+      summary.push(`Section count changed (${prevSections} → ${nextSections}).`);
+    }
+
+    const prevLinks = getImportantLinkCount(previousData);
+    const nextLinks = getImportantLinkCount(nextData);
+    if (prevLinks !== nextLinks) {
+      summary.push(`Important links count changed (${prevLinks} → ${nextLinks}).`);
+    }
+
+    const prevImages = getImageCount(previousData);
+    const nextImages = getImageCount(nextData);
+    if (prevImages !== nextImages) {
+      summary.push(`Image count changed (${prevImages} → ${nextImages}).`);
+    }
+
+    const prevTextLength = getTextLength(previousData);
+    const nextTextLength = getTextLength(nextData);
+    if (prevTextLength !== nextTextLength) {
+      summary.push('Body text length changed.');
+    }
+
+    if (summary.length === 0) {
+      return {
+        hasChanges: false,
+        summary: ['No content differences detected between the stored data and the latest scrape.'],
+      };
+    }
+
+    return {
+      hasChanges: true,
+      summary,
+    };
+  }, []);
+
+  const handleRescrapeSelected = useCallback(async () => {
+    if (!canAccess || !selectedItem?.url) return;
+    setIsRescrapingSelected(true);
+    setModalErrorMessage('');
+    setModalStatusMessage('');
+    try {
+      const response = await fetch('/api/scraper/scrape', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: selectedItem.url }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        const message = data?.message || 'Failed to re-scrape website';
+        throw new Error(message);
+      }
+      const latest = data.data?.scrapedData || null;
+      setRescrapedData(latest);
+      const { hasChanges, summary } = buildChangeSummary(selectedItem, latest);
+      setChangeSummary(summary);
+      setHasDetectedChanges(hasChanges);
+      setModalStatusMessage('Latest content fetched successfully.');
+    } catch (err) {
+      setModalErrorMessage(err.message || 'Unable to re-scrape website');
+    } finally {
+      setIsRescrapingSelected(false);
+    }
+  }, [canAccess, selectedItem]);
+
+  const handleSaveUpdatedData = useCallback(async () => {
+    if (!canAccess || !selectedItem?.id || !rescrapedData) return;
+    setIsUpdatingSelected(true);
+    setModalErrorMessage('');
+    setModalStatusMessage('');
+    try {
+      const response = await fetch(`/api/scraper/${selectedItem.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scrapedData: rescrapedData }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        const message = data?.message || 'Failed to update scraped data';
+        throw new Error(message);
+      }
+      const updated = data.data?.scrapedData || null;
+      if (updated) {
+        setSelectedItem(updated);
+      }
+      setChangeSummary([]);
+      setHasDetectedChanges(false);
+      setRescrapedData(null);
+      setModalStatusMessage('Scraped data updated successfully.');
+      await loadSavedItems();
+    } catch (err) {
+      setModalErrorMessage(err.message || 'Unable to update scraped data');
+    } finally {
+      setIsUpdatingSelected(false);
+    }
+  }, [canAccess, selectedItem, rescrapedData, loadSavedItems]);
+
+  const sortedItems = useMemo(() => {
+    if (!Array.isArray(savedItems)) return [];
+    const items = [...savedItems];
+    const { key, direction } = sortState;
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    items.sort((a, b) => {
+      if (key === 'scrapedAt') {
+        const dateA = new Date(a?.scrapedAt || 0).getTime();
+        const dateB = new Date(b?.scrapedAt || 0).getTime();
+        return (dateA - dateB) * multiplier;
+      }
+
+      const valueA = (a?.[key] || '').toString().toLowerCase();
+      const valueB = (b?.[key] || '').toString().toLowerCase();
+      return valueA.localeCompare(valueB) * multiplier;
+    });
+
+    return items;
+  }, [savedItems, sortState]);
+
+  const handleSortToggle = (key) => {
+    setSortState((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const renderSortButton = (label, key) => {
+    const isActive = sortState.key === key;
+    const directionIndicator = isActive ? (sortState.direction === 'asc' ? '↑' : '↓') : '';
+    return (
+      <button
+        type="button"
+        className={`${styles.sortButton} ${isActive ? styles.sortButtonActive : ''}`}
+        onClick={() => handleSortToggle(key)}
+      >
+        {label} {directionIndicator}
+      </button>
+    );
+  };
+
   if (!canAccess) {
     return (
       <div className={styles.container}>
@@ -305,298 +1143,19 @@ export default function ScraperManager({ user }) {
             </button>
           </div>
 
-          <div className={styles.previewGrid}>
-            {/* Domain Info Card */}
-            {scrapedData.domainInfo && Object.keys(scrapedData.domainInfo).length > 0 && (
-              <div className={`${styles.previewCard} ${styles.cardDomain}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Domain Information</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Domain:</span>
-                    <span className={styles.infoValue}>{scrapedData.domainInfo.domain || '—'}</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Protocol:</span>
-                    <span className={styles.infoValue}>{scrapedData.domainInfo.protocol || '—'}</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Host:</span>
-                    <span className={styles.infoValue}>{scrapedData.domainInfo.host || '—'}</span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Path:</span>
-                    <span className={styles.infoValue}>{scrapedData.domainInfo.path || '/'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Title Card */}
-            {scrapedData.title && (
-              <div className={`${styles.previewCard} ${styles.cardTitle}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Page Title</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <p className={styles.cardText}>{scrapedData.title}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Description Card */}
-            {scrapedData.description && (
-              <div className={`${styles.previewCard} ${styles.cardDescription}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Description</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <p className={styles.cardText}>{scrapedData.description}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Statistics Card */}
-            {scrapedData.stats && (
-              <div className={`${styles.previewCard} ${styles.cardStats}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Statistics</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.statsGrid}>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>{scrapedData.stats.totalHeadings || 0}</span>
-                      <span className={styles.statLabel}>Headings</span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>{scrapedData.stats.totalLinks || 0}</span>
-                      <span className={styles.statLabel}>Links</span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>{scrapedData.stats.totalImages || 0}</span>
-                      <span className={styles.statLabel}>Images</span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>{scrapedData.stats.totalKeywords || 0}</span>
-                      <span className={styles.statLabel}>Keywords</span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>
-                        {scrapedData.stats.textLength ? `${Math.round(scrapedData.stats.textLength / 1000)}k` : '0'}
-                      </span>
-                      <span className={styles.statLabel}>Text Length</span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statValue}>
-                        {scrapedData.stats.hasStructuredData ? 'Yes' : 'No'}
-                      </span>
-                      <span className={styles.statLabel}>Structured Data</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Keywords Card */}
-            {Array.isArray(scrapedData.keywords) && scrapedData.keywords.length > 0 && (
-              <div className={`${styles.previewCard} ${styles.cardKeywords}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Keywords</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.keywordsList}>
-                    {scrapedData.keywords.map((keyword, i) => (
-                      <span key={i} className={styles.keywordTag}>{keyword}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Headings Card */}
-            {scrapedData.headings && typeof scrapedData.headings === 'object' && (
-              <div className={`${styles.previewCard} ${styles.cardHeadings}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Headings</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  {Array.isArray(scrapedData.headings.h1) && scrapedData.headings.h1.length > 0 && (
-                    <div className={styles.headingGroup}>
-                      <strong className={styles.headingLabel}>H1 ({scrapedData.headings.h1.length}):</strong>
-                      <ul className={styles.previewList}>
-                        {scrapedData.headings.h1.slice(0, 5).map((h, i) => (
-                          <li key={i}>{h}</li>
-                        ))}
-                        {scrapedData.headings.h1.length > 5 && <li>... and {scrapedData.headings.h1.length - 5} more</li>}
-                      </ul>
-                    </div>
-                  )}
-                  {Array.isArray(scrapedData.headings.h2) && scrapedData.headings.h2.length > 0 && (
-                    <div className={styles.headingGroup}>
-                      <strong className={styles.headingLabel}>H2 ({scrapedData.headings.h2.length}):</strong>
-                      <ul className={styles.previewList}>
-                        {scrapedData.headings.h2.slice(0, 10).map((h, i) => (
-                          <li key={i}>{h}</li>
-                        ))}
-                        {scrapedData.headings.h2.length > 10 && <li>... and {scrapedData.headings.h2.length - 10} more</li>}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Links Card */}
-            {Array.isArray(scrapedData.links) && scrapedData.links.length > 0 && (
-              <div className={`${styles.previewCard} ${styles.cardLinks}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Links ({scrapedData.links.length})</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.linksList}>
-                    {scrapedData.links.slice(0, 20).map((link, i) => (
-                      <a
-                        key={i}
-                        href={link?.href || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.linkItem}
-                      >
-                        {link?.text || link?.href || 'Link'}
-                      </a>
-                    ))}
-                    {scrapedData.links.length > 20 && (
-                      <div className={styles.moreIndicator}>... and {scrapedData.links.length - 20} more links</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Images Card */}
-            {Array.isArray(scrapedData.images) && scrapedData.images.length > 0 && (
-              <div className={`${styles.previewCard} ${styles.cardImages}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Images ({scrapedData.images.length})</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.previewImages}>
-                    {scrapedData.images.slice(0, 6).map((img, i) => (
-                      <div key={i} className={styles.previewImage}>
-                        <img
-                          src={img?.src || ''}
-                          alt={img?.alt || 'Image'}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                        {img?.alt && <p>{img.alt.substring(0, 50)}</p>}
-                      </div>
-                    ))}
-                    {scrapedData.images.length > 6 && (
-                      <div className={styles.moreIndicator}>... and {scrapedData.images.length - 6} more images</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Metadata Card */}
-            {scrapedData.metadata && typeof scrapedData.metadata === 'object' && Object.keys(scrapedData.metadata).length > 0 && (
-              <div className={`${styles.previewCard} ${styles.cardMetadata}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Metadata</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.metadataList}>
-                    {scrapedData.metadata.language && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Language:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.language}</span>
-                      </div>
-                    )}
-                    {scrapedData.metadata.charset && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Charset:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.charset}</span>
-                      </div>
-                    )}
-                    {scrapedData.metadata.viewport && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Viewport:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.viewport}</span>
-                      </div>
-                    )}
-                    {scrapedData.metadata.author && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Author:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.author}</span>
-                      </div>
-                    )}
-                    {scrapedData.metadata.generator && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Generator:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.generator}</span>
-                      </div>
-                    )}
-                    {scrapedData.metadata.canonical && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Canonical:</span>
-                        <a href={scrapedData.metadata.canonical} target="_blank" rel="noopener noreferrer" className={styles.previewLink}>
-                          {scrapedData.metadata.canonical}
-                        </a>
-                      </div>
-                    )}
-                    {scrapedData.metadata.robots && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Robots:</span>
-                        <span className={styles.infoValue}>{scrapedData.metadata.robots}</span>
-                      </div>
-                    )}
-                    {scrapedData.stats?.hasOpenGraph && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Open Graph:</span>
-                        <span className={styles.infoValue}>Yes</span>
-                      </div>
-                    )}
-                    {scrapedData.stats?.hasTwitterCard && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Twitter Card:</span>
-                        <span className={styles.infoValue}>Yes</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Text Preview Card */}
-            {scrapedData.text && typeof scrapedData.text === 'string' && (
-              <div className={`${styles.previewCard} ${styles.cardTextPreview}`}>
-                <div className={styles.cardHeader}>
-                  <h4 className={styles.cardTitle}>Text Preview</h4>
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.previewText}>
-                    {scrapedData.text.substring(0, 2000)}
-                    {scrapedData.text.length > 2000 && '...'}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ScrapedDataset data={scrapedData} />
         </div>
       )}
 
       {/* Saved Items List */}
-      <div className={styles.savedListHeader}>
-        <h3 className={styles.heading}>
+      <div className={styles.listHeader}>
+        <div className={styles.sortControls}>
+          {renderSortButton('Sort by Title', 'title')}
+          {renderSortButton('Sort by Date', 'scrapedAt')}
+        </div>
+        <h3 className={styles.headingCenter}>
           Saved Scraped Data ({savedItems.length})
         </h3>
-      </div>
-
-      <div className={styles.listHeader}>
         <button
           type="button"
           onClick={loadSavedItems}
@@ -625,12 +1184,13 @@ export default function ScraperManager({ user }) {
                 <th>Description</th>
                 <th>Images</th>
                 <th>Links</th>
+                <th>Sections</th>
                 <th>Scraped At</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {savedItems.map((item) => (
+              {sortedItems.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <a
@@ -652,6 +1212,7 @@ export default function ScraperManager({ user }) {
                   </td>
                   <td>{item.imageCount || 0}</td>
                   <td>{item.importantLinks?.length || 0}</td>
+                  <td>{item.stats?.sectionCount ?? item.contentSections?.length ?? item.mainHeadings?.h1?.length ?? '—'}</td>
                   <td>{formatDateForDisplay(item.scrapedAt)}</td>
                   <td>
                     <div className={styles.actionGroup}>
@@ -682,343 +1243,62 @@ export default function ScraperManager({ user }) {
 
       {/* Details Modal */}
       {selectedItem && (
-        <div className={styles.modalOverlay} onClick={() => setSelectedItem(null)}>
+        <div className={styles.modalOverlay} onClick={handleCloseModal}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderMain}>
               <h3 className={styles.modalTitle}>Scraped Data Details</h3>
+                <div className={styles.modalHeaderActions}>
               <button
                 type="button"
-                className={styles.modalClose}
-                onClick={() => setSelectedItem(null)}
+                    className={styles.secondaryButton}
+                    onClick={handleRescrapeSelected}
+                    disabled={isRescrapingSelected}
               >
-                ×
+                    {isRescrapingSelected ? 'Rescraping…' : 'Rescrape'}
+              </button>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={handleSaveUpdatedData}
+                    disabled={!rescrapedData || isUpdatingSelected}
+                  >
+                    {isUpdatingSelected ? 'Saving…' : 'Save Updated Data'}
               </button>
             </div>
+                    </div>
+              <button type="button" className={styles.modalClose} onClick={handleCloseModal}>
+                ×
+              </button>
+                      </div>
             <div className={styles.modalBody}>
-              <div className={styles.previewGrid}>
-                {/* Domain Info Card */}
-                {selectedItem.domainInfo && Object.keys(selectedItem.domainInfo).length > 0 && (
-                  <div className={`${styles.previewCard} ${styles.cardDomain}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Domain Information</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Domain:</span>
-                        <span className={styles.infoValue}>{selectedItem.domainInfo.domain || '—'}</span>
-                      </div>
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Protocol:</span>
-                        <span className={styles.infoValue}>{selectedItem.domainInfo.protocol || '—'}</span>
-                      </div>
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Host:</span>
-                        <span className={styles.infoValue}>{selectedItem.domainInfo.host || '—'}</span>
-                      </div>
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Path:</span>
-                        <span className={styles.infoValue}>{selectedItem.domainInfo.path || '/'}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Title Card */}
-                {selectedItem.title && (
-                  <div className={`${styles.previewCard} ${styles.cardTitle}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Page Title</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <p className={styles.cardText}>{selectedItem.title}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Description Card */}
-                {selectedItem.description && (
-                  <div className={`${styles.previewCard} ${styles.cardDescription}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Description</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <p className={styles.cardText}>{selectedItem.description}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Statistics Card */}
-                {(selectedItem.stats || selectedItem.imageCount !== undefined) && (
-                  <div className={`${styles.previewCard} ${styles.cardStats}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Statistics</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.statsGrid}>
-                        {selectedItem.stats ? (
-                          <>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.stats.totalHeadings || 0}</span>
-                              <span className={styles.statLabel}>Headings</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.stats.totalLinks || selectedItem.importantLinks?.length || 0}</span>
-                              <span className={styles.statLabel}>Links</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.stats.totalImages || selectedItem.imageCount || 0}</span>
-                              <span className={styles.statLabel}>Images</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.stats.totalKeywords || selectedItem.keywords?.length || 0}</span>
-                              <span className={styles.statLabel}>Keywords</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>
-                                {selectedItem.stats.textLength ? `${Math.round(selectedItem.stats.textLength / 1000)}k` : (selectedItem.textPreview ? `${Math.round(selectedItem.textPreview.length / 1000)}k` : '0')}
-                              </span>
-                              <span className={styles.statLabel}>Text Length</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>
-                                {selectedItem.stats.hasStructuredData ? 'Yes' : (selectedItem.structuredDataCount > 0 ? 'Yes' : 'No')}
-                              </span>
-                              <span className={styles.statLabel}>Structured Data</span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{(selectedItem.mainHeadings?.h1?.length || 0) + (selectedItem.mainHeadings?.h2?.length || 0)}</span>
-                              <span className={styles.statLabel}>Headings</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.importantLinks?.length || 0}</span>
-                              <span className={styles.statLabel}>Links</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.imageCount || 0}</span>
-                              <span className={styles.statLabel}>Images</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>{selectedItem.keywords?.length || 0}</span>
-                              <span className={styles.statLabel}>Keywords</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>
-                                {selectedItem.textPreview ? `${Math.round(selectedItem.textPreview.length / 1000)}k` : '0'}
-                              </span>
-                              <span className={styles.statLabel}>Text Length</span>
-                            </div>
-                            <div className={styles.statItem}>
-                              <span className={styles.statValue}>
-                                {selectedItem.structuredDataCount > 0 ? 'Yes' : 'No'}
-                              </span>
-                              <span className={styles.statLabel}>Structured Data</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Keywords Card */}
-                {Array.isArray(selectedItem.keywords) && selectedItem.keywords.length > 0 && (
-                  <div className={`${styles.previewCard} ${styles.cardKeywords}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Keywords</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.keywordsList}>
-                        {selectedItem.keywords.map((keyword, i) => (
-                          <span key={i} className={styles.keywordTag}>{keyword}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Headings Card */}
-                {(selectedItem.headings || selectedItem.mainHeadings) && typeof (selectedItem.headings || selectedItem.mainHeadings) === 'object' && (
-                  <div className={`${styles.previewCard} ${styles.cardHeadings}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Headings</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      {(() => {
-                        const headings = selectedItem.headings || selectedItem.mainHeadings || {};
-                        const h1Array = Array.isArray(headings.h1) ? headings.h1 : [];
-                        const h2Array = Array.isArray(headings.h2) ? headings.h2 : [];
-                        return (
-                          <>
-                            {h1Array.length > 0 && (
-                              <div className={styles.headingGroup}>
-                                <strong className={styles.headingLabel}>H1 ({h1Array.length}):</strong>
-                                <ul className={styles.previewList}>
-                                  {h1Array.map((h, i) => (
-                                    <li key={i}>{h}</li>
+              {modalStatusMessage && (
+                <div className={`${styles.feedback} ${styles.feedbackSuccess}`}>{modalStatusMessage}</div>
+              )}
+              {modalErrorMessage && (
+                <div className={`${styles.feedback} ${styles.feedbackError}`}>{modalErrorMessage}</div>
+              )}
+              {changeSummary.length > 0 && (
+                <div
+                  className={`${styles.feedback} ${
+                    hasDetectedChanges ? styles.feedbackInfo : styles.feedbackSuccess
+                  }`}
+                >
+                  <strong>
+                    {hasDetectedChanges
+                      ? 'Changes detected between stored data and the latest scrape:'
+                      : 'No differences detected between the stored data and the latest scrape.'}
+                  </strong>
+                  {hasDetectedChanges && (
+                    <ul className={styles.changeList}>
+                      {changeSummary.map((item, idx) => (
+                        <li key={`change-${idx}`}>{item}</li>
                                   ))}
                                 </ul>
+                  )}
                               </div>
                             )}
-                            {h2Array.length > 0 && (
-                              <div className={styles.headingGroup}>
-                                <strong className={styles.headingLabel}>H2 ({h2Array.length}):</strong>
-                                <ul className={styles.previewList}>
-                                  {h2Array.map((h, i) => (
-                                    <li key={i}>{h}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                {/* Links Card */}
-                {Array.isArray(selectedItem.importantLinks) && selectedItem.importantLinks.length > 0 && (
-                  <div className={`${styles.previewCard} ${styles.cardLinks}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Links ({selectedItem.importantLinks.length})</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.linksList}>
-                        {selectedItem.importantLinks.map((link, i) => (
-                          <a
-                            key={i}
-                            href={link?.href || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.linkItem}
-                          >
-                            {link?.text || link?.href || 'Link'}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Images Card */}
-                {Array.isArray(selectedItem.mainImages) && selectedItem.mainImages.length > 0 && (
-                  <div className={`${styles.previewCard} ${styles.cardImages}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Images ({selectedItem.imageCount || 0})</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.previewImages}>
-                        {selectedItem.mainImages.map((img, i) => (
-                          <div key={i} className={styles.previewImage}>
-                            <img
-                              src={img?.src || ''}
-                              alt={img?.alt || 'Image'}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                            {img?.alt && <p>{img.alt.substring(0, 50)}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Metadata Card */}
-                {selectedItem.metadata && typeof selectedItem.metadata === 'object' && Object.keys(selectedItem.metadata).length > 0 && (
-                  <div className={`${styles.previewCard} ${styles.cardMetadata}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Metadata</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.metadataList}>
-                        {selectedItem.metadata.language && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Language:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.language}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.charset && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Charset:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.charset}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.viewport && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Viewport:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.viewport}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.author && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Author:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.author}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.generator && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Generator:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.generator}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.canonical && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Canonical:</span>
-                            <a href={selectedItem.metadata.canonical} target="_blank" rel="noopener noreferrer" className={styles.previewLink}>
-                              {selectedItem.metadata.canonical}
-                            </a>
-                          </div>
-                        )}
-                        {selectedItem.metadata.robots && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>Robots:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.robots}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.ogTitle && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>OG Title:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.ogTitle}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.ogDescription && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>OG Description:</span>
-                            <span className={styles.infoValue}>{selectedItem.metadata.ogDescription}</span>
-                          </div>
-                        )}
-                        {selectedItem.metadata.ogImage && (
-                          <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>OG Image:</span>
-                            <a href={selectedItem.metadata.ogImage} target="_blank" rel="noopener noreferrer" className={styles.previewLink}>
-                              {selectedItem.metadata.ogImage}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Text Preview Card */}
-                {selectedItem.textPreview && (
-                  <div className={`${styles.previewCard} ${styles.cardTextPreview}`}>
-                    <div className={styles.cardHeader}>
-                      <h4 className={styles.cardTitle}>Text Preview</h4>
-                    </div>
-                    <div className={styles.cardContent}>
-                      <div className={styles.previewText}>
-                        {selectedItem.textPreview}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ScrapedDataset data={rescrapedData || selectedItem} variant="modal" />
             </div>
           </div>
         </div>

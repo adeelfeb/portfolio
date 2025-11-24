@@ -178,6 +178,44 @@ export async function deleteScrapedDataById(req, res, currentUser, id) {
   }
 }
 
+export async function updateScrapedDataById(req, res, currentUser, id) {
+  if (!ensureFullAccess(res, currentUser)) return;
+
+  if (!id || typeof id !== 'string' || !id.trim()) {
+    return jsonError(res, 400, 'ID is required');
+  }
+
+  const { scrapedData } = req.body || {};
+
+  if (!scrapedData || typeof scrapedData !== 'object') {
+    return jsonError(res, 400, 'Scraped data is required');
+  }
+
+  try {
+    await connectDB();
+
+    const refinedData = refineScrapedData({ data: scrapedData });
+
+    if (!refinedData) {
+      return jsonError(res, 400, 'Invalid scraped data format');
+    }
+
+    refinedData.scrapedBy = currentUser._id || currentUser.id;
+
+    const updated = await ScrapedData.findByIdAndUpdate(id.trim(), refinedData, { new: true });
+
+    if (!updated) {
+      return jsonError(res, 404, 'Scraped data not found');
+    }
+
+    return jsonSuccess(res, 200, 'Scraped data updated successfully', {
+      scrapedData: toScrapedDataResponse(updated),
+    });
+  } catch (err) {
+    return jsonError(res, 500, 'Failed to update scraped data', err.message);
+  }
+}
+
 /**
  * Convert mongoose document to response format
  */

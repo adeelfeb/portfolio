@@ -1,7 +1,7 @@
 import { applyCors, withErrorHandling } from '../../../utils';
 import { jsonError } from '../../../lib/response';
 import { getUserFromRequest } from '../../../lib/auth';
-import { getScrapedDataById, deleteScrapedDataById } from '../../../controllers/scraperController';
+import { getScrapedDataById, deleteScrapedDataById, updateScrapedDataById } from '../../../controllers/scraperController';
 
 export const config = {
   api: {
@@ -18,6 +18,8 @@ async function handler(req, res) {
   switch (req.method) {
     case 'GET':
       return getScrapedDataById(req, res, currentUser, id);
+    case 'PUT':
+      return updateScrapedDataById(req, res, currentUser, id);
     case 'DELETE':
       return deleteScrapedDataById(req, res, currentUser, id);
     case 'OPTIONS':
