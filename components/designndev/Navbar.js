@@ -76,8 +76,9 @@ export default function Navbar() {
               </a>
             ))}
             <a
-              href="#contact"
-              onClick={(e) => handleLinkClick(e, '#contact')}
+              href="https://www.fiverr.com/s/EgQz3ey"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer"
             >
               Get Started
@@ -121,8 +122,9 @@ export default function Navbar() {
                 </a>
               ))}
               <a
-                href="#contact"
-                onClick={(e) => handleLinkClick(e, '#contact')}
+                href="https://www.fiverr.com/s/EgQz3ey"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold text-center hover:shadow-lg transition-all duration-200 cursor-pointer"
               >
                 Get Started

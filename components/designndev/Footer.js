@@ -24,11 +24,9 @@ export default function Footer() {
               Stop searching for "hire web developer" and start building. Let's discuss your specific requirements.
             </p>
             <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault()
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
+              href="https://www.fiverr.com/s/EgQz3ey"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
             >
               Get Started Today

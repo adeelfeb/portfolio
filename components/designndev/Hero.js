@@ -57,34 +57,18 @@ export default function Hero() {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault()
-                const element = document.querySelector('#contact')
-                if (element) {
-                  const offset = 80
-                  const elementPosition = element.getBoundingClientRect().top
-                  const offsetPosition = elementPosition + window.pageYOffset - offset
-                  window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-                }
-              }}
+              href="https://www.fiverr.com/s/EgQz3ey"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 flex items-center gap-2 cursor-pointer"
             >
               Start Your Project
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="#services"
-              onClick={(e) => {
-                e.preventDefault()
-                const element = document.querySelector('#services')
-                if (element) {
-                  const offset = 80
-                  const elementPosition = element.getBoundingClientRect().top
-                  const offsetPosition = elementPosition + window.pageYOffset - offset
-                  window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-                }
-              }}
+              href="https://www.fiverr.com/s/EgQz3ey"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-full font-semibold text-lg border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 cursor-pointer"
             >
               View Our Work
