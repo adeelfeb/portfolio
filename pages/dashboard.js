@@ -5,6 +5,7 @@ import SettingsPanel from '../components/dashboard/SettingsPanel';
 import AddOrigin from '../components/dashboard/AddOrigin';
 import UserOverviewTable from '../components/dashboard/UserOverviewTable';
 import ApiEndpointsPanel from '../components/dashboard/ApiEndpointsPanel';
+import BlogManager from '../components/dashboard/BlogManager';
 import { getUserFromRequest } from '../lib/auth';
 
 function serializeUser(user) {
@@ -35,26 +36,31 @@ const NAVIGATION_BY_ROLE = {
   superadmin: [
     { key: 'overview', label: 'Overview' },
     { key: 'user-management', label: 'User Management' },
+    { key: 'blogs', label: 'Blogs' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   admin: [
     { key: 'overview', label: 'Overview' },
+    { key: 'blogs', label: 'Blogs' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr: [
     { key: 'overview', label: 'Overview' },
+    { key: 'blogs', label: 'Blogs' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr_admin: [
     { key: 'overview', label: 'Overview' },
+    { key: 'blogs', label: 'Blogs' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   base_user: [
     { key: 'overview', label: 'My Applications' },
+    { key: 'blogs', label: 'Blogs' },
     { key: 'resources', label: 'Resources' },
     { key: 'support', label: 'Support' },
   ],
@@ -210,6 +216,11 @@ const SECTION_DESCRIPTORS = {
   'api-endpoints': {
     hideHeader: true,
     body: () => <ApiEndpointsPanel />,
+  },
+  blogs: {
+    subtitle: 'Create, manage, and publish SEO-optimized blog posts.',
+    hideHeader: true,
+    body: (user) => <BlogManager user={user} />,
   },
   submissions: {
     subtitle: 'Oversee incoming submissions and coordinate reviews.',
