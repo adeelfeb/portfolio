@@ -4,15 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import SettingsPanel from '../components/dashboard/SettingsPanel';
 import AddOrigin from '../components/dashboard/AddOrigin';
 import UserOverviewTable from '../components/dashboard/UserOverviewTable';
-import JobManager from '../components/dashboard/JobManager';
-import TranscriptManager from '../components/dashboard/TranscriptManager';
-import VendorManager from '../components/dashboard/VendorManager';
-import CandidateManager from '../components/dashboard/CandidateManager';
-import PerformanceDashboard from '../components/dashboard/reports/PerformanceDashboard';
-import LoxoPanel from '../components/dashboard/LoxoPanel';
-import CityServiceManager from '../components/dashboard/CityServiceManager';
 import ApiEndpointsPanel from '../components/dashboard/ApiEndpointsPanel';
-import ScraperManager from '../components/dashboard/ScraperManager';
 import { getUserFromRequest } from '../lib/auth';
 
 function serializeUser(user) {
@@ -43,64 +35,26 @@ const NAVIGATION_BY_ROLE = {
   superadmin: [
     { key: 'overview', label: 'Overview' },
     { key: 'user-management', label: 'User Management' },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'candidates', label: 'Candidates' },
-    { key: 'loxo', label: 'Loxo' },
-    { key: 'transcripts', label: 'Transcripts' },
-    { key: 'vendors', label: 'Vendors' },
-    { key: 'city-service-routes', label: 'City Service Routes' },
-    { key: 'funding', label: 'Funding Opportunities' },
-    { key: 'scraper', label: 'Web Scraper' },
     { key: 'add-origin', label: 'Add Origin' },
-    { key: 'reports', label: 'Reports & Analytics' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   admin: [
     { key: 'overview', label: 'Overview' },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'candidates', label: 'Candidates' },
-    { key: 'loxo', label: 'Loxo' },
-    { key: 'transcripts', label: 'Transcripts' },
-    { key: 'vendors', label: 'Vendors' },
-    { key: 'city-service-routes', label: 'City Service Routes' },
-    { key: 'funding', label: 'Funding Opportunities' },
-    { key: 'scraper', label: 'Web Scraper' },
-    { key: 'submissions', label: 'Submissions' },
-    { key: 'team', label: 'Team Insights' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr: [
     { key: 'overview', label: 'Overview' },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'candidates', label: 'Candidates' },
-    { key: 'loxo', label: 'Loxo' },
-    { key: 'transcripts', label: 'Transcripts' },
-    { key: 'vendors', label: 'Vendors' },
-    { key: 'city-service-routes', label: 'City Service Routes' },
-    { key: 'scraper', label: 'Web Scraper' },
     { key: 'add-origin', label: 'Add Origin' },
-    { key: 'reports', label: 'Reports & Analytics' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   hr_admin: [
     { key: 'overview', label: 'Overview' },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'candidates', label: 'Candidates' },
-    { key: 'loxo', label: 'Loxo' },
-    { key: 'transcripts', label: 'Transcripts' },
-    { key: 'vendors', label: 'Vendors' },
-    { key: 'city-service-routes', label: 'City Service Routes' },
-    { key: 'scraper', label: 'Web Scraper' },
     { key: 'add-origin', label: 'Add Origin' },
-    { key: 'reports', label: 'Reports & Analytics' },
     { key: 'api-endpoints', label: 'API Endpoints' },
   ],
   base_user: [
     { key: 'overview', label: 'My Applications' },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'transcripts', label: 'Transcripts' },
-    { key: 'vendors', label: 'Vendors' },
     { key: 'resources', label: 'Resources' },
     { key: 'support', label: 'Support' },
   ],
@@ -121,35 +75,6 @@ const SECTION_DESCRIPTORS = {
       }
       return <UserOverviewTable currentUser={user} />;
     },
-  },
-  jobs: {
-    subtitle: 'Review intake details and manage job assignments.',
-    hideHeader: true,
-    body: (user) => <JobManager user={user} />,
-  },
-  loxo: {
-    hideHeader: true,
-    body: () => <LoxoPanel />,
-  },
-  transcripts: {
-    subtitle: 'Analyze call transcripts and AI parsing confidence.',
-    hideHeader: true,
-    body: (user) => <TranscriptManager user={user} />,
-  },
-  vendors: {
-    subtitle: 'Monitor vendor compliance status and documentation.',
-    hideHeader: true,
-    body: (user) => <VendorManager user={user} />,
-  },
-  candidates: {
-    subtitle: 'Manage candidate and vendor lead intake. Track onboarding status and service information.',
-    hideHeader: true,
-    body: (user) => <CandidateManager user={user} />,
-  },
-  'city-service-routes': {
-    subtitle: 'Manage dynamic city + service URL routes. Test and configure location-based routing.',
-    hideHeader: true,
-    body: (user) => <CityServiceManager user={user} />,
   },
   applications: {
     hideHeader: true,
@@ -259,20 +184,6 @@ const SECTION_DESCRIPTORS = {
       { title: 'Share product feedback' },
     ],
   },
-  funding: {
-    subtitle: 'Review funding opportunities, eligibility, and allocation details.',
-    panels: [
-      {
-        title: 'Active opportunities',
-        description: 'Track open calls and match them to potential applicants.',
-        meta: '5 active',
-      },
-      {
-        title: 'Allocation overview',
-        description: 'Understand how resources are being distributed.',
-      },
-    ],
-  },
   'user-management': {
     subtitle: 'Manage access, roles, and permissions across your organization.',
     panels: [
@@ -292,10 +203,6 @@ const SECTION_DESCRIPTORS = {
       { title: 'Audit recent changes' },
     ],
   },
-  reports: {
-    hideHeader: true,
-    body: () => <PerformanceDashboard />,
-  },
   'add-origin': {
     hideHeader: true,
     body: () => <AddOrigin />,
@@ -303,11 +210,6 @@ const SECTION_DESCRIPTORS = {
   'api-endpoints': {
     hideHeader: true,
     body: () => <ApiEndpointsPanel />,
-  },
-  scraper: {
-    subtitle: 'Scrape websites and extract structured data. Save important information for future reference.',
-    hideHeader: true,
-    body: (user) => <ScraperManager user={user} />,
   },
   submissions: {
     subtitle: 'Oversee incoming submissions and coordinate reviews.',
@@ -372,14 +274,8 @@ export default function Dashboard({ user }) {
 
   const primaryNav = useMemo(() => navItems, [navItems]);
   const initialSection = useMemo(() => {
-    if (normalizedRole === 'hr') {
-      const loxoNav = primaryNav.find((item) => item.key === 'loxo');
-      if (loxoNav) {
-        return loxoNav.key;
-      }
-    }
     return primaryNav[0]?.key || FALLBACK_NAV[0].key;
-  }, [normalizedRole, primaryNav]);
+  }, [primaryNav]);
   const [activeSection, setActiveSection] = useState(initialSection);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
