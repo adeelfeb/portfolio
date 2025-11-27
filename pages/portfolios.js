@@ -5,13 +5,15 @@ import Link from 'next/link';
 import Navbar from '../components/designndev/Navbar';
 import Footer from '../components/designndev/Footer';
 
-export default function BlogsPage() {
-  const [blogs, setBlogs] = useState([]);
+export default function PortfoliosPage() {
+  const [portfolios, setPortfolios] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [technologies, setTechnologies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     category: '',
+    technology: '',
     search: '',
   });
   const [pagination, setPagination] = useState({
@@ -22,11 +24,12 @@ export default function BlogsPage() {
   });
 
   useEffect(() => {
-    fetchBlogs();
+    fetchPortfolios();
     fetchCategories();
+    fetchTechnologies();
   }, [pagination.page, filters]);
 
-  const fetchBlogs = async () => {
+  const fetchPortfolios = async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams({
@@ -36,16 +39,17 @@ export default function BlogsPage() {
       });
 
       if (filters.category) params.append('category', filters.category);
+      if (filters.technology) params.append('technology', filters.technology);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await axios.get(`/api/blogs?${params.toString()}`);
+      const response = await axios.get(`/api/portfolios?${params.toString()}`);
 
       if (response.data.success) {
-        setBlogs(response.data.data.blogs || []);
+        setPortfolios(response.data.data.portfolios || []);
         setPagination(response.data.data.pagination || pagination);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load blogs');
+      setError(err.response?.data?.message || 'Failed to load portfolios');
     } finally {
       setIsLoading(false);
     }
@@ -53,12 +57,23 @@ export default function BlogsPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('/api/blogs/categories');
+      const response = await axios.get('/api/portfolios/categories');
       if (response.data.success) {
         setCategories(response.data.data.categories || []);
       }
     } catch (err) {
       console.error('Failed to fetch categories:', err);
+    }
+  };
+
+  const fetchTechnologies = async () => {
+    try {
+      const response = await axios.get('/api/portfolios/technologies');
+      if (response.data.success) {
+        setTechnologies(response.data.data.technologies || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch technologies:', err);
     }
   };
 
@@ -74,7 +89,6 @@ export default function BlogsPage() {
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric',
       }).format(date);
     } catch {
       return '';
@@ -84,37 +98,37 @@ export default function BlogsPage() {
   return (
     <>
       <Head>
-        <title>Blog | Design n Dev - Latest Articles & Insights</title>
+        <title>Portfolio | Design n Dev - Our Projects & Work</title>
         <meta 
           name="description" 
-          content="Read our latest blog posts and articles about web development, Next.js, MERN Stack, and custom web solutions. Stay updated with industry insights and best practices." 
+          content="Explore our portfolio of web development projects, mobile apps, and custom solutions. See our work with Next.js, MERN Stack, and modern technologies." 
         />
         <meta 
           name="keywords" 
-          content="web development blog, Next.js articles, MERN stack blog, web development tips, startup development, custom web solutions" 
+          content="portfolio, web development projects, Next.js projects, MERN stack portfolio, custom web solutions, mobile app development" 
         />
-        <meta property="og:title" content="Blog | Design n Dev" />
+        <meta property="og:title" content="Portfolio | Design n Dev" />
         <meta 
           property="og:description" 
-          content="Read our latest blog posts and articles about web development and technology." 
+          content="Explore our portfolio of web development projects and custom solutions." 
         />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://designndev.com/blogs" />
+        <link rel="canonical" href="https://designndev.com/portfolios" />
       </Head>
       <div className="min-h-screen bg-white">
         <Navbar />
         <main className="pt-24 pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <header className="text-center mb-12">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Our Blog</h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">Discover our latest articles and insights</p>
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Our Portfolio</h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">Explore our latest projects and creative solutions</p>
             </header>
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <input
                 type="text"
-                placeholder="Search blogs..."
+                placeholder="Search portfolios..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 transition-colors"
@@ -131,26 +145,38 @@ export default function BlogsPage() {
                   </option>
                 ))}
               </select>
+              <select
+                value={filters.technology}
+                onChange={(e) => handleFilterChange('technology', e.target.value)}
+                className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 transition-colors"
+              >
+                <option value="">All Technologies</option>
+                {technologies.map((tech) => (
+                  <option key={tech} value={tech}>
+                    {tech}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Blog Grid */}
+            {/* Portfolio Grid */}
             {isLoading ? (
-              <div className="text-center py-16 text-gray-600">Loading blogs...</div>
+              <div className="text-center py-16 text-gray-600">Loading portfolios...</div>
             ) : error ? (
               <div className="text-center py-16 text-red-600">{error}</div>
-            ) : blogs.length === 0 ? (
-              <div className="text-center py-16 text-gray-600">No blogs found</div>
+            ) : portfolios.length === 0 ? (
+              <div className="text-center py-16 text-gray-600">No portfolios found</div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                  {blogs.map((blog) => (
-                    <article key={blog.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                      <Link href={`/blogs/${blog.slug}`}>
-                        {blog.featuredImage && (
+                  {portfolios.map((portfolio) => (
+                    <article key={portfolio.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                      <Link href={`/portfolios/${portfolio.slug}`}>
+                        {portfolio.featuredImage && (
                           <div className="relative h-64 overflow-hidden bg-gray-100">
                             <img
-                              src={blog.featuredImage}
-                              alt={blog.title}
+                              src={portfolio.featuredImage}
+                              alt={portfolio.title}
                               className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                               onError={(e) => {
                                 e.target.style.display = 'none';
@@ -161,22 +187,36 @@ export default function BlogsPage() {
                         <div className="p-6">
                           <div className="flex items-center gap-2 mb-3 flex-wrap">
                             <span className="text-blue-600 text-sm font-semibold uppercase tracking-wide">
-                              {blog.category}
+                              {portfolio.category}
                             </span>
-                            {blog.publishedAt && (
+                            {portfolio.projectDate && (
                               <span className="text-gray-500 text-sm">
-                                {formatDate(blog.publishedAt)}
+                                {formatDate(portfolio.projectDate)}
                               </span>
                             )}
                           </div>
                           <h2 className="text-2xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
-                            {blog.title}
+                            {portfolio.title}
                           </h2>
-                          <p className="text-gray-600 line-clamp-3 mb-4">{blog.excerpt}</p>
+                          <p className="text-gray-600 line-clamp-3 mb-4">{portfolio.description}</p>
+                          {portfolio.technologies && portfolio.technologies.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {portfolio.technologies.slice(0, 3).map((tech) => (
+                                <span key={tech} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                                  {tech}
+                                </span>
+                              ))}
+                              {portfolio.technologies.length > 3 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                  +{portfolio.technologies.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex justify-between items-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-                            <span>By {blog.authorName}</span>
-                            {blog.readingTime && (
-                              <span>{blog.readingTime} min read</span>
+                            <span>By {portfolio.authorName}</span>
+                            {portfolio.views > 0 && (
+                              <span>{portfolio.views} views</span>
                             )}
                           </div>
                         </div>
@@ -216,6 +256,4 @@ export default function BlogsPage() {
     </>
   );
 }
-
-
 

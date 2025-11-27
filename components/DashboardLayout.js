@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 // Category mapping for navigation items
 const getNavCategory = (key) => {
-  const hr = ['overview', 'blogs', 'add-origin'];
+  const hr = ['overview', 'blogs', 'portfolios', 'add-origin'];
   const all = ['api-endpoints', 'user-management', 'resources', 'support', 'updates', 'activity'];
   
   if (hr.includes(key)) return 'hr';
@@ -47,6 +47,13 @@ const getNavIcon = (key) => {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
+    ),
+    'portfolios': (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="3" y1="9" x2="21" y2="9"></line>
+        <line x1="9" y1="21" x2="9" y2="9"></line>
       </svg>
     ),
     'resources': (

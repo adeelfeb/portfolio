@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import Head from 'next/head';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
+import Navbar from '../../components/designndev/Navbar';
+import Footer from '../../components/designndev/Footer';
 
 export default function BlogPostPage() {
   const router = useRouter();
@@ -56,13 +56,13 @@ export default function BlogPostPage() {
     return (
       <>
         <Head>
-          <title>Loading...</title>
+          <title>Loading... | Design n Dev</title>
         </Head>
-        <div className="blog-page">
-          <Header />
-          <main className="blog-main">
-            <div className="container">
-              <div className="loading">Loading blog post...</div>
+        <div className="min-h-screen bg-white">
+          <Navbar />
+          <main className="pt-24 pb-16">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center py-16 text-gray-600">Loading blog post...</div>
             </div>
           </main>
           <Footer />
@@ -75,16 +75,16 @@ export default function BlogPostPage() {
     return (
       <>
         <Head>
-          <title>Blog Not Found</title>
+          <title>Blog Not Found | Design n Dev</title>
         </Head>
-        <div className="blog-page">
-          <Header />
-          <main className="blog-main">
-            <div className="container">
-              <div className="error">
-                <h1>Blog Not Found</h1>
-                <p>{error || 'The blog post you are looking for does not exist.'}</p>
-                <a href="/blogs" className="back-link">← Back to Blogs</a>
+        <div className="min-h-screen bg-white">
+          <Navbar />
+          <main className="pt-24 pb-16">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center py-16">
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">Blog Not Found</h1>
+                <p className="text-gray-600 mb-8">{error || 'The blog post you are looking for does not exist.'}</p>
+                <a href="/blogs" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Blogs</a>
               </div>
             </div>
           </main>
@@ -97,7 +97,7 @@ export default function BlogPostPage() {
   return (
     <>
       <Head>
-        <title>{blog.metaTitle || blog.title}</title>
+        <title>{blog.metaTitle || blog.title} | Design n Dev</title>
         <meta name="description" content={blog.metaDescription || blog.excerpt} />
         {blog.metaKeywords && blog.metaKeywords.length > 0 && (
           <meta name="keywords" content={blog.metaKeywords.join(', ')} />
@@ -109,212 +109,69 @@ export default function BlogPostPage() {
             <meta property="og:description" content={blog.metaDescription || blog.excerpt} />
           </>
         )}
+        <link rel="canonical" href={`https://designndev.com/blogs/${blog.slug}`} />
       </Head>
-      <div className="blog-page">
-        <Header />
-        <main className="blog-main">
-          <div className="container">
-            <article className="blog-post">
-              <header className="blog-post-header">
-                <div className="blog-post-meta">
-                  <span className="blog-category">{blog.category}</span>
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <main className="pt-24 pb-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <article className="bg-white rounded-xl shadow-lg overflow-hidden p-8 md:p-12">
+              <header className="mb-8">
+                <div className="flex items-center gap-4 mb-4 flex-wrap">
+                  <span className="text-blue-600 text-sm font-semibold uppercase tracking-wide">
+                    {blog.category}
+                  </span>
                   {blog.publishedAt && (
-                    <span className="blog-date">{formatDate(blog.publishedAt)}</span>
+                    <span className="text-gray-500 text-sm">{formatDate(blog.publishedAt)}</span>
                   )}
                   {blog.readingTime && (
-                    <span className="blog-reading-time">{blog.readingTime} min read</span>
+                    <span className="text-gray-500 text-sm">{blog.readingTime} min read</span>
                   )}
                 </div>
-                <h1 className="blog-post-title">{blog.title}</h1>
-                <p className="blog-post-excerpt">{blog.excerpt}</p>
-                <div className="blog-post-author">
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{blog.title}</h1>
+                <p className="text-xl text-gray-600 leading-relaxed mb-4">{blog.excerpt}</p>
+                <div className="text-gray-500 text-sm">
                   <span>By {blog.authorName}</span>
                 </div>
               </header>
 
               {blog.featuredImage && (
-                <div className="blog-post-image">
-                  <img src={blog.featuredImage} alt={blog.title} />
+                <div className="mb-8 rounded-lg overflow-hidden">
+                  <img src={blog.featuredImage} alt={blog.title} className="w-full h-auto" />
                 </div>
               )}
 
               <div
-                className="blog-post-content"
+                className="prose prose-lg max-w-none mb-8 text-gray-700 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: blog.content.replace(/\n/g, '<br />') }}
               />
 
               {blog.tags && blog.tags.length > 0 && (
-                <div className="blog-post-tags">
-                  <strong>Tags: </strong>
-                  {blog.tags.map((tag, index) => (
-                    <span key={tag} className="tag">
-                      {tag}
-                      {index < blog.tags.length - 1 && ', '}
-                    </span>
-                  ))}
+                <div className="pt-8 border-t border-gray-200 mb-8">
+                  <div className="flex flex-wrap gap-2">
+                    <strong className="text-gray-900">Tags: </strong>
+                    {blog.tags.map((tag, index) => (
+                      <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="blog-post-footer">
-                <a href="/blogs" className="back-link">← Back to Blogs</a>
+              <div className="pt-8 border-t border-gray-200">
+                <a href="/blogs" className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Blogs
+                </a>
               </div>
             </article>
           </div>
         </main>
         <Footer />
       </div>
-
-      <style jsx>{`
-        .blog-page {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .blog-main {
-          flex: 1;
-          padding: 3rem 0;
-        }
-
-        .container {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-        }
-
-        .blog-post {
-          background: white;
-          border-radius: 12px;
-          padding: 3rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .blog-post-header {
-          margin-bottom: 2rem;
-        }
-
-        .blog-post-meta {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          font-size: 0.875rem;
-          flex-wrap: wrap;
-        }
-
-        .blog-category {
-          color: #2563eb;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .blog-date,
-        .blog-reading-time {
-          color: #6b7280;
-        }
-
-        .blog-post-title {
-          font-size: 2.5rem;
-          font-weight: 700;
-          line-height: 1.2;
-          margin-bottom: 1rem;
-          color: #1a1a1a;
-        }
-
-        .blog-post-excerpt {
-          font-size: 1.25rem;
-          color: #666;
-          line-height: 1.6;
-          margin-bottom: 1rem;
-        }
-
-        .blog-post-author {
-          color: #888;
-          font-size: 0.875rem;
-        }
-
-        .blog-post-image {
-          width: 100%;
-          margin: 2rem 0;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .blog-post-image img {
-          width: 100%;
-          height: auto;
-          display: block;
-        }
-
-        .blog-post-content {
-          font-size: 1.125rem;
-          line-height: 1.8;
-          color: #333;
-          margin-bottom: 2rem;
-        }
-
-        .blog-post-tags {
-          padding: 1.5rem 0;
-          border-top: 1px solid #e5e7eb;
-          border-bottom: 1px solid #e5e7eb;
-          margin-bottom: 2rem;
-          color: #666;
-        }
-
-        .blog-post-tags .tag {
-          color: #2563eb;
-        }
-
-        .blog-post-footer {
-          margin-top: 2rem;
-        }
-
-        .back-link {
-          color: #2563eb;
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.2s;
-        }
-
-        .back-link:hover {
-          color: #1d4ed8;
-        }
-
-        .loading,
-        .error {
-          text-align: center;
-          padding: 4rem 2rem;
-        }
-
-        .error h1 {
-          font-size: 2rem;
-          margin-bottom: 1rem;
-          color: #1a1a1a;
-        }
-
-        .error p {
-          color: #666;
-          margin-bottom: 2rem;
-        }
-
-        @media (max-width: 768px) {
-          .blog-post {
-            padding: 2rem 1.5rem;
-          }
-
-          .blog-post-title {
-            font-size: 2rem;
-          }
-
-          .blog-post-excerpt {
-            font-size: 1.125rem;
-          }
-
-          .blog-post-content {
-            font-size: 1rem;
-          }
-        }
-      `}</style>
     </>
   );
 }
