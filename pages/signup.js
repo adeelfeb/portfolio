@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Layout from '../components/Layout';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 function formatErrorMessage(payload, fallback) {
   if (!payload) return fallback;
@@ -24,6 +25,46 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if user is already authenticated and redirect to dashboard
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        // Check if token exists in localStorage
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        
+        // Call /api/auth/me to verify authentication (checks both cookies and token)
+        const res = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include', // Include cookies
+          headers: token ? {
+            'Authorization': `Bearer ${token}`,
+          } : {},
+        });
+
+        const data = await res.json();
+        
+        // If user is authenticated, redirect to dashboard
+        if (data.success && data.data && data.data.user) {
+          // Store token in localStorage if provided by API
+          if (data.data.token && typeof window !== 'undefined') {
+            localStorage.setItem('token', data.data.token);
+          }
+          // Redirect to dashboard
+          router.replace('/dashboard');
+          return;
+        }
+      } catch (err) {
+        // If check fails, just show signup page
+        console.log('[Signup] Auth check failed, showing signup page:', err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    }
+
+    checkAuth();
+  }, [router]);
 
   const passwordHint = password && password.length < 6 ? 'Use at least 6 characters.' : '';
 
@@ -101,8 +142,27 @@ export default function SignupPage() {
     }
   }
 
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="auth-page">
+        <Header />
+        <div className="auth-shell">
+          <div className="auth-card">
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div className="spinner" style={{ margin: '0 auto 1rem' }} aria-hidden="true" />
+              <p style={{ color: '#4b5d73' }}>Checking authentication...</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <Layout>
+    <div className="auth-page">
+      <Header />
       <div className="auth-shell">
         <div className="auth-card">
           <header className="card-header">
@@ -179,11 +239,17 @@ export default function SignupPage() {
       </div>
 
       <style jsx>{`
+        .auth-page {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
         .auth-shell {
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 6rem 1.5rem 4rem;
+          flex: 1;
           background: radial-gradient(circle at top, rgba(0, 176, 117, 0.12), transparent 55%),
             radial-gradient(circle at bottom, rgba(0, 112, 243, 0.14), transparent 45%);
         }
@@ -364,7 +430,8 @@ export default function SignupPage() {
           }
         }
       `}</style>
-    </Layout>
+      <Footer />
+    </div>
   );
 }
 
