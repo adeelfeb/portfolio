@@ -2,36 +2,96 @@
 
 import { motion } from 'framer-motion'
 import { ArrowRight, Code } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import Script from 'next/script'
 
 export default function Hero() {
+  const vantaRef = useRef(null)
+  const vantaEffect = useRef(null)
+
+  useEffect(() => {
+    // Initialize Vanta effect after scripts are loaded
+    const initVanta = () => {
+      if (typeof window !== 'undefined' && window.VANTA && vantaRef.current && !vantaEffect.current) {
+        vantaEffect.current = window.VANTA.GLOBE({
+          el: vantaRef.current,
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200.00,
+          minWidth: 200.00,
+          scale: 1.00,
+          scaleMobile: 1.00,
+          color: 0xffffff,
+          size: 1.30,
+          backgroundColor: 0x0
+        })
+      }
+    }
+
+    let checkInterval = null
+
+    // Check if scripts are already loaded
+    if (typeof window !== 'undefined' && window.VANTA) {
+      initVanta()
+    } else {
+      // Wait for scripts to load
+      checkInterval = setInterval(() => {
+        if (typeof window !== 'undefined' && window.VANTA) {
+          initVanta()
+          if (checkInterval) {
+            clearInterval(checkInterval)
+            checkInterval = null
+          }
+        }
+      }, 100)
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => {
+        if (checkInterval) {
+          clearInterval(checkInterval)
+          checkInterval = null
+        }
+      }, 10000)
+    }
+
+    // Cleanup function
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval)
+      }
+      if (vantaEffect.current) {
+        vantaEffect.current.destroy()
+        vantaEffect.current = null
+      }
+    }
+  }, [])
+
   return (
-    <section id="home" className="relative min-h-[65vh] flex items-center justify-center pt-8 md:pt-12 bg-white overflow-hidden">
-      {/* Web Development Themed Background */}
-      <div className="absolute inset-0 overflow-hidden opacity-5">
-        {/* Grid pattern like code editor */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
-        {/* Code-like brackets and symbols */}
-        <div className="absolute top-20 left-10 text-6xl font-mono text-black/10 transform rotate-12">{"{"}</div>
-        <div className="absolute top-40 right-20 text-5xl font-mono text-black/10 transform -rotate-12">{"}"}</div>
-        <div className="absolute bottom-32 left-1/4 text-4xl font-mono text-black/10">{"<"}</div>
-        <div className="absolute bottom-20 right-1/3 text-4xl font-mono text-black/10">{">"}</div>
-        <div className="absolute top-1/3 right-1/4 text-3xl font-mono text-black/10">{"</"}</div>
-        {/* Subtle geometric shapes */}
-        <div className="absolute top-1/4 left-1/3 w-64 h-64 border-2 border-black/5 rounded-lg transform rotate-45" />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 border-2 border-black/5 rounded-full" />
-      </div>
-      
-      {/* Subtle gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 via-white to-gray-50/30 pointer-events-none" />
+    <>
+      {/* Load Vanta.js scripts with Next.js Script component for optimal performance */}
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          // After Three.js loads, load Vanta Globe
+          if (typeof window !== 'undefined' && !window.VANTA) {
+            const script = document.createElement('script')
+            script.src = 'https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js'
+            script.onload = () => {
+              // Vanta will be initialized by useEffect when it detects window.VANTA
+            }
+            document.body.appendChild(script)
+          }
+        }}
+      />
+
+      <section id="home" className="relative min-h-[65vh] flex items-center justify-center pt-8 md:pt-12 bg-black overflow-hidden">
+        {/* Vanta.js Globe Background */}
+        <div ref={vantaRef} className="absolute inset-0 w-full h-full" />
+        
+        {/* Subtle overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 pointer-events-none z-0" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center">
@@ -42,7 +102,7 @@ export default function Hero() {
             transition={{ duration: 0.6 }}
             className="mb-6 flex justify-center"
           >
-            <div className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+            <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-2xl shadow-blue-500/30">
               <Code className="w-12 h-12 text-white" />
             </div>
           </motion.div>
@@ -52,10 +112,10 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-6 leading-tight"
+            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-tight drop-shadow-lg"
           >
             Turn Your Vision Into a{' '}
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
               Powerful Digital Reality
             </span>
           </motion.h1>
@@ -65,9 +125,9 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="text-lg md:text-xl lg:text-2xl text-gray-700 max-w-4xl mx-auto mb-8 leading-relaxed"
+            className="text-lg md:text-xl lg:text-2xl text-gray-200 max-w-4xl mx-auto mb-8 leading-relaxed drop-shadow-md"
           >
-            We provide expert <strong className="text-gray-900">Full-Stack Website Development Services</strong> for ambitious startups and growing businesses. From lightning-fast <strong className="text-blue-600">Next.js</strong> applications to robust <strong className="text-purple-600">MERN Stack</strong> platforms, we build the technology your business needs to scale.
+            We provide expert <strong className="text-white">Full-Stack Website Development Services</strong> for ambitious startups and growing businesses. From lightning-fast <strong className="text-blue-400">Next.js</strong> applications to robust <strong className="text-purple-400">MERN Stack</strong> platforms, we build the technology your business needs to scale.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -90,7 +150,7 @@ export default function Hero() {
               href="https://www.fiverr.com/s/EgQz3ey"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg border-2 border-gray-300 hover:border-gray-400 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer"
+              className="bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-full font-semibold text-lg border-2 border-white/30 hover:bg-white/20 hover:border-white/50 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
             >
               View Our Work
             </a>
@@ -103,17 +163,18 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1 }}
-        className="absolute bottom-6 left-1/2 transform -translate-x-1/2"
+        className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10"
       >
-        <div className="w-6 h-10 border-2 border-gray-400/40 rounded-full flex justify-center">
+        <div className="w-6 h-10 border-2 border-white/40 rounded-full flex justify-center">
           <motion.div
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-1.5 h-1.5 bg-gray-600/60 rounded-full mt-2"
+            className="w-1.5 h-1.5 bg-white/70 rounded-full mt-2"
           />
         </div>
       </motion.div>
     </section>
+    </>
   )
 }
 
