@@ -143,7 +143,7 @@
 }
 
 .grid {
-  --ag-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ag-font-family: var(--font-poppins), 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --ag-font-size: 0.95rem;
   --ag-foreground-color: #0f172a;
   --ag-secondary-foreground-color: #475569;
