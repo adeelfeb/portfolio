@@ -1,31 +1,25 @@
-# Clean Build Script for Windows PowerShell
-# Removes all build artifacts and caches
-
-Write-Host "Cleaning build artifacts..." -ForegroundColor Yellow
+# Clean Next.js build cache and artifacts
+Write-Host "Cleaning Next.js build cache..." -ForegroundColor Yellow
 
 # Remove .next directory
-if (Test-Path .next) {
-    Remove-Item -Recurse -Force .next
+if (Test-Path ".next") {
+    Remove-Item -Recurse -Force ".next"
     Write-Host "✓ Removed .next directory" -ForegroundColor Green
 } else {
-    Write-Host "✓ .next directory doesn't exist" -ForegroundColor Green
+    Write-Host "✓ .next directory not found" -ForegroundColor Gray
 }
 
-# Remove .webpack directory
-if (Test-Path .webpack) {
-    Remove-Item -Recurse -Force .webpack
-    Write-Host "✓ Removed .webpack directory" -ForegroundColor Green
-} else {
-    Write-Host "✓ .webpack directory doesn't exist" -ForegroundColor Green
+# Remove node_modules/.cache if it exists
+if (Test-Path "node_modules\.cache") {
+    Remove-Item -Recurse -Force "node_modules\.cache"
+    Write-Host "✓ Removed node_modules/.cache" -ForegroundColor Green
 }
 
-# Remove node_modules cache
-if (Test-Path node_modules\.cache) {
-    Remove-Item -Recurse -Force node_modules\.cache
-    Write-Host "✓ Removed node_modules cache" -ForegroundColor Green
-} else {
-    Write-Host "✓ No node_modules cache found" -ForegroundColor Green
+# Remove any build artifacts
+if (Test-Path "out") {
+    Remove-Item -Recurse -Force "out"
+    Write-Host "✓ Removed out directory" -ForegroundColor Green
 }
 
-Write-Host "`nBuild cleanup complete! You can now run 'npm run dev' or 'npm run build'" -ForegroundColor Cyan
-
+Write-Host "`nBuild cache cleaned successfully!" -ForegroundColor Green
+Write-Host "You can now run 'npm run dev' or 'npm run build' again." -ForegroundColor Cyan

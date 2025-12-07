@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '../components/designndev/Navbar';
 import Footer from '../components/designndev/Footer';
+import styles from '../styles/Blogs.module.css';
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState([]);
@@ -81,6 +82,32 @@ export default function BlogsPage() {
     }
   };
 
+  // Generate structured data for SEO
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Design n Dev Blog',
+    description: 'Latest articles and insights about web development, Next.js, MERN Stack, and custom web solutions',
+    url: 'https://designndev.com/blogs',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Design n Dev',
+      url: 'https://designndev.com',
+    },
+    blogPost: blogs.map((blog) => ({
+      '@type': 'BlogPosting',
+      headline: blog.title,
+      description: blog.excerpt,
+      image: blog.featuredImage,
+      datePublished: blog.publishedAt,
+      author: {
+        '@type': 'Person',
+        name: blog.authorName,
+      },
+      url: `https://designndev.com/blogs/${blog.slug}`,
+    })),
+  };
+
   return (
     <>
       <Head>
@@ -93,90 +120,132 @@ export default function BlogsPage() {
           name="keywords" 
           content="web development blog, Next.js articles, MERN stack blog, web development tips, startup development, custom web solutions" 
         />
-        <meta property="og:title" content="Blog | Design n Dev" />
+        <meta property="og:title" content="Blog | Design n Dev - Latest Articles & Insights" />
         <meta 
           property="og:description" 
-          content="Read our latest blog posts and articles about web development and technology." 
+          content="Read our latest blog posts and articles about web development, Next.js, MERN Stack, and custom web solutions." 
         />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://designndev.com/blogs" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Blog | Design n Dev" />
+        <meta name="twitter:description" content="Latest articles and insights about web development and technology" />
         <link rel="canonical" href="https://designndev.com/blogs" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </Head>
-      <div className="min-h-screen bg-white">
+      <div className={styles.blogsPage}>
         <Navbar />
-        <main className="pt-24 pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <header className="text-center mb-12">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Our Blog</h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">Discover our latest articles and insights</p>
-            </header>
+        <main>
+          {/* Hero Section */}
+          <section className={styles.blogsHero}>
+            <div className={styles.blogsHeroContent}>
+              <h1 className={styles.blogsHeroTitle}>Our Blog</h1>
+              <p className={styles.blogsHeroSubtitle}>
+                Discover our latest articles and insights about web development, technology trends, and best practices
+              </p>
+            </div>
+          </section>
 
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <input
-                type="text"
-                placeholder="Search blogs..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 transition-colors"
-              />
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 transition-colors"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+            <div className={styles.blogsFilters}>
+              <div className={styles.blogsFiltersRow}>
+                <input
+                  type="text"
+                  placeholder="Search blogs..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className={styles.blogsSearchInput}
+                  aria-label="Search blogs"
+                />
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className={styles.blogsCategorySelect}
+                  aria-label="Filter by category"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Blog Grid */}
             {isLoading ? (
-              <div className="text-center py-16 text-gray-600">Loading blogs...</div>
+              <div className={styles.blogsLoading}>
+                <p>Loading blogs...</p>
+              </div>
             ) : error ? (
-              <div className="text-center py-16 text-red-600">{error}</div>
+              <div className={styles.blogsError}>
+                <p>{error}</p>
+              </div>
             ) : blogs.length === 0 ? (
-              <div className="text-center py-16 text-gray-600">No blogs found</div>
+              <div className={styles.blogsEmpty}>
+                <h2 className={styles.blogsEmptyTitle}>No blogs found</h2>
+                <p className={styles.blogsEmptyText}>
+                  {filters.search || filters.category
+                    ? 'Try adjusting your filters to see more results.'
+                    : 'Check back soon for new articles!'}
+                </p>
+              </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <div className={styles.blogsGrid}>
                   {blogs.map((blog) => (
-                    <article key={blog.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                      <Link href={`/blogs/${blog.slug}`}>
+                    <article key={blog.id} className={styles.blogCard} itemScope itemType="https://schema.org/BlogPosting">
+                      <Link href={`/blogs/${blog.slug}`} aria-label={`Read ${blog.title}`}>
                         {blog.featuredImage && (
-                          <div className="relative h-64 overflow-hidden bg-gray-100">
+                          <div className={styles.blogCardImageWrapper}>
                             <img
                               src={blog.featuredImage}
                               alt={blog.title}
-                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                              className={styles.blogCardImage}
+                              loading="lazy"
+                              itemProp="image"
                               onError={(e) => {
                                 e.target.style.display = 'none';
                               }}
                             />
-                          </div>
-                        )}
-                        <div className="p-6">
-                          <div className="flex items-center gap-2 mb-3 flex-wrap">
-                            <span className="text-blue-600 text-sm font-semibold uppercase tracking-wide">
+                            <span className={styles.blogCardCategory} itemProp="articleSection">
                               {blog.category}
                             </span>
+                          </div>
+                        )}
+                        <div className={styles.blogCardContent}>
+                          <div className={styles.blogCardMeta}>
                             {blog.publishedAt && (
-                              <span className="text-gray-500 text-sm">
+                              <time className={styles.blogCardDate} dateTime={blog.publishedAt} itemProp="datePublished">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
                                 {formatDate(blog.publishedAt)}
-                              </span>
+                              </time>
                             )}
                           </div>
-                          <h2 className="text-2xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
+                          <h2 className={styles.blogCardTitle} itemProp="headline">
                             {blog.title}
                           </h2>
-                          <p className="text-gray-600 line-clamp-3 mb-4">{blog.excerpt}</p>
-                          <div className="flex justify-between items-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-                            <span>By {blog.authorName}</span>
+                          <p className={styles.blogCardExcerpt} itemProp="description">
+                            {blog.excerpt}
+                          </p>
+                          <div className={styles.blogCardFooter}>
+                            <span className={styles.blogCardAuthor} itemProp="author" itemScope itemType="https://schema.org/Person">
+                              <span itemProp="name">By {blog.authorName}</span>
+                            </span>
                             {blog.readingTime && (
-                              <span>{blog.readingTime} min read</span>
+                              <span className={styles.blogCardReadingTime}>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {blog.readingTime} min read
+                              </span>
                             )}
                           </div>
                         </div>
@@ -187,25 +256,27 @@ export default function BlogsPage() {
 
                 {/* Pagination */}
                 {pagination.pages > 1 && (
-                  <div className="flex justify-center items-center gap-4">
+                  <nav className={styles.blogsPagination} aria-label="Blog pagination">
                     <button
                       disabled={pagination.page === 1}
                       onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                      className="px-6 py-2 border-2 border-gray-200 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600"
+                      className={styles.blogsPaginationButton}
+                      aria-label="Previous page"
                     >
                       Previous
                     </button>
-                    <span className="text-gray-700">
+                    <span className={styles.blogsPaginationInfo}>
                       Page {pagination.page} of {pagination.pages}
                     </span>
                     <button
                       disabled={pagination.page === pagination.pages}
                       onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                      className="px-6 py-2 border-2 border-gray-200 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600"
+                      className={styles.blogsPaginationButton}
+                      aria-label="Next page"
                     >
                       Next
                     </button>
-                  </div>
+                  </nav>
                 )}
               </>
             )}

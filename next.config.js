@@ -2,12 +2,20 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Ensure dynamic routes are handled at runtime, not during build
+  // Dynamic routes with getServerSideProps will be server-rendered
+  
   // Configure output file tracing to prevent .nft.json errors
   // Exclude all files from tracing since we're not using serverless deployment
   outputFileTracingExcludes: {
     '*': [
       'node_modules/**/*',
     ],
+  },
+  
+  // Generate static pages only for non-dynamic routes
+  generateBuildId: async () => {
+    return 'build-' + Date.now();
   },
 
   // Build optimizations for faster builds

@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import Head from 'next/head';
+import Link from 'next/link';
 import Navbar from '../../components/designndev/Navbar';
 import Footer from '../../components/designndev/Footer';
+import styles from '../../styles/Blogs.module.css';
+
+// Disable static generation for this dynamic route
+export async function getServerSideProps(context) {
+  // Return empty props to let the page handle client-side rendering
+  // This prevents build-time prerendering errors
+  return {
+    props: {},
+  };
+}
 
 export default function BlogPostPage() {
   const router = useRouter();
@@ -52,17 +63,45 @@ export default function BlogPostPage() {
     }
   };
 
+  // Generate structured data for SEO
+  const structuredData = blog ? {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: blog.title,
+    description: blog.metaDescription || blog.excerpt,
+    image: blog.featuredImage || blog.ogImage,
+    datePublished: blog.publishedAt,
+    dateModified: blog.updatedAt || blog.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: blog.authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Design n Dev',
+      url: 'https://designndev.com',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://designndev.com/blogs/${blog.slug}`,
+    },
+    articleSection: blog.category,
+    keywords: blog.metaKeywords?.join(', ') || blog.category,
+  } : null;
+
   if (isLoading) {
     return (
       <>
         <Head>
           <title>Loading... | Design n Dev</title>
         </Head>
-        <div className="min-h-screen bg-white">
+        <div className={styles.blogDetailPage}>
           <Navbar />
           <main className="pt-24 pb-16">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center py-16 text-gray-600">Loading blog post...</div>
+              <div className={styles.blogsLoading}>
+                <p>Loading blog post...</p>
+              </div>
             </div>
           </main>
           <Footer />
@@ -76,15 +115,21 @@ export default function BlogPostPage() {
       <>
         <Head>
           <title>Blog Not Found | Design n Dev</title>
+          <meta name="robots" content="noindex" />
         </Head>
-        <div className="min-h-screen bg-white">
+        <div className={styles.blogDetailPage}>
           <Navbar />
           <main className="pt-24 pb-16">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center py-16">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">Blog Not Found</h1>
-                <p className="text-gray-600 mb-8">{error || 'The blog post you are looking for does not exist.'}</p>
-                <a href="/blogs" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Blogs</a>
+              <div className={styles.blogsError}>
+                <h1 className="text-3xl font-bold mb-4">Blog Not Found</h1>
+                <p className="mb-8">{error || 'The blog post you are looking for does not exist.'}</p>
+                <Link href="/blogs" className={styles.blogDetailBackLink}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Blogs
+                </Link>
               </div>
             </div>
           </main>
@@ -102,58 +147,106 @@ export default function BlogPostPage() {
         {blog.metaKeywords && blog.metaKeywords.length > 0 && (
           <meta name="keywords" content={blog.metaKeywords.join(', ')} />
         )}
-        {blog.ogImage && (
-          <>
-            <meta property="og:image" content={blog.ogImage} />
-            <meta property="og:title" content={blog.metaTitle || blog.title} />
-            <meta property="og:description" content={blog.metaDescription || blog.excerpt} />
-          </>
+        <meta property="og:title" content={blog.metaTitle || blog.title} />
+        <meta property="og:description" content={blog.metaDescription || blog.excerpt} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://designndev.com/blogs/${blog.slug}`} />
+        {blog.ogImage && <meta property="og:image" content={blog.ogImage} />}
+        {blog.featuredImage && !blog.ogImage && <meta property="og:image" content={blog.featuredImage} />}
+        <meta property="article:published_time" content={blog.publishedAt} />
+        {blog.updatedAt && <meta property="article:modified_time" content={blog.updatedAt} />}
+        <meta property="article:author" content={blog.authorName} />
+        <meta property="article:section" content={blog.category} />
+        {blog.tags && blog.tags.length > 0 && (
+          blog.tags.map((tag) => (
+            <meta key={tag} property="article:tag" content={tag} />
+          ))
         )}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={blog.metaTitle || blog.title} />
+        <meta name="twitter:description" content={blog.metaDescription || blog.excerpt} />
+        {blog.ogImage && <meta name="twitter:image" content={blog.ogImage} />}
+        {blog.featuredImage && !blog.ogImage && <meta name="twitter:image" content={blog.featuredImage} />}
         <link rel="canonical" href={`https://designndev.com/blogs/${blog.slug}`} />
+        {structuredData && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          />
+        )}
       </Head>
-      <div className="min-h-screen bg-white">
+      <div className={styles.blogDetailPage}>
         <Navbar />
         <main className="pt-24 pb-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <article className="bg-white rounded-xl shadow-lg overflow-hidden p-8 md:p-12">
-              <header className="mb-8">
-                <div className="flex items-center gap-4 mb-4 flex-wrap">
-                  <span className="text-blue-600 text-sm font-semibold uppercase tracking-wide">
-                    {blog.category}
-                  </span>
+            {/* Breadcrumb */}
+            <nav className={styles.blogDetailBreadcrumb} aria-label="Breadcrumb">
+              <Link href="/blogs" className={styles.blogDetailBreadcrumbLink}>
+                Blog
+              </Link>
+              <span className="mx-2">/</span>
+              <span>{blog.title}</span>
+            </nav>
+
+            <article className={styles.blogDetailArticle} itemScope itemType="https://schema.org/BlogPosting">
+              <header className={styles.blogDetailHeader}>
+                <span className={styles.blogDetailCategory} itemProp="articleSection">
+                  {blog.category}
+                </span>
+                <div className={styles.blogDetailMeta}>
                   {blog.publishedAt && (
-                    <span className="text-gray-500 text-sm">{formatDate(blog.publishedAt)}</span>
+                    <time dateTime={blog.publishedAt} itemProp="datePublished">
+                      {formatDate(blog.publishedAt)}
+                    </time>
                   )}
                   {blog.readingTime && (
-                    <span className="text-gray-500 text-sm">{blog.readingTime} min read</span>
+                    <span>
+                      <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {blog.readingTime} min read
+                    </span>
                   )}
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{blog.title}</h1>
-                <p className="text-xl text-gray-600 leading-relaxed mb-4">{blog.excerpt}</p>
-                <div className="text-gray-500 text-sm">
-                  <span>By {blog.authorName}</span>
+                <h1 className={styles.blogDetailTitle} itemProp="headline">
+                  {blog.title}
+                </h1>
+                <p className={styles.blogDetailExcerpt} itemProp="description">
+                  {blog.excerpt}
+                </p>
+                <div className={styles.blogDetailAuthor} itemProp="author" itemScope itemType="https://schema.org/Person">
+                  <span itemProp="name">By {blog.authorName}</span>
                 </div>
               </header>
 
               {blog.featuredImage && (
-                <div className="mb-8 rounded-lg overflow-hidden">
-                  <img src={blog.featuredImage} alt={blog.title} className="w-full h-auto" />
+                <div className={styles.blogDetailImageWrapper}>
+                  <img 
+                    src={blog.featuredImage} 
+                    alt={blog.title} 
+                    className={styles.blogDetailImage}
+                    itemProp="image"
+                    loading="eager"
+                  />
                 </div>
               )}
 
               {blog.content && (
-                <div
-                  className="prose prose-lg max-w-none mb-8 text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: (blog.content || '').replace(/\n/g, '<br />') }}
-                />
+                <div className={styles.blogDetailContent}>
+                  <div
+                    className={styles.blogDetailContentBody}
+                    itemProp="articleBody"
+                    dangerouslySetInnerHTML={{ __html: (blog.content || '').replace(/\n/g, '<br />') }}
+                  />
+                </div>
               )}
 
               {blog.tags && blog.tags.length > 0 && (
-                <div className="pt-8 border-t border-gray-200 mb-8">
-                  <div className="flex flex-wrap gap-2">
-                    <strong className="text-gray-900">Tags: </strong>
-                    {blog.tags.map((tag, index) => (
-                      <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                <div className={styles.blogDetailTags}>
+                  <div className={styles.blogDetailTagsTitle}>Tags</div>
+                  <div className={styles.blogDetailTagsList}>
+                    {blog.tags.map((tag) => (
+                      <span key={tag} className={styles.blogDetailTag} itemProp="keywords">
                         {tag}
                       </span>
                     ))}
@@ -161,14 +254,14 @@ export default function BlogPostPage() {
                 </div>
               )}
 
-              <div className="pt-8 border-t border-gray-200">
-                <a href="/blogs" className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2">
+              <footer className={styles.blogDetailFooter}>
+                <Link href="/blogs" className={styles.blogDetailBackLink}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                   Back to Blogs
-                </a>
-              </div>
+                </Link>
+              </footer>
             </article>
           </div>
         </main>
