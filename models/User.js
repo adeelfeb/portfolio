@@ -12,6 +12,10 @@ const UserSchema = new mongoose.Schema(
      * Enables future migration to managed roles without breaking existing data.
      */
     roleRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', default: null },
+    // Email verification fields
+    isEmailVerified: { type: Boolean, default: false, index: true },
+    otp: { type: String, default: null },
+    otpExpires: { type: Date, default: null },
   },
   {
     timestamps: true,

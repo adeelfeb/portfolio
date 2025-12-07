@@ -10,5 +10,13 @@ export {
   calculateProofScorePlaceholder,
   normalizeFundingDataPlaceholder,
 } from './proofscore';
+export { sendEmail, sendOTPEmail, sendWelcomeEmail } from './email';
+export {
+  generateOTP,
+  generateOTPExpiry,
+  isOTPExpired,
+  verifyOTP,
+  getOTPExpiryMinutes,
+} from './otp';
 
 

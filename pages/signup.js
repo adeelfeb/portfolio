@@ -6,16 +6,14 @@ import Footer from '../components/designndev/Footer';
 
 function formatErrorMessage(payload, fallback) {
   if (!payload) return fallback;
-  const detail =
-    typeof payload.error === 'string'
-      ? payload.error
-      : Array.isArray(payload.error)
-      ? payload.error.join(', ')
-      : '';
-  if (detail) {
-    return `${payload.message || fallback}: ${detail}`;
+  
+  // Always use the message from the API if available
+  // Don't expose error details to users
+  if (payload.message) {
+    return payload.message;
   }
-  return payload.message || fallback;
+  
+  return fallback;
 }
 
 export default function SignupPage() {
@@ -95,49 +93,61 @@ export default function SignupPage() {
         credentials: 'include', // Include cookies for session management
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
       });
-      console.log('[Signup] Response received', {
-        status: res.status,
-        ok: res.ok,
-        redirected: res.redirected,
-        url: res.url,
-      });
       
       const text = await res.text();
-      console.log('[Signup] Raw response body', text);
       let data = {};
+      
+      // Safely parse JSON response
       if (text && text.trim()) {
         try {
           data = JSON.parse(text);
         } catch (parseErr) {
-          // Invalid JSON response
-          throw new Error("We couldn't create your account. Please try again.");
+          // Invalid JSON response - show generic error
+          setError("We couldn't create your account. Please try again.");
+          setLoading(false);
+          return;
         }
       }
       
+      // Handle API errors gracefully
       if (!res.ok || !data.success) {
-        console.warn('[Signup] API reported failure', {
-          status: res.status,
-          payload: data,
-        });
-        throw new Error(formatErrorMessage(data, "We couldn't create your account. Please try again."));
+        // Extract user-friendly error message
+        const errorMessage = formatErrorMessage(data, "We couldn't create your account. Please try again.");
+        setError(errorMessage);
+        setLoading(false);
+        return;
       }
       
-      // Store token in localStorage for API requests
+      // Success - check if email verification is required
+      if (data.data && data.data.message) {
+        // If email verification is required, show success message
+        if (data.data.message.includes('verification') || data.data.message.includes('check your email')) {
+          setError(''); // Clear any previous errors
+          // Show success message - user needs to verify email
+          setError('✓ Account created! Please check your email for the verification code to complete registration.');
+          // Don't redirect - let user see the message and check their email
+          return;
+        }
+      }
+      
+      // Store token in localStorage for API requests (if provided)
       if (data.data && data.data.token) {
         localStorage.setItem('token', data.data.token);
       }
       
       // Small delay to ensure cookie is set before redirect
       await new Promise(resolve => setTimeout(resolve, 150));
-      console.log('[Signup] Cookie delay complete, navigating to dashboard');
-      // Use replace instead of push to avoid adding to browser history
-      await router.replace('/dashboard');
-      console.log('[Signup] Navigation to dashboard requested');
+      
+      // Redirect to dashboard only if user is fully authenticated
+      if (data.data && data.data.user) {
+        await router.replace('/dashboard');
+      }
     } catch (err) {
+      // Catch any unexpected errors (network errors, etc.)
       console.error('[Signup] Error during signup flow', err);
-      setError(err.message || "We couldn't create your account. Please try again.");
+      // Show generic error message to user
+      setError("We couldn't create your account. Please check your connection and try again.");
     } finally {
-      console.log('[Signup] Resetting loading state');
       setLoading(false);
     }
   }
@@ -171,7 +181,11 @@ export default function SignupPage() {
           </header>
 
           {error && (
-            <div className="alert" role="alert" aria-live="assertive">
+            <div 
+              className={`alert ${error.startsWith('✓') ? 'alert-success' : ''}`} 
+              role="alert" 
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}
@@ -283,6 +297,16 @@ export default function SignupPage() {
           color: #b91c1c;
           border: 1px solid rgba(220, 38, 38, 0.22);
           font-weight: 500;
+        }
+        .alert-success {
+          background: rgba(16, 185, 129, 0.08);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.22);
+        }
+        .alert-success {
+          background: rgba(16, 185, 129, 0.08);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.22);
         }
         .form {
           display: grid;
