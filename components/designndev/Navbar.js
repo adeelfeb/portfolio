@@ -90,8 +90,7 @@ export default function Navbar() {
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/services', label: 'Services' },
-    { href: '/tech-stack', label: 'Tech Stack' },
-    { href: '/process', label: 'Process' },
+    { href: '/new-year-resolution', label: 'New Year Resolution', isSpecial: true },
     { href: '/blogs', label: 'Blog' },
     { href: '/portfolio', label: 'Portfolio' },
     { href: '/contact', label: 'Contact' },
@@ -135,7 +134,9 @@ export default function Navbar() {
                     className={`px-3 py-2 text-sm font-medium transition-all duration-200 relative no-underline ${
                       isActive(item.href)
                         ? 'text-blue-600 font-semibold'
-                        : 'text-gray-700 hover:text-blue-600'
+                        : item.isSpecial 
+                          ? 'text-purple-600 font-semibold hover:text-blue-600 bg-purple-50 rounded-lg hover:bg-purple-100'
+                          : 'text-gray-700 hover:text-blue-600'
                     }`}
                   >
                     <span className="relative z-10">{item.label}</span>
@@ -157,7 +158,9 @@ export default function Navbar() {
                     className={`px-2 py-2 text-xs font-medium transition-all duration-200 relative no-underline ${
                       isActive(item.href)
                         ? 'text-blue-600 font-semibold'
-                        : 'text-gray-700 hover:text-blue-600'
+                        : item.isSpecial 
+                          ? 'text-purple-600 font-semibold hover:text-blue-600 bg-purple-50 rounded-lg hover:bg-purple-100'
+                          : 'text-gray-700 hover:text-blue-600'
                     }`}
                   >
                     <span className="relative z-10">{item.label}</span>
@@ -245,7 +248,9 @@ export default function Navbar() {
                     className={`block px-3 py-2 text-base font-medium transition-all duration-200 rounded-lg no-underline ${
                       isActive(item.href)
                         ? 'text-blue-600 font-semibold bg-blue-50'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        : item.isSpecial 
+                          ? 'text-purple-600 font-semibold bg-purple-50 hover:bg-purple-100'
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >

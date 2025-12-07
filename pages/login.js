@@ -1,8 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Navbar from '../components/designndev/Navbar';
+import Footer from '../components/designndev/Footer';
 
 function formatErrorMessage(payload, fallback) {
   if (!payload) return fallback;
@@ -26,6 +26,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Get redirect destination from query params
+  const redirectTo = router.query.redirect || '/dashboard';
+
   // Check if user is already authenticated and redirect to dashboard
   useEffect(() => {
     async function checkAuth() {
@@ -44,14 +47,14 @@ export default function LoginPage() {
 
         const data = await res.json();
         
-        // If user is authenticated, redirect to dashboard
+        // If user is authenticated, redirect to dashboard or specified redirect
         if (data.success && data.data && data.data.user) {
           // Store token in localStorage if provided by API
           if (data.data.token && typeof window !== 'undefined') {
             localStorage.setItem('token', data.data.token);
           }
-          // Redirect to dashboard
-          router.replace('/dashboard');
+          // Redirect to dashboard or specified redirect destination
+          router.replace(redirectTo);
           return;
         }
       } catch (err) {
@@ -63,7 +66,7 @@ export default function LoginPage() {
     }
 
     checkAuth();
-  }, [router]);
+  }, [router, redirectTo]);
 
   const isDisabled = useMemo(() => {
     return loading || !email.trim() || password.length < 6;
@@ -109,7 +112,9 @@ export default function LoginPage() {
       // Small delay to ensure cookie is set before redirect
       await new Promise(resolve => setTimeout(resolve, 150));
       // Use replace instead of push to avoid adding to browser history
-      await router.replace('/dashboard');
+      // Redirect to dashboard or specified redirect destination
+      const redirectTo = router.query.redirect || '/dashboard';
+      await router.replace(redirectTo);
     } catch (err) {
       console.error('[Login] Error during sign-in flow', err);
       setError(err.message || "We couldn't sign you in with those credentials.");
@@ -122,7 +127,7 @@ export default function LoginPage() {
   if (checkingAuth) {
     return (
       <div className="auth-page">
-        <Header />
+        <Navbar />
         <div className="auth-shell">
           <div className="auth-card">
             <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -138,7 +143,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <Header />
+      <Navbar />
       <div className="auth-shell">
         <div className="auth-card">
           <header className="card-header">
@@ -209,7 +214,7 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 6rem 1.5rem 4rem;
+          padding: 8rem 1.5rem 4rem;
           flex: 1;
           background: radial-gradient(circle at top, rgba(0, 112, 243, 0.15), transparent 55%),
             radial-gradient(circle at bottom, rgba(35, 159, 255, 0.12), transparent 40%);
@@ -338,7 +343,7 @@ export default function LoginPage() {
         }
         @media (max-width: 600px) {
           .auth-shell {
-            padding: 4rem 1rem 3rem;
+            padding: 6rem 1rem 3rem;
           }
           .auth-card {
             padding: 2rem 1.65rem;
@@ -353,7 +358,7 @@ export default function LoginPage() {
         }
         @media (max-width: 480px) {
           .auth-shell {
-            padding: 3rem 1rem 2.5rem;
+            padding: 5rem 1rem 2.5rem;
           }
           .auth-card {
             padding: 1.75rem 1.5rem;

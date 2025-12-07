@@ -1,8 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Navbar from '../components/designndev/Navbar';
+import Footer from '../components/designndev/Footer';
 
 function formatErrorMessage(payload, fallback) {
   if (!payload) return fallback;
@@ -146,7 +146,7 @@ export default function SignupPage() {
   if (checkingAuth) {
     return (
       <div className="auth-page">
-        <Header />
+        <Navbar />
         <div className="auth-shell">
           <div className="auth-card">
             <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -162,7 +162,7 @@ export default function SignupPage() {
 
   return (
     <div className="auth-page">
-      <Header />
+      <Navbar />
       <div className="auth-shell">
         <div className="auth-card">
           <header className="card-header">
@@ -248,7 +248,7 @@ export default function SignupPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 6rem 1.5rem 4rem;
+          padding: 8rem 1.5rem 4rem;
           flex: 1;
           background: radial-gradient(circle at top, rgba(0, 176, 117, 0.12), transparent 55%),
             radial-gradient(circle at bottom, rgba(0, 112, 243, 0.14), transparent 45%);
@@ -381,7 +381,7 @@ export default function SignupPage() {
         }
         @media (max-width: 600px) {
           .auth-shell {
-            padding: 4rem 1rem 3rem;
+            padding: 6rem 1rem 3rem;
           }
           .auth-card {
             padding: 2.1rem 1.75rem 2rem;
@@ -396,7 +396,7 @@ export default function SignupPage() {
         }
         @media (max-width: 480px) {
           .auth-shell {
-            padding: 3rem 1rem 2.5rem;
+            padding: 5rem 1rem 2.5rem;
           }
           .auth-card {
             padding: 1.85rem 1.5rem 1.75rem;
