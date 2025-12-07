@@ -1,40 +1,91 @@
 import axios from 'axios';
+import nodemailer from 'nodemailer';
 import { env } from '../lib/config';
 import { logger } from './logger';
 
 /**
- * Email utility for sending emails via SMTP2Go API
+ * Email utility for sending emails via SMTP2Go
  * 
- * Environment variables required:
- * - SMTP2GO_API_KEY: Your SMTP2Go API key
+ * Supports both:
+ * 1. REST API (requires SMTP2GO_API_KEY)
+ * 2. SMTP Protocol (requires SMTP_USERNAME, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT)
+ * 
+ * Environment variables:
+ * - SMTP2GO_API_KEY: Your SMTP2Go API key (for REST API)
  * - SMTP2GO_FROM_EMAIL: The sender email address
  * - SMTP2GO_FROM_NAME: The sender name (optional)
+ * - SMTP_USERNAME: SMTP username (for SMTP protocol)
+ * - SMTP_PASSWORD: SMTP password (for SMTP protocol)
+ * - SMTP_HOST: SMTP host (defaults to mail.smtp2go.com)
+ * - SMTP_PORT: SMTP port (defaults to 25)
+ * - SMTP_SECURE: Use SSL/TLS (defaults to false)
  */
 
 const SMTP2GO_API_URL = 'https://api.smtp2go.com/v3/email/send';
 
 /**
- * Send an email using SMTP2Go API
- * @param {Object} options - Email options
- * @param {string|string[]} options.to - Recipient email(s)
- * @param {string} options.subject - Email subject
- * @param {string} options.htmlBody - HTML email body
- * @param {string} [options.textBody] - Plain text email body (optional)
- * @param {string} [options.from] - Sender email (defaults to SMTP2GO_FROM_EMAIL)
- * @param {string} [options.fromName] - Sender name (defaults to SMTP2GO_FROM_NAME)
- * @returns {Promise<Object>} Response from SMTP2Go API
+ * Send email using SMTP protocol (fallback when API key is not available)
  */
-export async function sendEmail({
-  to,
-  subject,
-  htmlBody,
-  textBody,
-  from,
-  fromName,
-}) {
-  const apiKey = process.env.SMTP2GO_API_KEY;
-  const defaultFrom = process.env.SMTP2GO_FROM_EMAIL;
-  const defaultFromName = process.env.SMTP2GO_FROM_NAME || 'The Server';
+async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromName }) {
+  const smtpHost = env.SMTP_HOST || 'mail.smtp2go.com';
+  const smtpPort = parseInt(env.SMTP_PORT || '25', 10);
+  const smtpUsername = env.SMTP_USERNAME;
+  const smtpPassword = env.SMTP_PASSWORD;
+  const smtpSecure = env.SMTP_SECURE || false;
+  const defaultFrom = env.SMTP2GO_FROM_EMAIL;
+  const defaultFromName = env.SMTP2GO_FROM_NAME || 'The Server';
+
+  if (!smtpUsername || !smtpPassword) {
+    throw new Error('SMTP_USERNAME and SMTP_PASSWORD are required for SMTP protocol');
+  }
+
+  if (!defaultFrom) {
+    throw new Error('SMTP2GO_FROM_EMAIL or SMTP_FROM is not configured');
+  }
+
+  // Create transporter
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure, // true for 465, false for other ports
+    auth: {
+      user: smtpUsername,
+      pass: smtpPassword,
+    },
+  });
+
+  // Normalize 'to' to array
+  const recipients = Array.isArray(to) ? to : [to];
+
+  // Send email
+  const mailOptions = {
+    from: fromName 
+      ? `${fromName} <${from || defaultFrom}>` 
+      : (from || defaultFrom),
+    to: recipients.join(', '),
+    subject: subject,
+    html: htmlBody,
+    text: textBody || htmlBody.replace(/<[^>]*>/g, ''), // Strip HTML if no text body
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  
+  logger.info(`Email sent via SMTP to: ${recipients.join(', ')}, Message ID: ${info.messageId}`);
+  
+  return {
+    success: true,
+    messageId: info.messageId,
+    data: info,
+  };
+}
+
+/**
+ * Send email using SMTP2Go REST API
+ */
+async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName }) {
+  const apiKey = env.SMTP2GO_API_KEY;
+  const defaultFrom = env.SMTP2GO_FROM_EMAIL;
+  const defaultFromName = env.SMTP2GO_FROM_NAME || 'The Server';
 
   if (!apiKey) {
     throw new Error('SMTP2GO_API_KEY is not configured');
@@ -63,7 +114,7 @@ export async function sendEmail({
   };
 
   try {
-    logger.info(`Sending email to: ${recipients.join(', ')}`);
+    logger.info(`Sending email via API to: ${recipients.join(', ')}`);
     const response = await axios.post(SMTP2GO_API_URL, emailData, {
       headers: {
         'Content-Type': 'application/json',
@@ -93,7 +144,7 @@ export async function sendEmail({
 
     throw new Error('Unexpected response format from SMTP2Go');
   } catch (error) {
-    logger.error('Failed to send email:', error.response?.data || error.message);
+    logger.error('Failed to send email via API:', error.response?.data || error.message);
     
     if (error.response) {
       // SMTP2Go API error - extract meaningful error message
@@ -122,6 +173,37 @@ export async function sendEmail({
     
     throw new Error(`Failed to send email: ${error.message}`);
   }
+}
+
+export async function sendEmail({
+  to,
+  subject,
+  htmlBody,
+  textBody,
+  from,
+  fromName,
+}) {
+  // Try REST API first if API key is available
+  if (env.SMTP2GO_API_KEY) {
+    try {
+      return await sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName });
+    } catch (error) {
+      logger.warn('REST API failed, falling back to SMTP:', error.message);
+      // Fall through to SMTP if API fails
+    }
+  }
+
+  // Fall back to SMTP protocol if API key is not available or API failed
+  if (env.SMTP_USERNAME && env.SMTP_PASSWORD) {
+    return await sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromName });
+  }
+
+  // If neither method is configured, throw helpful error
+  throw new Error(
+    'Email configuration missing. Please configure either:\n' +
+    '1. SMTP2GO_API_KEY (for REST API), or\n' +
+    '2. SMTP_USERNAME and SMTP_PASSWORD (for SMTP protocol)'
+  );
 }
 
 /**

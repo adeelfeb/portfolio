@@ -2,6 +2,7 @@ import { sendEmail } from '../../../utils/email';
 import { jsonError, jsonSuccess } from '../../../lib/response';
 import { applyCors } from '../../../utils';
 import { logger } from '../../../utils/logger';
+import { env } from '../../../lib/config';
 
 /**
  * Test endpoint for email configuration
@@ -16,10 +17,10 @@ export default async function handler(req, res) {
     return jsonError(res, 405, `Method ${req.method} not allowed`);
   }
 
-  // Check if required environment variables are set
-  const apiKey = process.env.SMTP2GO_API_KEY;
-  const fromEmail = process.env.SMTP2GO_FROM_EMAIL;
-  const fromName = process.env.SMTP2GO_FROM_NAME || 'The Server';
+  // Check if required environment variables are set (using config file)
+  const apiKey = env.SMTP2GO_API_KEY;
+  const fromEmail = env.SMTP2GO_FROM_EMAIL;
+  const fromName = env.SMTP2GO_FROM_NAME || 'The Server';
 
   const missing = [];
   if (!apiKey) missing.push('SMTP2GO_API_KEY');
