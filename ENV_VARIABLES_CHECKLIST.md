@@ -2,19 +2,21 @@
 
 ## ✅ Required Environment Variables
 
-Add these to your `.env.local` file (or `.env` file):
+You need **ONE** of the following configurations in your `.env.local` file:
 
+### Option 1: SMTP Protocol (Current)
 ```env
-# ============================================
-# SMTP2Go Email Configuration (REQUIRED)
-# ============================================
+SMTP_HOST=mail.smtp2go.com
+SMTP_PORT=25
+SMTP_USERNAME=noreply@designndev.com
+SMTP_PASSWORD=your_password
+SMTP_FROM=noreply@designndev.com
+```
+
+### Option 2: SMTP2Go API
+```env
 SMTP2GO_API_KEY=your_api_key_here
 SMTP2GO_FROM_EMAIL=your-verified-email@example.com
-
-# ============================================
-# SMTP2Go Email Configuration (OPTIONAL)
-# ============================================
-SMTP2GO_FROM_NAME=Your App Name
 ```
 
 ## 📋 Quick Setup Steps

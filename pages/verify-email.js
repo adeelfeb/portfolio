@@ -18,152 +18,110 @@ function formatErrorMessage(payload, fallback) {
   return payload.message || fallback;
 }
 
-export default function LoginPage() {
+export default function VerifyEmailPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [resending, setResending] = useState(false);
+  
+  const email = router.query.email || '';
 
-  // Get redirect destination from query params
-  const redirectTo = router.query.redirect || '/dashboard';
-
-  // Check if user is already authenticated and redirect to dashboard
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        // Check if token exists in localStorage
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        
-        // Call /api/auth/me to verify authentication (checks both cookies and token)
-        const res = await fetch('/api/auth/me', {
-          method: 'GET',
-          credentials: 'include', // Include cookies
-          headers: token ? {
-            'Authorization': `Bearer ${token}`,
-          } : {},
-        });
-
-        const data = await res.json();
-        
-        // If user is authenticated, redirect to dashboard or specified redirect
-        if (data.success && data.data && data.data.user) {
-          // Store token in localStorage if provided by API
-          if (data.data.token && typeof window !== 'undefined') {
-            localStorage.setItem('token', data.data.token);
-          }
-          // Redirect to dashboard or specified redirect destination
-          router.replace(redirectTo);
-          return;
-        }
-      } catch (err) {
-        // If check fails, just show login page
-        console.log('[Login] Auth check failed, showing login page:', err);
-      } finally {
-        setCheckingAuth(false);
-      }
+    // If no email is provided, redirect back to login
+    if (router.isReady && !email) {
+      router.replace('/login');
     }
-
-    checkAuth();
-  }, [router, redirectTo]);
+  }, [router.isReady, email, router]);
 
   const isDisabled = useMemo(() => {
-    return loading || !email.trim() || password.length < 6;
-  }, [email, password, loading]);
+    return loading || !otp.trim() || otp.trim().length < 4;
+  }, [otp, loading]);
+
+  async function onResend(e) {
+    e.preventDefault();
+    if (resending || !email) return;
+    
+    setResending(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.message || 'Failed to resend code');
+      } else {
+        setSuccess('Verification code sent! Please check your email.');
+      }
+    } catch (err) {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
     if (isDisabled) return;
     setLoading(true);
     setError('');
+    setSuccess('');
     
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Include cookies for session management
-        body: JSON.stringify({ email: email.trim(), password }),
+        credentials: 'include',
+        body: JSON.stringify({ email, otp: otp.trim() }),
       });
       
       const text = await res.text();
       let data = {};
       
-      // Safely parse JSON response
       if (text && text.trim()) {
         try {
           data = JSON.parse(text);
         } catch (parseErr) {
-          // Invalid JSON response - network or server error
-          if (res.status >= 500) {
-            setError('Server error. Please try again in a moment.');
-          } else if (res.status === 0 || !res.ok) {
-            setError('Unable to connect to the server. Please check your internet connection.');
-          } else {
-            setError("We couldn't sign you in. Please try again.");
-          }
-          setLoading(false);
-          return;
+            setError("Server error. Please try again.");
+            setLoading(false);
+            return;
         }
       }
       
-      // Handle API errors gracefully
       if (!res.ok || !data.success) {
-        const errorMessage = formatErrorMessage(data, "We couldn't sign you in with those credentials.");
-        
-        // Check if email verification is required
-        if (res.status === 403 && (errorMessage.includes('verify') || errorMessage.includes('verification'))) {
-          setError(errorMessage + ' You can request a new verification code from the signup page.');
-        } else {
-          setError(errorMessage);
-        }
-        
+        setError(formatErrorMessage(data, "Verification failed"));
         setLoading(false);
         return;
       }
       
-      // Success - store token and redirect
+      // Success
+      setSuccess('Email verified successfully!');
+      
       if (data.data && data.data.token) {
         localStorage.setItem('token', data.data.token);
       }
       
-      // Small delay to ensure cookie is set before redirect
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Small delay before redirect
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Redirect to dashboard or specified redirect destination
-      const redirectTo = router.query.redirect || '/dashboard';
-      await router.replace(redirectTo);
+      router.replace('/dashboard');
+      
     } catch (err) {
-      console.error('[Login] Error during sign-in flow', err);
-      
-      // Handle network errors
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError('Unable to connect to the server. Please check your internet connection and try again.');
-      } else {
-        setError(err.message || "We couldn't sign you in. Please check your credentials and try again.");
-      }
+      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Show loading state while checking authentication
-  if (checkingAuth) {
-    return (
-      <div className="auth-page">
-        <Navbar />
-        <div className="auth-shell">
-          <div className="auth-card">
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div className="spinner" style={{ margin: '0 auto 1rem' }} aria-hidden="true" />
-              <p style={{ color: '#4b5d73' }}>Checking authentication...</p>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  if (!router.isReady) return null;
 
   return (
     <div className="auth-page">
@@ -171,8 +129,8 @@ export default function LoginPage() {
       <div className="auth-shell">
         <div className="auth-card">
           <header className="card-header">
-            <h1>Welcome back</h1>
-            <p>Sign in to access your funding intelligence dashboard.</p>
+            <h1>Verify your email</h1>
+            <p>We've sent a verification code to <strong>{email}</strong></p>
           </header>
 
           {error && (
@@ -180,48 +138,51 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+          
+          {success && (
+            <div className="alert alert-success" role="alert" aria-live="polite">
+              {success}
+            </div>
+          )}
 
           <form onSubmit={onSubmit} className="form" noValidate>
             <label className="field">
-              <span>Email</span>
+              <span>Verification Code</span>
               <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                id="login-email"
-                name="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                id="otp"
+                name="otp"
+                placeholder="Enter 6-digit code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
                 required
                 disabled={loading}
               />
             </label>
-            <label className="field">
-              <span>Password</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                id="login-password"
-                name="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                disabled={loading}
-              />
-            </label>
+            
             <button type="submit" disabled={isDisabled}>
               {loading && <span className="spinner" aria-hidden="true" />}
-              <span>{loading ? 'Signing you in…' : 'Sign In'}</span>
+              <span>{loading ? 'Verifying…' : 'Verify Email'}</span>
             </button>
+            
+            <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                <button 
+                    type="button" 
+                    onClick={onResend} 
+                    disabled={resending}
+                    className="text-btn"
+                >
+                    {resending ? 'Sending...' : 'Resend Code'}
+                </button>
+            </div>
           </form>
 
           <footer className="card-footer">
-            <span>Need an account?</span>
+            <span>Wrong email?</span>
             <Link href="/signup" className="cta-link">
-              Create one here
+              Create a new account
             </Link>
           </footer>
 
@@ -273,6 +234,11 @@ export default function LoginPage() {
           color: #b91c1c;
           border: 1px solid rgba(220, 38, 38, 0.24);
           font-weight: 500;
+        }
+        .alert-success {
+          background: rgba(16, 185, 129, 0.08);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.22);
         }
         .form {
           display: grid;
@@ -327,6 +293,19 @@ export default function LoginPage() {
           opacity: 0.72;
           box-shadow: none;
         }
+        .text-btn {
+            background: none;
+            color: #0070f3;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            box-shadow: none;
+        }
+        .text-btn:hover {
+            text-decoration: underline;
+            background: none;
+            box-shadow: none;
+            transform: none;
+        }
         .spinner {
           width: 1rem;
           height: 1rem;
@@ -378,41 +357,6 @@ export default function LoginPage() {
           }
           .card-header p {
             font-size: 0.9rem;
-          }
-        }
-        @media (max-width: 480px) {
-          .auth-shell {
-            padding: 5rem 1rem 2.5rem;
-          }
-          .auth-card {
-            padding: 1.75rem 1.5rem;
-            gap: 1.5rem;
-          }
-          .card-header h1 {
-            font-size: 1.6rem;
-          }
-          .form {
-            gap: 1.1rem;
-          }
-          input {
-            padding: 0.85rem 0.95rem;
-            font-size: 0.95rem;
-          }
-          button {
-            padding: 0.9rem 1.15rem;
-            font-size: 0.95rem;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .auth-card {
-            animation: none;
-          }
-          button,
-          input {
-            transition: none;
-          }
-          .spinner {
-            animation-duration: 1s;
           }
         }
       `}</style>

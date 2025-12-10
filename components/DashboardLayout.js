@@ -455,6 +455,10 @@ export default function DashboardLayout({
           background: #7c3aed;
           border-radius: 0 4px 4px 0;
         }
+        
+        .nav-button--marketing.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.6));
+        }
 
         /* HR team - Blue theme */
         .nav-button--hr {
@@ -488,6 +492,10 @@ export default function DashboardLayout({
           height: 60%;
           background: #2563eb;
           border-radius: 0 4px 4px 0;
+        }
+        
+        .nav-button--hr.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.6));
         }
 
         /* All users - Teal/Green theme */
@@ -523,6 +531,10 @@ export default function DashboardLayout({
           background: #14b8a6;
           border-radius: 0 4px 4px 0;
         }
+        
+        .nav-button--all.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.6));
+        }
 
         .nav-icon {
           display: flex;
@@ -531,14 +543,19 @@ export default function DashboardLayout({
           flex-shrink: 0;
           width: 20px;
           height: 20px;
-          opacity: 0.85;
-          transition: opacity 0.25s ease, transform 0.25s ease;
+          opacity: 0.9;
+          transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
+          color: currentColor;
         }
 
         .nav-button:hover .nav-icon,
         .nav-button.is-active .nav-icon {
           opacity: 1;
-          transform: scale(1.1);
+          transform: scale(1.15);
+        }
+        
+        .nav-button.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
         }
 
         .nav-label {
@@ -589,8 +606,9 @@ export default function DashboardLayout({
           flex-shrink: 0;
           width: 20px;
           height: 20px;
-          opacity: 0.85;
-          transition: opacity 0.25s ease, transform 0.25s ease;
+          opacity: 0.9;
+          transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
+          color: currentColor;
         }
 
         .secondary-button .nav-label {
@@ -604,7 +622,11 @@ export default function DashboardLayout({
         .secondary-button:hover .nav-icon,
         .secondary-button.is-active .nav-icon {
           opacity: 1;
-          transform: scale(1.1);
+          transform: scale(1.15);
+        }
+        
+        .secondary-button.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
         }
 
         .secondary-button:hover,

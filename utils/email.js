@@ -32,15 +32,17 @@ async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromNam
   const smtpUsername = env.SMTP_USERNAME;
   const smtpPassword = env.SMTP_PASSWORD;
   const smtpSecure = env.SMTP_SECURE || false;
-  const defaultFrom = env.SMTP2GO_FROM_EMAIL;
-  const defaultFromName = env.SMTP2GO_FROM_NAME || 'The Server';
+  const defaultFrom = env.SMTP_FROM;
+  const defaultFromName = 'The Server';
 
-  if (!smtpUsername || !smtpPassword) {
-    throw new Error('SMTP_USERNAME and SMTP_PASSWORD are required for SMTP protocol');
+  if (!smtpUsername || smtpUsername.trim() === '' || !smtpPassword || smtpPassword.trim() === '') {
+    logger.error('SMTP_USERNAME and SMTP_PASSWORD are required for SMTP protocol. Check your .env file.');
+    throw new Error('SMTP_USERNAME and SMTP_PASSWORD are required for SMTP protocol. Please add them to your .env or .env.local file.');
   }
 
-  if (!defaultFrom) {
-    throw new Error('SMTP2GO_FROM_EMAIL or SMTP_FROM is not configured');
+  if (!defaultFrom || defaultFrom.trim() === '') {
+    logger.error('SMTP_FROM is not configured. Check your .env file.');
+    throw new Error('SMTP_FROM is not configured. Please add it to your .env or .env.local file.');
   }
 
   // Create transporter
@@ -87,12 +89,14 @@ async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName
   const defaultFrom = env.SMTP2GO_FROM_EMAIL;
   const defaultFromName = env.SMTP2GO_FROM_NAME || 'The Server';
 
-  if (!apiKey) {
-    throw new Error('SMTP2GO_API_KEY is not configured');
+  if (!apiKey || apiKey.trim() === '') {
+    logger.error('SMTP2GO_API_KEY is not configured. Check your .env file.');
+    throw new Error('SMTP2GO_API_KEY is not configured. Please add it to your .env or .env.local file.');
   }
 
-  if (!defaultFrom) {
-    throw new Error('SMTP2GO_FROM_EMAIL is not configured');
+  if (!defaultFrom || defaultFrom.trim() === '') {
+    logger.error('SMTP2GO_FROM_EMAIL is not configured. Check your .env file.');
+    throw new Error('SMTP2GO_FROM_EMAIL is not configured. Please add it to your .env or .env.local file.');
   }
 
   // Normalize 'to' to array
@@ -183,8 +187,19 @@ export async function sendEmail({
   from,
   fromName,
 }) {
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development') {
+    logger.info('Email config check:', {
+      hasSMTP2GO_API_KEY: !!env.SMTP2GO_API_KEY,
+      hasSMTP_USERNAME: !!env.SMTP_USERNAME,
+      hasSMTP_PASSWORD: !!env.SMTP_PASSWORD,
+      SMTP2GO_FROM_EMAIL: env.SMTP2GO_FROM_EMAIL || 'Not set',
+      SMTP_FROM: env.SMTP_FROM || 'Not set',
+    });
+  }
+
   // Try REST API first if API key is available
-  if (env.SMTP2GO_API_KEY) {
+  if (env.SMTP2GO_API_KEY && env.SMTP2GO_API_KEY.trim() !== '') {
     try {
       return await sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName });
     } catch (error) {
@@ -194,16 +209,26 @@ export async function sendEmail({
   }
 
   // Fall back to SMTP protocol if API key is not available or API failed
-  if (env.SMTP_USERNAME && env.SMTP_PASSWORD) {
+  if (env.SMTP_USERNAME && env.SMTP_USERNAME.trim() !== '' &&
+      env.SMTP_PASSWORD && env.SMTP_PASSWORD.trim() !== '') {
     return await sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromName });
   }
 
-  // If neither method is configured, throw helpful error
-  throw new Error(
+  // If neither method is configured, throw helpful error with debug info
+  const errorMsg =
     'Email configuration missing. Please configure either:\n' +
     '1. SMTP2GO_API_KEY (for REST API), or\n' +
-    '2. SMTP_USERNAME and SMTP_PASSWORD (for SMTP protocol)'
-  );
+    '2. SMTP_USERNAME and SMTP_PASSWORD (for SMTP protocol)\n\n' +
+    'Current status:\n' +
+    `- SMTP2GO_API_KEY: ${env.SMTP2GO_API_KEY ? 'Set' : 'NOT SET'}\n` +
+    `- SMTP_USERNAME: ${env.SMTP_USERNAME ? 'Set' : 'NOT SET'}\n` +
+    `- SMTP_PASSWORD: ${env.SMTP_PASSWORD ? 'Set' : 'NOT SET'}\n` +
+    `- SMTP_FROM: ${env.SMTP_FROM ? 'Set' : 'NOT SET'}\n` +
+    `- SMTP2GO_FROM_EMAIL: ${env.SMTP2GO_FROM_EMAIL || 'NOT SET'}\n\n` +
+    'Please check your .env or .env.local file and restart the server.';
+
+  logger.error('Email configuration error:', errorMsg);
+  throw new Error(errorMsg);
 }
 
 /**

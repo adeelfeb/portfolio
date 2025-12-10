@@ -80,11 +80,6 @@ export default function SignupPage() {
     if (isDisabled) return;
     setLoading(true);
     setError('');
-    console.log('[Signup] Submit pressed', {
-      name: name.trim(),
-      email: email.trim(),
-      timestamp: new Date().toISOString(),
-    });
 
     try {
       const res = await fetch('/api/auth/signup', {
@@ -102,8 +97,14 @@ export default function SignupPage() {
         try {
           data = JSON.parse(text);
         } catch (parseErr) {
-          // Invalid JSON response - show generic error
-          setError("We couldn't create your account. Please try again.");
+          // Invalid JSON response - network or server error
+          if (res.status >= 500) {
+            setError('Server error. Please try again in a moment.');
+          } else if (res.status === 0 || !res.ok) {
+            setError('Unable to connect to the server. Please check your internet connection.');
+          } else {
+            setError("We couldn't create your account. Please try again.");
+          }
           setLoading(false);
           return;
         }
@@ -111,7 +112,6 @@ export default function SignupPage() {
       
       // Handle API errors gracefully
       if (!res.ok || !data.success) {
-        // Extract user-friendly error message
         const errorMessage = formatErrorMessage(data, "We couldn't create your account. Please try again.");
         setError(errorMessage);
         setLoading(false);
@@ -119,15 +119,11 @@ export default function SignupPage() {
       }
       
       // Success - check if email verification is required
-      if (data.data && data.data.message) {
-        // If email verification is required, show success message
-        if (data.data.message.includes('verification') || data.data.message.includes('check your email')) {
-          setError(''); // Clear any previous errors
-          // Show success message - user needs to verify email
-          setError('✓ Account created! Please check your email for the verification code to complete registration.');
-          // Don't redirect - let user see the message and check their email
-          return;
-        }
+      if (data.data && (data.data.requiresVerification || data.data.message)) {
+        // Redirect to verification page with email
+        const targetEmail = data.data.email || email;
+        router.push(`/verify-email?email=${encodeURIComponent(targetEmail)}`);
+        return;
       }
       
       // Store token in localStorage for API requests (if provided)
@@ -145,8 +141,13 @@ export default function SignupPage() {
     } catch (err) {
       // Catch any unexpected errors (network errors, etc.)
       console.error('[Signup] Error during signup flow', err);
-      // Show generic error message to user
-      setError("We couldn't create your account. Please check your connection and try again.");
+      
+      // Handle network errors
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('Unable to connect to the server. Please check your internet connection and try again.');
+      } else {
+        setError(err.message || "We couldn't create your account. Please check your connection and try again.");
+      }
     } finally {
       setLoading(false);
     }

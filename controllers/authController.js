@@ -31,23 +31,45 @@ function sanitizeUser(userDoc) {
 
 export async function signup(req, res) {
   const { name, email, password } = req.body || {};
+  
+  // Validate all required fields with user-friendly messages
   const missing = [];
-  if (!name) missing.push('name');
-  if (!email) missing.push('email');
+  if (!name || (typeof name === 'string' && !name.trim())) missing.push('name');
+  if (!email || (typeof email === 'string' && !email.trim())) missing.push('email');
   if (!password) missing.push('password');
+  
   if (missing.length) {
-    return jsonError(res, 400, `Missing required field(s): ${missing.join(', ')}`);
+    return jsonError(res, 400, `Please provide ${missing.join(', ')}`);
   }
-  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(email);
+  
+  // Validate email format
+  const emailTrimmed = email.trim().toLowerCase();
+  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(emailTrimmed);
   if (!emailOk) {
-    return jsonError(res, 400, 'Invalid email format');
+    return jsonError(res, 400, 'Please provide a valid email address');
   }
+  
+  // Validate password strength
+  if (typeof password !== 'string' || password.length < 6) {
+    return jsonError(res, 400, 'Password must be at least 6 characters long');
+  }
+  
+  // Validate name
+  const nameTrimmed = name.trim();
+  if (nameTrimmed.length < 2) {
+    return jsonError(res, 400, 'Name must be at least 2 characters long');
+  }
+  
   if (!env.JWT_SECRET) {
-    return jsonError(res, 500, 'Server misconfiguration: JWT_SECRET not set');
+    logger.error('JWT_SECRET not configured');
+    return jsonError(res, 500, 'Server configuration error. Please contact support.');
   }
+  
   try {
     await connectDB();
-    const existing = await User.findOne({ email });
+    
+    // Check for existing user (case-insensitive)
+    const existing = await User.findOne({ email: emailTrimmed });
     if (existing) {
       // If user exists but email is not verified, allow resending OTP
       if (!existing.isEmailVerified) {
@@ -59,19 +81,19 @@ export async function signup(req, res) {
         await existing.save();
         
         try {
-          await sendOTPEmail(email, otp, name);
-          logger.info(`OTP resent to existing unverified user: ${email}`);
+          await sendOTPEmail(emailTrimmed, otp, existing.name || nameTrimmed);
+          logger.info(`OTP resent to existing unverified user: ${emailTrimmed}`);
           return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
-            email: email,
+            email: emailTrimmed,
             message: 'Please verify your email to complete registration',
+            requiresVerification: true,
           });
         } catch (emailError) {
           logger.error('Failed to send OTP email:', emailError.message);
-          // Return a user-friendly error message without exposing technical details
           return jsonError(res, 500, 'Unable to send verification email at this time. Please try again later or contact support if the issue persists.');
         }
       }
-      return jsonError(res, 409, 'Email already registered');
+      return jsonError(res, 409, 'An account with this email already exists. Please sign in instead.');
     }
     
     // Generate OTP for new user
@@ -80,8 +102,8 @@ export async function signup(req, res) {
     
     const baseRole = await ensureRole('base_user', 'Default role for new users');
     const user = await User.create({
-      name,
-      email,
+      name: nameTrimmed,
+      email: emailTrimmed,
       password,
       role: baseRole.name,
       roleRef: baseRole._id,
@@ -92,8 +114,8 @@ export async function signup(req, res) {
     
     // Send OTP email
     try {
-      await sendOTPEmail(email, otp, name);
-      logger.info(`OTP sent to new user: ${email}`);
+      await sendOTPEmail(emailTrimmed, otp, nameTrimmed);
+      logger.info(`OTP sent to new user: ${emailTrimmed}`);
     } catch (emailError) {
       logger.error('Failed to send OTP email:', emailError.message);
       // Delete the user if email sending fails
@@ -102,59 +124,99 @@ export async function signup(req, res) {
       } catch (deleteError) {
         logger.error('Failed to delete user after email error:', deleteError.message);
       }
-      // Return a user-friendly error message without exposing technical details
-      return jsonError(res, 500, 'Unable to send verification email at this time. Please try again later or contact support if the issue persists.');
+      return jsonError(res, 500, 'Unable to send verification email at this time. Please check your email address and try again, or contact support if the issue persists.');
     }
     
-    return jsonSuccess(res, 201, 'Signup successful. Please check your email for verification code.', {
-      email: email,
+    return jsonSuccess(res, 201, 'Account created successfully! Please check your email for the verification code.', {
+      email: emailTrimmed,
       message: 'A verification code has been sent to your email. Please verify your email to complete registration.',
+      requiresVerification: true,
     });
   } catch (err) {
-    logger.error('Signup error:', err.message);
-    // Return a generic error message without exposing internal details
+    logger.error('Signup error:', err.message, err.stack);
+    
+    // Handle duplicate key errors (MongoDB)
+    if (err.code === 11000 || err.name === 'MongoServerError') {
+      return jsonError(res, 409, 'An account with this email already exists. Please sign in instead.');
+    }
+    
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors || {}).map(e => e.message).join(', ');
+      return jsonError(res, 400, errors || 'Invalid input data');
+    }
+    
+    // Generic error for everything else
     return jsonError(res, 500, 'Unable to create your account at this time. Please try again later or contact support if the issue persists.');
   }
 }
 
 export async function login(req, res) {
   const { email, password } = req.body || {};
-  const missing = [];
-  if (!email) missing.push('email');
-  if (!password) missing.push('password');
-  if (missing.length) {
-    return jsonError(res, 400, `Missing required field(s): ${missing.join(', ')}`);
+  
+  // Validate input - provide user-friendly error messages
+  if (!email || !password) {
+    const missing = [];
+    if (!email) missing.push('email');
+    if (!password) missing.push('password');
+    return jsonError(res, 400, `Please provide ${missing.join(' and ')}`);
   }
+  
+  // Validate email format
+  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(email.trim());
+  if (!emailOk) {
+    return jsonError(res, 400, 'Please provide a valid email address');
+  }
+  
+  // Validate password is not empty
+  if (typeof password !== 'string' || password.length === 0) {
+    return jsonError(res, 400, 'Please provide your password');
+  }
+  
   try {
     await connectDB();
     await ensureDefaultHrUser();
-    const user = await User.findOne({ email });
+    
+    // Find user by email (case-insensitive search)
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    
+    // Don't reveal if email exists or not - use generic message for security
     if (!user) {
-      return jsonError(res, 401, 'Email not found');
+      return jsonError(res, 401, 'Invalid email or password');
     }
+    
+    // Verify password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return jsonError(res, 401, 'Invalid password');
+      return jsonError(res, 401, 'Invalid email or password');
     }
     
     // Check if email is verified
     if (!user.isEmailVerified) {
-      return jsonError(res, 403, 'Please verify your email before logging in. Check your inbox for the verification code.');
+      // Offer to resend OTP
+      return jsonError(res, 403, 'Please verify your email before logging in. Check your inbox for the verification code, or request a new one.');
     }
     
     await ensureUserHasRole(user);
+    
     if (!env.JWT_SECRET) {
-      return jsonError(res, 500, 'Server misconfiguration: JWT_SECRET not set');
+      logger.error('JWT_SECRET not configured');
+      return jsonError(res, 500, 'Server configuration error. Please contact support.');
     }
+    
     const token = signToken({ id: user._id, role: user.role });
     // Pass the request so the cookie secure flag reflects the real protocol
     setAuthCookie(res, token, req);
+    
+    logger.info(`User logged in successfully: ${user.email}`);
     return jsonSuccess(res, 200, 'Login successful', {
       user: sanitizeUser(user),
       token,
     });
   } catch (err) {
-    return jsonError(res, 500, 'Login failed', err.message);
+    logger.error('Login error:', err.message, err.stack);
+    // Don't expose internal error details
+    return jsonError(res, 500, 'Unable to sign you in at this time. Please try again later.');
   }
 }
 
@@ -172,36 +234,56 @@ export async function me(req, res) {
 
 export async function verifyEmail(req, res) {
   const { email, otp } = req.body || {};
+  
+  // Validate input
   const missing = [];
-  if (!email) missing.push('email');
-  if (!otp) missing.push('otp');
+  if (!email || (typeof email === 'string' && !email.trim())) missing.push('email');
+  if (!otp || (typeof otp === 'string' && !otp.trim())) missing.push('verification code');
+  
   if (missing.length) {
-    return jsonError(res, 400, `Missing required field(s): ${missing.join(', ')}`);
+    return jsonError(res, 400, `Please provide ${missing.join(' and ')}`);
   }
   
-  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(email);
+  const emailTrimmed = email.trim().toLowerCase();
+  const otpTrimmed = typeof otp === 'string' ? otp.trim() : String(otp);
+  
+  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(emailTrimmed);
   if (!emailOk) {
-    return jsonError(res, 400, 'Invalid email format');
+    return jsonError(res, 400, 'Please provide a valid email address');
+  }
+  
+  if (!otpTrimmed || otpTrimmed.length < 4) {
+    return jsonError(res, 400, 'Please provide a valid verification code');
   }
   
   try {
     await connectDB();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: emailTrimmed });
+    
     if (!user) {
-      return jsonError(res, 404, 'User not found. Please sign up first.');
+      return jsonError(res, 404, 'No account found with this email. Please sign up first.');
     }
     
     if (user.isEmailVerified) {
+      // Generate token for already verified users
+      if (!env.JWT_SECRET) {
+        logger.error('JWT_SECRET not configured');
+        return jsonError(res, 500, 'Server configuration error. Please contact support.');
+      }
+      const token = signToken({ id: user._id, role: user.role });
+      setAuthCookie(res, token, req);
+      
       return jsonSuccess(res, 200, 'Email already verified', {
         user: sanitizeUser(user),
+        token,
         alreadyVerified: true,
       });
     }
     
     // Verify OTP
-    const verification = verifyOTP(otp, user.otp, user.otpExpires);
+    const verification = verifyOTP(otpTrimmed, user.otp, user.otpExpires);
     if (!verification.isValid) {
-      return jsonError(res, 400, verification.message);
+      return jsonError(res, 400, verification.message || 'Invalid or expired verification code. Please request a new one.');
     }
     
     // Mark email as verified and clear OTP
@@ -212,8 +294,8 @@ export async function verifyEmail(req, res) {
     
     // Send welcome email
     try {
-      await sendWelcomeEmail(email, user.name);
-      logger.info(`Welcome email sent to verified user: ${email}`);
+      await sendWelcomeEmail(emailTrimmed, user.name);
+      logger.info(`Welcome email sent to verified user: ${emailTrimmed}`);
     } catch (emailError) {
       logger.error('Failed to send welcome email:', emailError.message);
       // Don't fail the verification if welcome email fails
@@ -221,42 +303,47 @@ export async function verifyEmail(req, res) {
     
     // Generate token for immediate login after verification
     if (!env.JWT_SECRET) {
-      return jsonError(res, 500, 'Server misconfiguration: JWT_SECRET not set');
+      logger.error('JWT_SECRET not configured');
+      return jsonError(res, 500, 'Server configuration error. Please contact support.');
     }
     const token = signToken({ id: user._id, role: user.role });
     setAuthCookie(res, token, req);
     
-    return jsonSuccess(res, 200, 'Email verified successfully', {
+    logger.info(`Email verified successfully: ${emailTrimmed}`);
+    return jsonSuccess(res, 200, 'Email verified successfully! You can now sign in.', {
       user: sanitizeUser(user),
       token,
     });
   } catch (err) {
-    logger.error('Email verification error:', err.message);
-    // Return a generic error message without exposing internal details
+    logger.error('Email verification error:', err.message, err.stack);
     return jsonError(res, 500, 'Unable to verify your email at this time. Please try again later or contact support if the issue persists.');
   }
 }
 
 export async function resendOTP(req, res) {
   const { email } = req.body || {};
-  if (!email) {
-    return jsonError(res, 400, 'Email is required');
+  
+  if (!email || (typeof email === 'string' && !email.trim())) {
+    return jsonError(res, 400, 'Please provide your email address');
   }
   
-  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(email);
+  const emailTrimmed = email.trim().toLowerCase();
+  const emailOk = typeof email === 'string' && /.+@.+\..+/.test(emailTrimmed);
   if (!emailOk) {
-    return jsonError(res, 400, 'Invalid email format');
+    return jsonError(res, 400, 'Please provide a valid email address');
   }
   
   try {
     await connectDB();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: emailTrimmed });
+    
     if (!user) {
-      return jsonError(res, 404, 'User not found. Please sign up first.');
+      // Don't reveal if email exists for security
+      return jsonSuccess(res, 200, 'If an account exists with this email, a verification code has been sent.');
     }
     
     if (user.isEmailVerified) {
-      return jsonSuccess(res, 200, 'Email already verified', {
+      return jsonSuccess(res, 200, 'Email already verified. You can sign in now.', {
         alreadyVerified: true,
       });
     }
@@ -271,18 +358,17 @@ export async function resendOTP(req, res) {
     
     // Send OTP email
     try {
-      await sendOTPEmail(email, otp, user.name);
-      logger.info(`OTP resent to user: ${email}`);
+      await sendOTPEmail(emailTrimmed, otp, user.name);
+      logger.info(`OTP resent to user: ${emailTrimmed}`);
       return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
-        email: email,
+        email: emailTrimmed,
       });
     } catch (emailError) {
       logger.error('Failed to send OTP email:', emailError.message);
-      return jsonError(res, 500, 'Failed to send verification email. Please try again later.');
+      return jsonError(res, 500, 'Unable to send verification email at this time. Please try again later or contact support if the issue persists.');
     }
   } catch (err) {
-    logger.error('Resend OTP error:', err.message);
-    // Return a generic error message without exposing internal details
+    logger.error('Resend OTP error:', err.message, err.stack);
     return jsonError(res, 500, 'Unable to resend verification code at this time. Please try again later or contact support if the issue persists.');
   }
 }

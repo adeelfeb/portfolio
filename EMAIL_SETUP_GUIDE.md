@@ -23,24 +23,44 @@ This guide will help you configure SMTP2Go for email verification in your applic
 
 ## Step 3: Configure Environment Variables
 
-Add the following environment variables to your `.env.local` file (or `.env` file):
+You can use either the SMTP2Go API (recommended) or standard SMTP protocol (fallback).
+
+### Option A: SMTP Protocol (Current Setup)
+
+Your `.env` or `.env.local` file should look like this:
 
 ```env
-# SMTP2Go Configuration (REQUIRED)
+# Email Configuration - SMTP Protocol
+SMTP_HOST=mail.smtp2go.com
+SMTP_PORT=25
+SMTP_USERNAME=noreply@designndev.com
+SMTP_PASSWORD=your_password_here
+SMTP_FROM=noreply@designndev.com
+SMTP_SECURE=false
+```
+
+### Option B: SMTP2Go API
+
+If you prefer to use the API key method:
+
+```env
+# SMTP2Go Configuration (API)
 SMTP2GO_API_KEY=your_smtp2go_api_key_here
 SMTP2GO_FROM_EMAIL=your-verified-email@example.com
-
-# SMTP2Go Configuration (OPTIONAL)
-SMTP2GO_FROM_NAME=Your App Name
+SMTP2GO_FROM_NAME=The Server
 ```
 
 ### Environment Variables Explained
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `SMTP2GO_API_KEY` | ✅ **Yes** | Your SMTP2Go API key from the dashboard | `api-xxxxxxxxxxxxxxxxxxxxx` |
-| `SMTP2GO_FROM_EMAIL` | ✅ **Yes** | The verified sender email address | `noreply@yourdomain.com` |
-| `SMTP2GO_FROM_NAME` | ❌ No | Display name for sender (defaults to "The Server") | `My Awesome App` |
+| Variable | Required (SMTP) | Required (API) | Description |
+|----------|----------------|----------------|-------------|
+| `SMTP_USERNAME` | ✅ Yes | ❌ No | SMTP username |
+| `SMTP_PASSWORD` | ✅ Yes | ❌ No | SMTP password |
+| `SMTP_HOST` | ✅ Yes | ❌ No | SMTP host (mail.smtp2go.com) |
+| `SMTP_PORT` | ✅ Yes | ❌ No | SMTP port (25, 2525, 587, etc.) |
+| `SMTP_FROM` | ✅ Yes | ❌ No | Sender email address |
+| `SMTP2GO_API_KEY` | ❌ No | ✅ Yes | SMTP2Go API key |
+| `SMTP2GO_FROM_EMAIL` | ❌ No | ✅ Yes | Verified sender email for API |
 
 ## Step 4: Verify Your Setup
 

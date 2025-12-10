@@ -21,6 +21,26 @@ export default async function handler(req, res) {
   }
 
   const debugInfo = debugEnv();
-  return jsonSuccess(res, 200, 'Environment variable debug info', debugInfo);
+  
+  // Add additional diagnostic info
+  const additionalInfo = {
+    ...debugInfo,
+    recommendations: [],
+  };
+  
+  // Check if email config is missing
+  if (!process.env.SMTP2GO_API_KEY && !process.env.SMTP_USERNAME) {
+    additionalInfo.recommendations.push(
+      'Add SMTP2GO_API_KEY to your .env or .env.local file for email functionality'
+    );
+  }
+  
+  if (!process.env.SMTP2GO_FROM_EMAIL && !process.env.SMTP_FROM) {
+    additionalInfo.recommendations.push(
+      'Add SMTP2GO_FROM_EMAIL to your .env or .env.local file'
+    );
+  }
+  
+  return jsonSuccess(res, 200, 'Environment variable debug info', additionalInfo);
 }
 
