@@ -72,3 +72,4 @@ And email verification should work for signup!
 ## For Production (Ubuntu)
 
 The same SMTP variables will work on your Ubuntu production server. Just make sure to set these environment variables in your hosting platform or `.env.local` file on production.
+
