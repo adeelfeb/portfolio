@@ -291,6 +291,10 @@ export default function NewYearResolutionManager() {
           display: flex;
           flex-direction: column;
           gap: 2rem;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(59, 130, 246, 0.05));
+          padding: 2rem;
+          border-radius: 1.5rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
         }
         .manager-header {
           display: flex;
@@ -300,30 +304,37 @@ export default function NewYearResolutionManager() {
           gap: 1rem;
         }
         .manager-header h2 {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #0f172a;
+          font-size: 1.75rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           margin-bottom: 0.25rem;
         }
         .manager-header p {
-          color: #64748b;
+          color: #6366f1;
+          font-weight: 500;
         }
         
         .btn-primary {
-          background: #2563eb;
+          background: linear-gradient(135deg, #8b5cf6, #3b82f6);
           color: white;
           border: none;
           padding: 0.75rem 1.5rem;
-          border-radius: 0.5rem;
+          border-radius: 0.75rem;
           font-weight: 600;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.3s;
           display: inline-flex;
           align-items: center;
           gap: 0.5rem;
+          box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
         }
         .btn-primary:hover {
-          background: #1d4ed8;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+          background: linear-gradient(135deg, #7c3aed, #2563eb);
         }
         .icon-inline {
           display: inline-block;
@@ -340,37 +351,61 @@ export default function NewYearResolutionManager() {
         }
         
         .form-card {
-          background: white;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
           padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          border: 1px solid #e2e8f0;
+          border-radius: 1.25rem;
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(59, 130, 246, 0.1);
+          border: 2px solid rgba(139, 92, 246, 0.2);
           animation: slideDown 0.3s ease-out;
         }
         .form-card h3 {
           margin-top: 0;
           margin-bottom: 1.5rem;
+          color: #6366f1;
+          font-weight: 700;
         }
         .form-group {
-          margin-bottom: 1.25rem;
+          margin-bottom: 1.5rem;
         }
         .form-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 1rem;
+          gap: 1.25rem;
         }
         label {
           display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: #334155;
+          margin-bottom: 0.65rem;
+          font-weight: 600;
+          color: #4f46e5;
+          font-size: 0.9rem;
         }
         input[type="text"], textarea, select {
           width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 0.5rem;
+          padding: 0.875rem 1.125rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
+          border-radius: 0.75rem;
           font-size: 1rem;
+          background: white;
+          color: #1e293b;
+          transition: all 0.3s ease;
+          font-family: inherit;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+          outline: none;
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+          background: #fefefe;
+        }
+        input[type="text"]:hover, textarea:hover, select:hover {
+          border-color: rgba(139, 92, 246, 0.4);
+        }
+        select {
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b5cf6' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 1rem center;
+          padding-right: 2.5rem;
         }
         .form-actions {
           display: flex;
@@ -381,26 +416,27 @@ export default function NewYearResolutionManager() {
         
         .resolutions-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.75rem;
         }
         .resolution-card {
-          background: white;
-          padding: 1.5rem;
-          border-radius: 1rem;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+          padding: 1.75rem;
+          border-radius: 1.25rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.12), 0 2px 4px rgba(59, 130, 246, 0.08);
           display: flex;
           flex-direction: column;
-          transition: transform 0.2s;
+          transition: all 0.3s ease;
         }
         .resolution-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(139, 92, 246, 0.2), 0 4px 8px rgba(59, 130, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.4);
         }
         .resolution-card.completed {
-          background: #f8fafc;
-          border-color: #e2e8f0;
+          background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(240, 253, 250, 0.95));
+          border-color: rgba(16, 185, 129, 0.3);
         }
         .card-header {
           display: flex;
@@ -409,13 +445,14 @@ export default function NewYearResolutionManager() {
           margin-bottom: 1rem;
         }
         .category-tag {
-          background: #eff6ff;
-          color: #2563eb;
-          padding: 0.25rem 0.75rem;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+          color: #6366f1;
+          padding: 0.35rem 0.85rem;
           border-radius: 999px;
           font-size: 0.75rem;
-          font-weight: 600;
+          font-weight: 700;
           text-transform: uppercase;
+          border: 1px solid rgba(139, 92, 246, 0.3);
         }
         .card-actions {
           display: flex;
@@ -496,9 +533,10 @@ export default function NewYearResolutionManager() {
           color: #2563eb;
         }
         .btn-toggle.active {
-          background: #10b981;
+          background: linear-gradient(135deg, #10b981, #059669);
           border-color: #10b981;
           color: white;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         
         .empty-state {

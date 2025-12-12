@@ -213,19 +213,30 @@ export default function SettingsPanel({ user, onProfileUpdated }) {
           width: 100%;
           max-width: 100%;
           border-radius: 0.75rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 0.75rem 1rem;
+          border: 2px solid rgba(148, 163, 184, 0.3);
+          padding: 0.875rem 1.125rem;
           font-size: 0.95rem;
-          background: #f8fafc;
-          transition: border 0.2s ease, box-shadow 0.2s ease;
+          background: #ffffff;
+          color: #1e293b;
+          transition: all 0.3s ease;
           box-sizing: border-box;
+          font-family: inherit;
+        }
+
+        input:hover {
+          border-color: rgba(37, 99, 235, 0.4);
+          background: #fefefe;
         }
 
         input:focus {
           outline: none;
-          border-color: rgba(37, 99, 235, 0.6);
+          border-color: #2563eb;
           box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-          background: #fff;
+          background: #ffffff;
+        }
+
+        input::placeholder {
+          color: #94a3b8;
         }
 
         button {

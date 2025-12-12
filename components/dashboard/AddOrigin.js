@@ -582,12 +582,12 @@ export default function AddOrigin() {
           width: 100%;
           max-width: 100%;
           border-radius: 0.75rem;
-          border: 1.5px solid rgba(148, 163, 184, 0.4);
-          padding: 0.75rem 1rem;
+          border: 2px solid rgba(148, 163, 184, 0.3);
+          padding: 0.875rem 1.125rem;
           font-size: 0.95rem;
           background: #ffffff;
-          color: #0f172a;
-          transition: all 0.2s ease;
+          color: #1e293b;
+          transition: all 0.3s ease;
           box-sizing: border-box;
           min-width: 0;
           font-family: inherit;
@@ -596,19 +596,19 @@ export default function AddOrigin() {
         input::placeholder,
         textarea::placeholder {
           color: #94a3b8;
-          opacity: 0.8;
         }
 
         input:hover:not(:disabled),
         textarea:hover:not(:disabled) {
-          border-color: rgba(148, 163, 184, 0.6);
+          border-color: rgba(37, 99, 235, 0.4);
+          background: #fefefe;
         }
 
         input:focus,
         textarea:focus {
           outline: none;
           border-color: #2563eb;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
           background: #ffffff;
         }
 
