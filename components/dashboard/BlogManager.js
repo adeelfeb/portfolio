@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 import axios from 'axios';
 
 // Configure axios to send cookies with requests
@@ -479,7 +480,7 @@ export default function BlogManager({ user }) {
             <div className="modal-header">
               <h3>{editingBlog ? 'Edit Blog' : 'Create New Blog'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="close-btn">
-                ×
+                <X size={20} />
               </button>
             </div>
 
@@ -610,7 +611,9 @@ export default function BlogManager({ user }) {
                   {formData.metaKeywords.map((keyword) => (
                     <span key={keyword} className="tag">
                       {keyword}
-                      <button onClick={() => removeKeyword(keyword)}>×</button>
+                      <button onClick={() => removeKeyword(keyword)} className="tag-remove-btn">
+                        <X size={14} />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -632,7 +635,9 @@ export default function BlogManager({ user }) {
                   {formData.tags.map((tag) => (
                     <span key={tag} className="tag">
                       {tag}
-                      <button onClick={() => removeTag(tag)}>×</button>
+                      <button onClick={() => removeTag(tag)} className="tag-remove-btn">
+                        <X size={14} />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -837,9 +842,35 @@ export default function BlogManager({ user }) {
         .close-btn {
           background: none;
           border: none;
-          font-size: 2rem;
           cursor: pointer;
           color: #666;
+          padding: 0.25rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0.25rem;
+          transition: all 0.2s;
+        }
+        .close-btn:hover {
+          background: #f3f4f6;
+          color: #111;
+        }
+        .tag-remove-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #666;
+          padding: 0.125rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0.125rem;
+          transition: all 0.2s;
+          margin-left: 0.25rem;
+        }
+        .tag-remove-btn:hover {
+          background: rgba(0, 0, 0, 0.1);
+          color: #dc2626;
         }
 
         .modal-body {

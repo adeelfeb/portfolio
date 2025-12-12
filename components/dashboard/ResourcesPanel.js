@@ -1,4 +1,5 @@
 import React from 'react';
+import { BookOpen, FileText, Wrench, Newspaper, Lightbulb, ArrowRight, Download } from 'lucide-react';
 
 export default function ResourcesPanel() {
   const resources = [
@@ -38,26 +39,34 @@ export default function ResourcesPanel() {
           <div className="resource-section" key={section.category}>
             <h3 className="section-title">{section.category}</h3>
             <ul className="resource-list">
-              {section.items.map((item, idx) => (
-                <li key={idx} className="resource-item">
-                  <div className="resource-icon">
-                    {item.type === 'Guide' && '📖'}
-                    {item.type === 'Template' && '📝'}
-                    {item.type === 'Tool' && '🛠️'}
-                    {item.type === 'Article' && '📰'}
-                    {item.type === 'Case Study' && '💡'}
-                  </div>
-                  <div className="resource-content">
-                    <a href={item.url} className="resource-link" onClick={(e) => e.preventDefault()}>
-                      {item.title}
-                    </a>
-                    <span className="resource-type">{item.type}</span>
-                  </div>
-                  <button className="download-btn" aria-label="View resource">
-                    →
-                  </button>
-                </li>
-              ))}
+              {section.items.map((item, idx) => {
+                const getIcon = () => {
+                  switch (item.type) {
+                    case 'Guide': return <BookOpen size={20} />;
+                    case 'Template': return <FileText size={20} />;
+                    case 'Tool': return <Wrench size={20} />;
+                    case 'Article': return <Newspaper size={20} />;
+                    case 'Case Study': return <Lightbulb size={20} />;
+                    default: return <FileText size={20} />;
+                  }
+                };
+                return (
+                  <li key={idx} className="resource-item">
+                    <div className="resource-icon">
+                      {getIcon()}
+                    </div>
+                    <div className="resource-content">
+                      <a href={item.url} className="resource-link" onClick={(e) => e.preventDefault()}>
+                        {item.title}
+                      </a>
+                      <span className="resource-type">{item.type}</span>
+                    </div>
+                    <button className="download-btn" aria-label="View resource">
+                      <ArrowRight size={18} />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
@@ -123,7 +132,8 @@ export default function ResourcesPanel() {
           justify-content: center;
           background: #f1f5f9;
           border-radius: 0.5rem;
-          font-size: 1.25rem;
+          color: #475569;
+          flex-shrink: 0;
         }
         .resource-content {
           flex: 1;
@@ -150,8 +160,11 @@ export default function ResourcesPanel() {
           color: #94a3b8;
           cursor: pointer;
           padding: 0.5rem;
-          border-radius: 0.25rem;
+          border-radius: 0.375rem;
           transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .download-btn:hover {
           color: #2563eb;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Clock, Edit, X, Check, Plus } from 'lucide-react';
 
 export default function NewYearResolutionManager() {
   const [resolutions, setResolutions] = useState([]);
@@ -150,7 +151,8 @@ export default function NewYearResolutionManager() {
         </div>
         {!showForm && (
           <button className="btn-primary" onClick={() => setShowForm(true)}>
-            + New Resolution
+            <Plus className="icon-inline" size={18} />
+            New Resolution
           </button>
         )}
       </div>
@@ -245,8 +247,12 @@ export default function NewYearResolutionManager() {
                 <div className="card-header">
                   <span className="category-tag">{resolution.category}</span>
                   <div className="card-actions">
-                    <button onClick={() => handleEdit(resolution)} className="icon-btn" title="Edit">✎</button>
-                    <button onClick={() => handleDelete(resolution._id)} className="icon-btn delete" title="Delete">×</button>
+                    <button onClick={() => handleEdit(resolution)} className="icon-btn" title="Edit">
+                      <Edit size={18} />
+                    </button>
+                    <button onClick={() => handleDelete(resolution._id)} className="icon-btn delete" title="Delete">
+                      <X size={18} />
+                    </button>
                   </div>
                 </div>
                 
@@ -256,14 +262,22 @@ export default function NewYearResolutionManager() {
                 <div className="card-footer">
                   <div className="status">
                     <span className="frequency-badge">
-                      ⏰ {resolution.reminderFrequency}
+                      <Clock size={14} className="icon-inline" />
+                      {resolution.reminderFrequency}
                     </span>
                   </div>
                   <button 
                     className={`btn-toggle ${resolution.isCompleted ? 'active' : ''}`}
                     onClick={() => toggleCompletion(resolution._id, resolution.isCompleted)}
                   >
-                    {resolution.isCompleted ? '✓ Completed' : 'Mark Complete'}
+                    {resolution.isCompleted ? (
+                      <>
+                        <Check size={16} className="icon-inline" />
+                        Completed
+                      </>
+                    ) : (
+                      'Mark Complete'
+                    )}
                   </button>
                 </div>
               </div>
@@ -304,9 +318,16 @@ export default function NewYearResolutionManager() {
           font-weight: 600;
           cursor: pointer;
           transition: background 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
         }
         .btn-primary:hover {
           background: #1d4ed8;
+        }
+        .icon-inline {
+          display: inline-block;
+          vertical-align: middle;
         }
         .btn-secondary {
           background: white;
@@ -405,14 +426,20 @@ export default function NewYearResolutionManager() {
           border: none;
           cursor: pointer;
           color: #94a3b8;
-          font-size: 1.1rem;
-          padding: 0.25rem;
+          padding: 0.5rem;
+          border-radius: 0.375rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
         }
         .icon-btn:hover {
           color: #2563eb;
+          background: #eff6ff;
         }
         .icon-btn.delete:hover {
           color: #ef4444;
+          background: #fef2f2;
         }
         
         .resolution-card h3 {
@@ -444,8 +471,11 @@ export default function NewYearResolutionManager() {
           font-size: 0.85rem;
           color: #64748b;
           background: #f1f5f9;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.25rem;
+          padding: 0.35rem 0.65rem;
+          border-radius: 0.375rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
         }
         .btn-toggle {
           background: white;
@@ -457,6 +487,9 @@ export default function NewYearResolutionManager() {
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
         }
         .btn-toggle:hover {
           border-color: #2563eb;

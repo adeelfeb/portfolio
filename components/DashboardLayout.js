@@ -152,9 +152,20 @@ export default function DashboardLayout({
       <aside className={`sidebar ${sidebarOpen ? 'is-open' : ''}`}>
         <div className="sidebar-top">
           <div className="brand" aria-label="Application" style={{ padding: '0.8rem 0.85rem 0.6rem' }}>
-            <div className="brand-mark">TS</div>
+            <div className="brand-mark">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="#3B82F6"/>
+                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="#9333EA"/>
+                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="#9333EA"/>
+                <rect x="13" y="13" width="8" height="8" rx="1.5" fill="#3B82F6"/>
+              </svg>
+            </div>
             <div className="brand-text">
-              <span className="brand-title">TheServer</span>
+              <span className="brand-title">
+                <span className="brand-title-blue">Design</span>
+                <span className="brand-title-separator"> n </span>
+                <span className="brand-title-purple">Dev</span>
+              </span>
               <span className="brand-subtitle">{roleLabel}</span>
             </div>
           </div>
@@ -334,15 +345,16 @@ export default function DashboardLayout({
           width: 2.75rem;
           height: 2.75rem;
           border-radius: 12px;
-          background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 55%),
-            linear-gradient(135deg, #38bdf8, #2563eb);
+          background: rgba(15, 23, 42, 0.4);
           display: grid;
           place-items: center;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: #f8fafc;
-          border: 1px solid rgba(148, 197, 253, 0.5);
-          box-shadow: 0 16px 32px rgba(15, 23, 42, 0.4);
+          border: 1px solid rgba(148, 197, 253, 0.2);
+          box-shadow: 0 8px 16px rgba(15, 23, 42, 0.3);
+          flex-shrink: 0;
+        }
+        .brand-mark svg {
+          width: 20px;
+          height: 20px;
         }
 
         .brand-text {
@@ -352,11 +364,22 @@ export default function DashboardLayout({
         }
 
         .brand-title {
-          font-weight: 600;
-          text-transform: uppercase;
-          font-size: 0.8rem;
-          letter-spacing: 0.12em;
-          color: #f1f5f9;
+          font-weight: 700;
+          font-size: 0.85rem;
+          letter-spacing: 0.02em;
+          display: flex;
+          align-items: center;
+          line-height: 1.2;
+        }
+        .brand-title-blue {
+          color: #60a5fa;
+        }
+        .brand-title-separator {
+          color: rgba(226, 232, 240, 0.6);
+          margin: 0 0.15rem;
+        }
+        .brand-title-purple {
+          color: #a78bfa;
         }
 
         .brand-subtitle {

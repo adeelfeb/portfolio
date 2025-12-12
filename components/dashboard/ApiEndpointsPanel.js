@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Lock } from 'lucide-react';
 import { apiEndpointsMetadata } from '../../lib/apiEndpointsMetadata';
 import styles from '../../styles/ApiEndpointsPanel.module.css';
 
@@ -131,7 +132,8 @@ function EndpointCard({ endpoint, category }) {
           <h3 className={styles.endpointPath}>{endpoint.path}</h3>
           {endpoint.requiresAuth && (
             <span className={`${styles.endpointBadge} ${styles.endpointBadgeAuth}`} title="Requires Authentication">
-              🔒 Auth Required
+              <Lock size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+              Auth Required
             </span>
           )}
         </div>
