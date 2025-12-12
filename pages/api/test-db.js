@@ -27,8 +27,20 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      // Connect to MongoDB
-      await connectDB();
+      // Try to connect to MongoDB - graceful failure if unavailable
+      try {
+        await connectDB();
+      } catch (dbError) {
+        if (dbError.code === 'NO_DB_URI') {
+          return res.status(200).json({
+            success: false,
+            message: 'Database not configured. MONGODB_URI environment variable is not set.',
+            error: 'DATABASE_NOT_CONFIGURED',
+            timestamp: new Date().toISOString(),
+          });
+        }
+        throw dbError;
+      }
 
       // Create a new test document
       const testDoc = new Test({
@@ -51,10 +63,11 @@ export default async function handler(req, res) {
       });
     } catch (error) {
       console.error('Database error:', error);
-      res.status(500).json({
+      res.status(200).json({
         success: false,
         message: 'Error connecting to MongoDB or saving document',
         error: error.message,
+        timestamp: new Date().toISOString(),
       });
     }
   } else {

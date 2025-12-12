@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Vercel deployment optimizations
+  // Don't fail build if environment variables are missing
+  env: {
+    // Provide safe defaults for build time
+    MONGODB_URI: process.env.MONGODB_URI || '',
+    JWT_SECRET: process.env.JWT_SECRET || '',
+  },
+  
   // Ensure dynamic routes are handled at runtime, not during build
   // Dynamic routes with getServerSideProps will be server-rendered
   

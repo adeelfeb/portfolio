@@ -26,15 +26,22 @@ function serializeUser(user) {
 }
 
 export async function getServerSideProps(context) {
-  const { req } = context;
-  const user = await getUserFromRequest(req);
+  try {
+    const { req } = context;
+    const user = await getUserFromRequest(req);
 
-  if (!user) {
+    if (!user) {
+      return { redirect: { destination: '/login', permanent: false } };
+    }
+
+    const serializedUser = serializeUser(user);
+    return { props: { user: serializedUser } };
+  } catch (error) {
+    // If auth fails (e.g., DB not available), redirect to login
+    // This allows the app to work even without backend
+    console.error('[Dashboard] Error in getServerSideProps:', error.message);
     return { redirect: { destination: '/login', permanent: false } };
   }
-
-  const serializedUser = serializeUser(user);
-  return { props: { user: serializedUser } };
 }
 
 const NAVIGATION_BY_ROLE = {

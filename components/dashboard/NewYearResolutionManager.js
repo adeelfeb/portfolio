@@ -24,19 +24,36 @@ export default function NewYearResolutionManager() {
   async function fetchResolutions() {
     try {
       setLoading(true);
+      setError(''); // Clear previous errors
       const res = await fetch('/api/resolutions', {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
+      // Handle network errors
+      if (!res.ok && res.status >= 500) {
+        throw new Error('Server unavailable. Please try again later.');
+      }
+      
       const data = await res.json();
       if (data.success) {
-        setResolutions(data.data.resolutions);
+        setResolutions(data.data?.resolutions || []);
       } else {
-        setError(data.message || 'Failed to fetch resolutions');
+        // Don't show error if it's just "database not configured"
+        if (data.error !== 'DATABASE_NOT_CONFIGURED') {
+          setError(data.message || 'Failed to fetch resolutions');
+        } else {
+          setResolutions([]); // Show empty state instead of error
+        }
       }
     } catch (err) {
-      setError('An error occurred while fetching resolutions');
+      // Only show error if it's not a network/server issue
+      if (err.message && !err.message.includes('fetch')) {
+        setError(err.message);
+      } else {
+        setError('Unable to connect to server. Please check your connection.');
+      }
     } finally {
       setLoading(false);
     }
