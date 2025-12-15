@@ -481,6 +481,11 @@ export default function Dashboard({ user }) {
 
         <div className="promotion-banner">
           <div className="promotion-content">
+            <div className="promotion-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
             <div className="promotion-text">
               <strong>Need a Developer?</strong> I'm a <strong>Software Engineer</strong>, <strong>Website Developer</strong>, <strong>Full Stack Developer</strong>, and <strong>App Developer</strong> ready to help bring your projects, ventures, and ideas to life. Let's accomplish your goals in the coming years with cutting-edge AI and functionality that you can sell and grow with. <strong>Connect with us today!</strong>
             </div>
@@ -585,8 +590,28 @@ export default function Dashboard({ user }) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 2rem;
+            gap: 1.5rem;
             max-width: 100%;
+          }
+
+          .promotion-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            color: #ffffff;
+            opacity: 0.95;
+            animation: pulse 2s ease-in-out infinite;
+          }
+
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 0.95;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.05);
+            }
           }
 
           .promotion-text {
@@ -1103,6 +1128,11 @@ export default function Dashboard({ user }) {
               gap: 1rem;
             }
 
+            .promotion-icon {
+              width: 24px;
+              height: 24px;
+            }
+
             .promotion-text {
               font-size: 0.85rem;
               line-height: 1.55;
@@ -1158,6 +1188,11 @@ export default function Dashboard({ user }) {
 
             .promotion-content {
               gap: 0.85rem;
+            }
+
+            .promotion-icon {
+              width: 22px;
+              height: 22px;
             }
 
             .promotion-text {
@@ -1246,6 +1281,11 @@ export default function Dashboard({ user }) {
             .promotion-content {
               flex-direction: column;
               gap: 0.75rem;
+            }
+
+            .promotion-icon {
+              width: 20px;
+              height: 20px;
             }
 
             .promotion-text {
