@@ -58,7 +58,7 @@ export default function SignupPage() {
             localStorage.setItem('token', data.data.token);
           }
           // Redirect to dashboard
-          router.replace('/dashboard');
+          router.replace('/dashboard#resolutions');
           return;
         }
       } catch (err) {
@@ -145,7 +145,7 @@ export default function SignupPage() {
       
       // Redirect to dashboard only if user is fully authenticated
       if (data.data && data.data.user) {
-        await router.replace('/dashboard');
+        await router.replace('/dashboard#resolutions');
       }
     } catch (err) {
       // Catch any unexpected errors (network errors, etc.)

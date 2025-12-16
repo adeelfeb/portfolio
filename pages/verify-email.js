@@ -112,7 +112,7 @@ export default function VerifyEmailPage() {
       // Small delay before redirect
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      router.replace('/dashboard');
+      router.replace('/dashboard#resolutions');
       
     } catch (err) {
       setError(err.message || "Verification failed. Please try again.");

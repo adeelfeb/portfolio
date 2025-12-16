@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   // Get redirect destination from query params - memoize to prevent unnecessary re-renders
   const redirectTo = useMemo(() => {
-    return router.query.redirect || '/dashboard';
+    return router.query.redirect || '/dashboard#resolutions';
   }, [router.query.redirect]);
 
   // Check if user is already authenticated and redirect to dashboard
@@ -64,7 +64,7 @@ export default function LoginPage() {
             localStorage.setItem('token', data.data.token);
           }
           // Get redirect destination from query params at redirect time
-          const redirectDestination = router.query.redirect || '/dashboard';
+          const redirectDestination = router.query.redirect || '/dashboard#resolutions';
           // Redirect to dashboard or specified redirect destination
           router.replace(redirectDestination);
           return;
@@ -144,7 +144,7 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 150));
       
       // Redirect to dashboard or specified redirect destination
-      const redirectTo = router.query.redirect || '/dashboard';
+      const redirectTo = router.query.redirect || '/dashboard#resolutions';
       await router.replace(redirectTo);
     } catch (err) {
       console.error('[Login] Error during sign-in flow', err);
