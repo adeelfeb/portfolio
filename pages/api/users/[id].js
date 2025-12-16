@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import User from '../../../models/User';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import roleMiddleware from '../../../middlewares/roleMiddleware';
@@ -9,7 +9,8 @@ import { applyCors } from '../../../utils';
 export default async function handler(req, res) {
   const { method, query: { id } } = req;
   if (await applyCors(req, res)) return;
-  await connectDB();
+  const db = await requireDB(res);
+  if (!db) return;
 
   switch (method) {
     case 'GET': {

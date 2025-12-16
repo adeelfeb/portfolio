@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import AllowedOrigin from '../../../models/AllowedOrigin';
 import { jsonError, jsonSuccess } from '../../../lib/response';
 import { applyCors } from '../../../utils';
@@ -35,7 +35,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    const db = await requireDB(res);
+    if (!db) return;
 
     const results = {
       created: [],

@@ -141,10 +141,15 @@ export default function PortfolioDetailPage() {
     );
   }
 
+  // Ensure title is always a string to prevent React warnings
+  const portfolioTitle = portfolio?.metaTitle || portfolio?.title || 'Portfolio Project';
+  const safeTitle = typeof portfolioTitle === 'string' ? portfolioTitle : (Array.isArray(portfolioTitle) ? portfolioTitle.join(' ') : String(portfolioTitle || 'Portfolio Project'));
+  const pageTitle = `${String(safeTitle)} | Design n Dev`;
+
   return (
     <>
       <Head>
-        <title>{portfolio.metaTitle || portfolio.title} | Design n Dev</title>
+        <title>{pageTitle}</title>
         <meta name="description" content={portfolio.metaDescription || portfolio.description} />
         {portfolio.metaKeywords && portfolio.metaKeywords.length > 0 && (
           <meta name="keywords" content={portfolio.metaKeywords.join(', ')} />

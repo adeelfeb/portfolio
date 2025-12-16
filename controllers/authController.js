@@ -62,11 +62,14 @@ export async function signup(req, res) {
   
   if (!env.JWT_SECRET) {
     logger.error('JWT_SECRET not configured');
-    return jsonError(res, 500, 'Server configuration error. Please contact support.');
+    return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
   }
   
   try {
-    await connectDB();
+    const dbResult = await connectDB();
+    if (!dbResult.success) {
+      return jsonError(res, 503, 'Database service is currently unavailable. Please try again later.');
+    }
     
     // Check for existing user (case-insensitive)
     const existing = await User.findOne({ email: emailTrimmed });
@@ -174,7 +177,10 @@ export async function login(req, res) {
   }
   
   try {
-    await connectDB();
+    const dbResult = await connectDB();
+    if (!dbResult.success) {
+      return jsonError(res, 503, 'Database service is currently unavailable. Please try again later.');
+    }
     await ensureDefaultHrUser();
     
     // Find user by email (case-insensitive search)
@@ -201,10 +207,13 @@ export async function login(req, res) {
     
     if (!env.JWT_SECRET) {
       logger.error('JWT_SECRET not configured');
-      return jsonError(res, 500, 'Server configuration error. Please contact support.');
+      return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
     }
     
     const token = signToken({ id: user._id, role: user.role });
+    if (!token) {
+      return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
+    }
     // Pass the request so the cookie secure flag reflects the real protocol
     setAuthCookie(res, token, req);
     
@@ -257,7 +266,10 @@ export async function verifyEmail(req, res) {
   }
   
   try {
-    await connectDB();
+    const dbResult = await connectDB();
+    if (!dbResult.success) {
+      return jsonError(res, 503, 'Database service is currently unavailable. Please try again later.');
+    }
     const user = await User.findOne({ email: emailTrimmed });
     
     if (!user) {
@@ -268,9 +280,12 @@ export async function verifyEmail(req, res) {
       // Generate token for already verified users
       if (!env.JWT_SECRET) {
         logger.error('JWT_SECRET not configured');
-        return jsonError(res, 500, 'Server configuration error. Please contact support.');
+        return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
       }
       const token = signToken({ id: user._id, role: user.role });
+      if (!token) {
+        return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
+      }
       setAuthCookie(res, token, req);
       
       return jsonSuccess(res, 200, 'Email already verified', {
@@ -304,9 +319,12 @@ export async function verifyEmail(req, res) {
     // Generate token for immediate login after verification
     if (!env.JWT_SECRET) {
       logger.error('JWT_SECRET not configured');
-      return jsonError(res, 500, 'Server configuration error. Please contact support.');
+      return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
     }
     const token = signToken({ id: user._id, role: user.role });
+    if (!token) {
+      return jsonError(res, 503, 'Authentication service is currently unavailable. Please try again later.');
+    }
     setAuthCookie(res, token, req);
     
     logger.info(`Email verified successfully: ${emailTrimmed}`);
@@ -334,7 +352,11 @@ export async function resendOTP(req, res) {
   }
   
   try {
-    await connectDB();
+    const dbResult = await connectDB();
+    if (!dbResult.success) {
+      // Don't reveal database status for security - return generic success message
+      return jsonSuccess(res, 200, 'If an account exists with this email, a verification code has been sent.');
+    }
     const user = await User.findOne({ email: emailTrimmed });
     
     if (!user) {
@@ -387,7 +409,10 @@ export async function createInitialSuperAdmin(req, res) {
     return jsonError(res, 403, 'Invalid setup token');
   }
   try {
-    await connectDB();
+    const dbResult = await connectDB();
+    if (!dbResult.success) {
+      return jsonError(res, 503, 'Database service is currently unavailable. Please try again later.');
+    }
     const existingSuperAdmin = await User.exists({ role: 'superadmin' });
     if (existingSuperAdmin) {
       return jsonError(res, 403, 'Superadmin already exists');

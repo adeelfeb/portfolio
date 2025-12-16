@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import { jsonError, jsonSuccess } from '../../../lib/response';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import roleMiddleware from '../../../middlewares/roleMiddleware';
@@ -46,11 +46,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  try {
-    await connectDB();
-  } catch (error) {
-    return jsonError(res, 500, 'Failed to connect to database', error.message);
-  }
+  const db = await requireDB(res);
+  if (!db) return;
 
   switch (method) {
     case 'GET': {

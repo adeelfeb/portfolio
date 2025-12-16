@@ -413,10 +413,14 @@ export default function Dashboard({ user }) {
       : sectionDescriptor.subtitle;
   const hideHeader = Boolean(sectionDescriptor.hideHeader);
 
+  // Ensure sectionTitle is always a string to prevent React warnings
+  const safeSectionTitle = typeof sectionTitle === 'string' ? sectionTitle : (Array.isArray(sectionTitle) ? sectionTitle.join(' ') : String(sectionTitle || 'Dashboard'));
+  const pageTitle = `${safeSectionTitle} | Designndev Resolution list`;
+
   return (
     <>
       <Head>
-        <title>{sectionTitle} | Designndev Resolution list</title>
+        <title>{String(pageTitle)}</title>
       </Head>
       <DashboardLayout
         user={sessionUser}

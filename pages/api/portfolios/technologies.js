@@ -1,11 +1,12 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import { getTechnologies } from '../../../controllers/portfolioController';
 import { applyCors } from '../../../utils';
 
 export default async function handler(req, res) {
   const { method } = req;
   if (await applyCors(req, res)) return;
-  await connectDB();
+  const db = await requireDB(res);
+  if (!db) return;
 
   // Technologies endpoint is public
   if (method === 'GET') {

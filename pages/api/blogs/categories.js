@@ -1,11 +1,12 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import { getCategories } from '../../../controllers/blogController';
 import { applyCors } from '../../../utils';
 
 export default async function handler(req, res) {
   const { method } = req;
   if (await applyCors(req, res)) return;
-  await connectDB();
+  const db = await requireDB(res);
+  if (!db) return;
 
   // Categories endpoint is public
   if (method === 'GET') {

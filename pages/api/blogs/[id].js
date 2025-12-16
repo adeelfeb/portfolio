@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import { getBlogById, updateBlog, deleteBlog, publishBlog } from '../../../controllers/blogController';
 import { getUserFromRequest } from '../../../lib/auth';
@@ -7,7 +7,8 @@ import { applyCors } from '../../../utils';
 export default async function handler(req, res) {
   const { method, query } = req;
   if (await applyCors(req, res)) return;
-  await connectDB();
+  const db = await requireDB(res);
+  if (!db) return;
 
   // Extract id from query
   const id = query.id;

@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import User from '../../../models/User';
 import Role from '../../../models/Role';
 import { jsonError, jsonSuccess } from '../../../lib/response';
@@ -30,7 +30,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    const db = await requireDB(res);
+    if (!db) return;
 
     const { name, email, password, role } = req.body || {};
     const missing = [];

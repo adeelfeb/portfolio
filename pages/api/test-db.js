@@ -28,18 +28,14 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       // Try to connect to MongoDB - graceful failure if unavailable
-      try {
-        await connectDB();
-      } catch (dbError) {
-        if (dbError.code === 'NO_DB_URI') {
-          return res.status(200).json({
-            success: false,
-            message: 'Database not configured. MONGODB_URI environment variable is not set.',
-            error: 'DATABASE_NOT_CONFIGURED',
-            timestamp: new Date().toISOString(),
-          });
-        }
-        throw dbError;
+      const dbResult = await connectDB();
+      if (!dbResult.success) {
+        return res.status(200).json({
+          success: false,
+          message: 'Database not configured. MONGODB_URI environment variable is not set.',
+          error: dbResult.code || 'DATABASE_NOT_CONFIGURED',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Create a new test document

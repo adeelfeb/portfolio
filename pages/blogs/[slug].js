@@ -139,10 +139,15 @@ export default function BlogPostPage() {
     );
   }
 
+  // Ensure title is always a string to prevent React warnings
+  const blogTitle = blog?.metaTitle || blog?.title || 'Blog Post';
+  const safeTitle = typeof blogTitle === 'string' ? blogTitle : (Array.isArray(blogTitle) ? blogTitle.join(' ') : String(blogTitle || 'Blog Post'));
+  const pageTitle = `${String(safeTitle)} | Design n Dev`;
+
   return (
     <>
       <Head>
-        <title>{blog.metaTitle || blog.title} | Design n Dev</title>
+        <title>{pageTitle}</title>
         <meta name="description" content={blog.metaDescription || blog.excerpt} />
         {blog.metaKeywords && blog.metaKeywords.length > 0 && (
           <meta name="keywords" content={blog.metaKeywords.join(', ')} />

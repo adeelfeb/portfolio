@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import User from '../../../models/User';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import roleMiddleware from '../../../middlewares/roleMiddleware';
@@ -19,7 +19,8 @@ export default async function handler(req, res) {
   if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
 
   try {
-    await connectDB();
+    const db = await requireDB(res);
+    if (!db) return;
     await ensureDefaultHrUser();
     const users = await User.find()
       .select('name email role createdAt updatedAt')

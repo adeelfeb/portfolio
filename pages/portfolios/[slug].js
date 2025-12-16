@@ -144,7 +144,7 @@ export default function PortfolioPostPage() {
   return (
     <>
       <Head>
-        <title>{portfolio.metaTitle || portfolio.title} | Design n Dev</title>
+        <title>{`${String(portfolio.metaTitle || portfolio.title || 'Portfolio')} | Design n Dev`}</title>
         <meta name="description" content={portfolio.metaDescription || portfolio.description} />
         {portfolio.metaKeywords && portfolio.metaKeywords.length > 0 && (
           <meta name="keywords" content={portfolio.metaKeywords.join(', ')} />

@@ -1,4 +1,4 @@
-import connectDB from '../../../lib/db';
+import { requireDB } from '../../../lib/dbHelper';
 import authMiddleware from '../../../middlewares/authMiddleware';
 import { getAllPortfolios, createPortfolio } from '../../../controllers/portfolioController';
 import { applyCors } from '../../../utils';
@@ -6,7 +6,8 @@ import { applyCors } from '../../../utils';
 export default async function handler(req, res) {
   const { method } = req;
   if (await applyCors(req, res)) return;
-  await connectDB();
+  const db = await requireDB(res);
+  if (!db) return;
 
   switch (method) {
     case 'GET':
