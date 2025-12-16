@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Edit, Trash2, Eye, Clock } from 'lucide-react';
 import axios from 'axios';
 
 // Configure axios to send cookies with requests
@@ -367,15 +367,19 @@ export default function BlogManager({ user }) {
 
   return (
     <div className="blog-manager">
-      <div className="blog-manager-header">
-        <h2>Blog Management</h2>
+      <div className="manager-header">
+        <div>
+          <h2>Blog Management</h2>
+          <p>Create, manage, and publish SEO-optimized blog posts.</p>
+        </div>
         <button onClick={openCreateModal} className="btn-primary">
+          <Plus className="icon-inline" size={18} />
           Create New Blog
         </button>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {error && <div className="alert error">{error}</div>}
+      {success && <div className="alert success">{success}</div>}
 
       {/* Filters */}
       <div className="blog-filters">
@@ -416,36 +420,49 @@ export default function BlogManager({ user }) {
       {isLoading ? (
         <div className="loading">Loading blogs...</div>
       ) : blogs.length === 0 ? (
-        <div className="empty-state">No blogs found</div>
+        <div className="empty-state">
+          <p>No blogs found. Start by creating one!</p>
+        </div>
       ) : (
-        <div className="blog-list">
+        <div className="blogs-grid">
           {blogs.map((blog) => (
-            <div key={blog.id} className="blog-card">
-              <div className="blog-card-header">
-                <h3>{blog.title}</h3>
+            <div key={blog.id} className={`blog-card ${blog.status === 'published' ? 'published' : ''}`}>
+              <div className="card-header">
                 <span className={`status-badge status-${blog.status}`}>
                   {blog.status}
                 </span>
+                <div className="card-actions">
+                  <button onClick={() => openEditModal(blog)} className="icon-btn" title="Edit">
+                    <Edit size={18} />
+                  </button>
+                  <button onClick={() => handleDelete(blog.id)} className="icon-btn delete" title="Delete">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
-              <p className="blog-excerpt">{blog.excerpt}</p>
-              <div className="blog-meta">
-                <span>Category: {blog.category}</span>
-                <span>Author: {blog.authorName}</span>
-                <span>Views: {blog.views || 0}</span>
-                {blog.readingTime && <span>{blog.readingTime} min read</span>}
-              </div>
-              <div className="blog-actions">
-                <button onClick={() => openEditModal(blog)} className="btn-secondary">
-                  Edit
-                </button>
+              
+              <h3>{blog.title}</h3>
+              {blog.excerpt && <p className="blog-excerpt">{blog.excerpt}</p>}
+              
+              <div className="card-footer">
+                <div className="blog-meta">
+                  <span className="category-tag">{blog.category || 'Uncategorized'}</span>
+                  <span className="meta-item">
+                    <Eye size={14} className="icon-inline" />
+                    {blog.views || 0}
+                  </span>
+                  {blog.readingTime && (
+                    <span className="meta-item">
+                      <Clock size={14} className="icon-inline" />
+                      {blog.readingTime} min
+                    </span>
+                  )}
+                </div>
                 {isAdmin && blog.status !== 'published' && (
-                  <button onClick={() => handlePublish(blog.id)} className="btn-success">
+                  <button onClick={() => handlePublish(blog.id)} className="btn-publish">
                     Publish
                   </button>
                 )}
-                <button onClick={() => handleDelete(blog.id)} className="btn-danger">
-                  Delete
-                </button>
               </div>
             </div>
           ))}
@@ -674,139 +691,257 @@ export default function BlogManager({ user }) {
 
       <style jsx>{`
         .blog-manager {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(59, 130, 246, 0.05));
           padding: 2rem;
+          border-radius: 1.5rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
         }
 
-        .blog-manager-header {
+        .manager-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 2rem;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        .manager-header h2 {
+          font-size: 1.75rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: 0.25rem;
+        }
+        .manager-header p {
+          color: #6366f1;
+          font-weight: 500;
+        }
+        
+        .btn-primary {
+          background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+        }
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+          background: linear-gradient(135deg, #7c3aed, #2563eb);
+        }
+        .icon-inline {
+          display: inline-block;
+          vertical-align: middle;
         }
 
         .blog-filters {
           display: flex;
           gap: 1rem;
-          margin-bottom: 2rem;
+          flex-wrap: wrap;
         }
 
         .filter-input,
         .filter-select {
-          padding: 0.5rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
+          padding: 0.875rem 1.125rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
+          border-radius: 0.75rem;
+          font-size: 0.95rem;
+          background: white;
+          color: #1e293b;
+          transition: all 0.3s ease;
+          font-family: inherit;
+        }
+        .filter-input:focus,
+        .filter-select:focus {
+          outline: none;
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+        }
+        .filter-input:hover,
+        .filter-select:hover {
+          border-color: rgba(139, 92, 246, 0.4);
+        }
+        .filter-select {
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b5cf6' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 1rem center;
+          padding-right: 2.5rem;
+        }
+        .filter-input {
+          flex: 1;
+          min-width: 200px;
         }
 
-        .blog-list {
+        .blogs-grid {
           display: grid;
-          gap: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.75rem;
         }
 
         .blog-card {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 1.5rem;
-          background: white;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+          padding: 1.75rem;
+          border-radius: 1.25rem;
+          border: 2px solid rgba(139, 92, 246, 0.2);
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.12), 0 2px 4px rgba(59, 130, 246, 0.08);
+          display: flex;
+          flex-direction: column;
+          transition: all 0.3s ease;
+        }
+        .blog-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(139, 92, 246, 0.2), 0 4px 8px rgba(59, 130, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.4);
+        }
+        .blog-card.published {
+          background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(240, 253, 250, 0.95));
+          border-color: rgba(16, 185, 129, 0.3);
         }
 
-        .blog-card-header {
+        .card-header {
           display: flex;
           justify-content: space-between;
-          align-items: start;
+          align-items: flex-start;
           margin-bottom: 1rem;
         }
-
-        .blog-card-header h3 {
-          margin: 0;
-          flex: 1;
-        }
-
-        .status-badge {
-          padding: 0.25rem 0.75rem;
-          border-radius: 12px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          text-transform: capitalize;
-        }
-
-        .status-draft {
-          background: #f3f4f6;
-          color: #6b7280;
-        }
-
-        .status-pending {
-          background: #fef3c7;
-          color: #92400e;
-        }
-
-        .status-published {
-          background: #d1fae5;
-          color: #065f46;
-        }
-
-        .blog-excerpt {
-          color: #666;
-          margin-bottom: 1rem;
-        }
-
-        .blog-meta {
-          display: flex;
-          gap: 1rem;
-          font-size: 0.875rem;
-          color: #888;
-          margin-bottom: 1rem;
-        }
-
-        .blog-actions {
+        .card-actions {
           display: flex;
           gap: 0.5rem;
         }
-
-        .btn-primary,
-        .btn-secondary,
-        .btn-success,
-        .btn-danger {
-          padding: 0.5rem 1rem;
+        .icon-btn {
+          background: none;
           border: none;
-          border-radius: 4px;
           cursor: pointer;
-          font-weight: 500;
+          color: #94a3b8;
+          padding: 0.5rem;
+          border-radius: 0.375rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .icon-btn:hover {
+          color: #2563eb;
+          background: #eff6ff;
+        }
+        .icon-btn.delete:hover {
+          color: #ef4444;
+          background: #fef2f2;
         }
 
-        .btn-primary {
-          background: #2563eb;
-          color: white;
+        .status-badge {
+          padding: 0.35rem 0.85rem;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          border: 1px solid;
+        }
+        .status-draft {
+          background: linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(107, 114, 128, 0.1));
+          color: #6b7280;
+          border-color: rgba(107, 114, 128, 0.3);
+        }
+        .status-pending {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.1));
+          color: #92400e;
+          border-color: rgba(245, 158, 11, 0.3);
+        }
+        .status-published {
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.1));
+          color: #065f46;
+          border-color: rgba(16, 185, 129, 0.3);
         }
 
-        .btn-secondary {
-          background: #6b7280;
-          color: white;
+        .blog-card h3 {
+          margin: 0 0 0.5rem 0;
+          color: #0f172a;
+          font-size: 1.25rem;
+          font-weight: 700;
         }
-
-        .btn-success {
-          background: #10b981;
-          color: white;
+        .blog-excerpt {
+          color: #64748b;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          margin: 0 0 1.5rem 0;
+          flex: 1;
         }
-
-        .btn-danger {
-          background: #ef4444;
+        
+        .card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: auto;
+          padding-top: 1rem;
+          border-top: 1px solid #f1f5f9;
+        }
+        .blog-meta {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .category-tag {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+          color: #6366f1;
+          padding: 0.35rem 0.85rem;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .meta-item {
+          font-size: 0.85rem;
+          color: #64748b;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+        }
+        .btn-publish {
+          background: linear-gradient(135deg, #10b981, #059669);
           color: white;
+          border: none;
+          padding: 0.4rem 0.8rem;
+          border-radius: 0.5rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        .btn-publish:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
         .alert {
           padding: 1rem;
-          border-radius: 4px;
+          border-radius: 0.5rem;
           margin-bottom: 1rem;
         }
-
-        .alert-error {
-          background: #fee2e2;
-          color: #991b1b;
+        .alert.error {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
         }
-
-        .alert-success {
+        .alert.success {
           background: #d1fae5;
           color: #065f46;
+          border: 1px solid #a7f3d0;
         }
 
         .modal-overlay {
@@ -823,12 +958,15 @@ export default function BlogManager({ user }) {
         }
 
         .modal-content {
-          background: white;
-          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+          border-radius: 1.25rem;
           width: 90%;
           max-width: 800px;
           max-height: 90vh;
           overflow-y: auto;
+          box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3), 0 8px 24px rgba(59, 130, 246, 0.2);
+          border: 2px solid rgba(139, 92, 246, 0.2);
+          animation: slideDown 0.3s ease-out;
         }
 
         .modal-header {
@@ -836,7 +974,13 @@ export default function BlogManager({ user }) {
           justify-content: space-between;
           align-items: center;
           padding: 1.5rem;
-          border-bottom: 1px solid #ddd;
+          border-bottom: 2px solid rgba(139, 92, 246, 0.1);
+        }
+        .modal-header h3 {
+          margin: 0;
+          color: #6366f1;
+          font-weight: 700;
+          font-size: 1.5rem;
         }
 
         .close-btn {
@@ -885,7 +1029,7 @@ export default function BlogManager({ user }) {
           display: block;
           margin-bottom: 0.65rem;
           font-weight: 600;
-          color: #1e293b;
+          color: #4f46e5;
           font-size: 0.9rem;
         }
 
@@ -894,7 +1038,7 @@ export default function BlogManager({ user }) {
         .form-group select {
           width: 100%;
           padding: 0.875rem 1.125rem;
-          border: 2px solid rgba(148, 163, 184, 0.3);
+          border: 2px solid rgba(139, 92, 246, 0.2);
           border-radius: 0.75rem;
           font-family: inherit;
           font-size: 0.95rem;
@@ -905,21 +1049,21 @@ export default function BlogManager({ user }) {
         .form-group input:hover,
         .form-group textarea:hover,
         .form-group select:hover {
-          border-color: rgba(37, 99, 235, 0.4);
+          border-color: rgba(139, 92, 246, 0.4);
           background: #fefefe;
         }
         .form-group input:focus,
         .form-group textarea:focus,
         .form-group select:focus {
           outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
           background: #ffffff;
         }
         .form-group select {
           cursor: pointer;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563eb' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b5cf6' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 1rem center;
           padding-right: 2.5rem;
@@ -983,7 +1127,21 @@ export default function BlogManager({ user }) {
           justify-content: flex-end;
           gap: 1rem;
           padding: 1.5rem;
-          border-top: 1px solid #ddd;
+          border-top: 2px solid rgba(139, 92, 246, 0.1);
+        }
+        .btn-secondary {
+          background: white;
+          color: #475569;
+          border: 1px solid #cbd5e1;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+          background: #f1f5f9;
+          border-color: #94a3b8;
         }
 
         .pagination {
@@ -994,11 +1152,41 @@ export default function BlogManager({ user }) {
           margin-top: 2rem;
         }
 
-        .loading,
-        .empty-state {
+        .loading {
           text-align: center;
           padding: 2rem;
-          color: #666;
+          color: #64748b;
+          font-weight: 500;
+        }
+        .empty-state {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 4rem;
+          background: white;
+          border-radius: 1rem;
+          border: 2px dashed #cbd5e1;
+          color: #64748b;
+        }
+        .empty-state p {
+          margin: 0;
+          font-size: 1.1rem;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 640px) {
+          .blogs-grid {
+            grid-template-columns: 1fr;
+          }
+          .blog-filters {
+            flex-direction: column;
+          }
+          .filter-input {
+            min-width: 100%;
+          }
         }
       `}</style>
     </div>

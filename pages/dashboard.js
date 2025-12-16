@@ -236,12 +236,7 @@ export default function Dashboard({ user }) {
   }, []);
 
   const primaryNav = useMemo(() => navItems, [navItems]);
-  const initialSection = useMemo(() => {
-    return primaryNav[0]?.key || FALLBACK_NAV[0].key;
-  }, [primaryNav]);
-  const [activeSection, setActiveSection] = useState(initialSection);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
+  
   const resolveSectionKey = useCallback(
     (key) => {
       if (!key) return null;
@@ -256,6 +251,30 @@ export default function Dashboard({ user }) {
     },
     [primaryNav]
   );
+
+  // Initialize activeSection by checking hash first, then defaulting to first nav item
+  const [activeSection, setActiveSection] = useState(() => {
+    if (typeof window !== 'undefined') {
+      let hashValue = window.location.hash.replace(/^#/, '');
+      if (hashValue) {
+        try {
+          hashValue = decodeURIComponent(hashValue);
+        } catch {
+          // ignore decode errors
+        }
+        // Try to resolve the hash value
+        const normalized = hashValue.toLowerCase().trim();
+        if (normalized) {
+          const match = navItems.find((item) => item.key.toLowerCase() === normalized);
+          if (match) {
+            return match.key;
+          }
+        }
+      }
+    }
+    return navItems[0]?.key || FALLBACK_NAV[0].key;
+  });
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const updateUrlHash = useCallback((key) => {
     if (typeof window === 'undefined') return;
@@ -295,12 +314,17 @@ export default function Dashboard({ user }) {
       } catch {
         // ignore decode errors and fall back to raw hash
       }
+      if (!hashValue) return; // No hash, keep current section
       const resolvedKey = resolveSectionKey(hashValue);
       if (!resolvedKey) return;
-      setActiveSection((prev) => (prev === resolvedKey ? prev : resolvedKey));
+      setActiveSection((prev) => {
+        // Only update if different to avoid unnecessary re-renders
+        return prev === resolvedKey ? prev : resolvedKey;
+      });
       updateUrlHash(resolvedKey);
     };
 
+    // Apply hash on mount and when hash changes
     applyHashToState();
     window.addEventListener('hashchange', applyHashToState);
     return () => {
