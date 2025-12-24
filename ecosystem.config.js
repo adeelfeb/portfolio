@@ -1,27 +1,17 @@
 module.exports = {
-  apps: [
-    {
-      name: 'proof-server',
-      script: 'npm',
-      args: 'start',
-      cwd: '/root/proof',
-      instances: 1,
-      exec_mode: 'fork',
-      watch: false,
-      max_memory_restart: '500M',
-      env: {
-        NODE_ENV: 'production',
-      },
-      error_file: '/root/.pm2/logs/proof-server-error.log',
-      out_file: '/root/.pm2/logs/proof-server-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      merge_logs: true,
-      autorestart: true,
-      max_restarts: 10,
-      min_uptime: '10s',
-      restart_delay: 4000,
-      kill_timeout: 5000,
-    },
-  ],
+  apps: [{
+    name: 'portfolio',
+    script: './node_modules/next/dist/bin/next',
+    args: 'start -p 3000',
+    node_args: '--max-old-space-size=1024',
+    cwd: '/var/www/portfolio_app',
+    instances: 1,
+    exec_mode: 'fork',
+    autorestart: true,
+    min_uptime: '15s', // Don't allow rapid-fire restarts
+    max_restarts: 5,
+    env: {
+      NODE_ENV: 'production',
+    }
+  }]
 };
-
