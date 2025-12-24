@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -26,9 +26,9 @@ jobs:
 
       - name: Deploy to server
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'cd /root/proof && bash scripts/deploy.sh'
+          # Changed directory to /var/www/portfolio_app
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'bash /var/www/portfolio_app/scripts/deploy.sh'
 
       - name: Deployment status
         run: |
           echo "✅ Deployment completed successfully!"
-
