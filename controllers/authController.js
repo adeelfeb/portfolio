@@ -5,7 +5,7 @@ import { jsonError, jsonSuccess } from '../lib/response';
 import { env } from '../lib/config';
 import { ensureRole, ensureUserHasRole } from '../lib/roles';
 import { generateOTP, generateOTPExpiry, verifyOTP } from '../utils/otp';
-import { sendOTPEmail, sendWelcomeEmail } from '../utils/email';
+import { sendOTPEmail, sendWelcomeEmail, sendEmailAsync } from '../utils/email';
 import { logger } from '../utils/logger';
 
 const DEFAULT_ROLES = [
@@ -29,7 +29,10 @@ function sanitizeUser(userDoc) {
 }
 
 export async function signup(req, res) {
+  const startTime = Date.now();
   const { name, email, password } = req.body || {};
+  
+  logger.info('[Signup] Request received', { email: email?.trim(), timestamp: new Date().toISOString() });
   
   // Validate all required fields with user-friendly messages
   const missing = [];
@@ -65,7 +68,10 @@ export async function signup(req, res) {
   }
   
   try {
+    const dbStartTime = Date.now();
     const dbResult = await connectDB();
+    const dbTime = Date.now() - dbStartTime;
+    logger.info(`[Signup] DB connection: ${dbTime}ms`);
     if (!dbResult.success) {
       // Log error details for debugging (server-side only)
       if (dbResult.error) {
@@ -90,7 +96,11 @@ export async function signup(req, res) {
     }
     
     // Check for existing user (case-insensitive)
+    const findUserStartTime = Date.now();
     const existing = await User.findOne({ email: emailTrimmed });
+    const findUserTime = Date.now() - findUserStartTime;
+    logger.info(`[Signup] User lookup: ${findUserTime}ms`);
+    
     if (existing) {
       // If user exists but email is not verified, allow resending OTP
       if (!existing.isEmailVerified) {
@@ -101,18 +111,20 @@ export async function signup(req, res) {
         existing.otpExpires = otpExpires;
         await existing.save();
         
-        try {
-          await sendOTPEmail(emailTrimmed, otp, existing.name || nameTrimmed);
-          logger.info(`OTP resent to existing unverified user: ${emailTrimmed}`);
-          return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
-            email: emailTrimmed,
-            message: 'Please verify your email to complete registration',
-            requiresVerification: true,
-          });
-        } catch (emailError) {
-          logger.error('Failed to send OTP email:', emailError.message);
-          return jsonError(res, 500, 'Unable to send verification email at this time. Please try again later or contact support if the issue persists.');
-        }
+        // Send email asynchronously - don't block response
+        sendEmailAsync(
+          () => sendOTPEmail(emailTrimmed, otp, existing.name || nameTrimmed),
+          'signup-resend-otp'
+        );
+        
+        const totalTime = Date.now() - startTime;
+        logger.info(`[Signup] Resent OTP to existing user: ${totalTime}ms total`);
+        
+        return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
+          email: emailTrimmed,
+          message: 'Please verify your email to complete registration',
+          requiresVerification: true,
+        });
       }
       return jsonError(res, 409, 'An account with this email already exists. Please sign in instead.');
     }
@@ -121,7 +133,12 @@ export async function signup(req, res) {
     const otp = generateOTP();
     const otpExpires = generateOTPExpiry();
     
+    const roleStartTime = Date.now();
     const baseRole = await ensureRole('base_user', 'Default role for new users');
+    const roleTime = Date.now() - roleStartTime;
+    logger.info(`[Signup] Role ensure: ${roleTime}ms`);
+    
+    const createUserStartTime = Date.now();
     const user = await User.create({
       name: nameTrimmed,
       email: emailTrimmed,
@@ -132,29 +149,36 @@ export async function signup(req, res) {
       otp,
       otpExpires,
     });
+    const createUserTime = Date.now() - createUserStartTime;
+    logger.info(`[Signup] User created: ${createUserTime}ms`);
     
-    // Send OTP email
-    try {
-      await sendOTPEmail(emailTrimmed, otp, nameTrimmed);
-      logger.info(`OTP sent to new user: ${emailTrimmed}`);
-    } catch (emailError) {
-      logger.error('Failed to send OTP email:', emailError.message);
-      // Delete the user if email sending fails
-      try {
-        await User.findByIdAndDelete(user._id);
-      } catch (deleteError) {
-        logger.error('Failed to delete user after email error:', deleteError.message);
-      }
-      return jsonError(res, 500, 'Unable to send verification email at this time. Please check your email address and try again, or contact support if the issue persists.');
-    }
+    // Send OTP email asynchronously - don't block response
+    // User is already created, email will be sent in background
+    sendEmailAsync(
+      () => sendOTPEmail(emailTrimmed, otp, nameTrimmed),
+      'signup-new-user'
+    );
     
+    const totalTime = Date.now() - startTime;
+    logger.info(`[Signup] Success - user created: ${totalTime}ms total`, {
+      userId: user._id,
+      email: emailTrimmed,
+    });
+    
+    // Return success immediately - email is being sent in background
     return jsonSuccess(res, 201, 'Account created successfully! Please check your email for the verification code.', {
       email: emailTrimmed,
       message: 'A verification code has been sent to your email. Please verify your email to complete registration.',
       requiresVerification: true,
     });
   } catch (err) {
-    logger.error('Signup error:', err.message, err.stack);
+    const totalTime = Date.now() - startTime;
+    logger.error(`[Signup] Error after ${totalTime}ms:`, {
+      error: err.message,
+      stack: err.stack,
+      code: err.code,
+      name: err.name,
+    });
     
     // Handle duplicate key errors (MongoDB)
     if (err.code === 11000 || err.name === 'MongoServerError') {
@@ -278,7 +302,10 @@ export async function me(req, res) {
 }
 
 export async function verifyEmail(req, res) {
+  const startTime = Date.now();
   const { email, otp } = req.body || {};
+  
+  logger.info('[VerifyEmail] Request received', { email: email?.trim(), timestamp: new Date().toISOString() });
   
   // Validate input
   const missing = [];
@@ -302,11 +329,18 @@ export async function verifyEmail(req, res) {
   }
   
   try {
+    const dbStartTime = Date.now();
     const dbResult = await connectDB();
+    const dbTime = Date.now() - dbStartTime;
+    logger.info(`[VerifyEmail] DB connection: ${dbTime}ms`);
     if (!dbResult.success) {
       return jsonError(res, 503, 'Database service is currently unavailable. Please try again later.');
     }
+    
+    const findUserStartTime = Date.now();
     const user = await User.findOne({ email: emailTrimmed });
+    const findUserTime = Date.now() - findUserStartTime;
+    logger.info(`[VerifyEmail] User lookup: ${findUserTime}ms`);
     
     if (!user) {
       return jsonError(res, 404, 'No account found with this email. Please sign up first.');
@@ -341,16 +375,16 @@ export async function verifyEmail(req, res) {
     user.isEmailVerified = true;
     user.otp = null;
     user.otpExpires = null;
+    const saveStartTime = Date.now();
     await user.save();
+    const saveTime = Date.now() - saveStartTime;
+    logger.info(`[VerifyEmail] User save: ${saveTime}ms`);
     
-    // Send welcome email
-    try {
-      await sendWelcomeEmail(emailTrimmed, user.name);
-      logger.info(`Welcome email sent to verified user: ${emailTrimmed}`);
-    } catch (emailError) {
-      logger.error('Failed to send welcome email:', emailError.message);
-      // Don't fail the verification if welcome email fails
-    }
+    // Send welcome email asynchronously - don't block response
+    sendEmailAsync(
+      () => sendWelcomeEmail(emailTrimmed, user.name),
+      'email-verification-welcome'
+    );
     
     // Generate token for immediate login after verification
     if (!env.JWT_SECRET) {
@@ -363,19 +397,28 @@ export async function verifyEmail(req, res) {
     }
     setAuthCookie(res, token, req);
     
-    logger.info(`Email verified successfully: ${emailTrimmed}`);
+    const totalTime = Date.now() - startTime;
+    logger.info(`[VerifyEmail] Success: ${totalTime}ms total`, { email: emailTrimmed });
+    
     return jsonSuccess(res, 200, 'Email verified successfully! You can now sign in.', {
       user: sanitizeUser(user),
       token,
     });
   } catch (err) {
-    logger.error('Email verification error:', err.message, err.stack);
+    const totalTime = Date.now() - startTime;
+    logger.error(`[VerifyEmail] Error after ${totalTime}ms:`, {
+      error: err.message,
+      stack: err.stack,
+    });
     return jsonError(res, 500, 'Unable to verify your email at this time. Please try again later or contact support if the issue persists.');
   }
 }
 
 export async function resendOTP(req, res) {
+  const startTime = Date.now();
   const { email } = req.body || {};
+  
+  logger.info('[ResendOTP] Request received', { email: email?.trim(), timestamp: new Date().toISOString() });
   
   if (!email || (typeof email === 'string' && !email.trim())) {
     return jsonError(res, 400, 'Please provide your email address');
@@ -414,19 +457,24 @@ export async function resendOTP(req, res) {
     user.otpExpires = otpExpires;
     await user.save();
     
-    // Send OTP email
-    try {
-      await sendOTPEmail(emailTrimmed, otp, user.name);
-      logger.info(`OTP resent to user: ${emailTrimmed}`);
-      return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
-        email: emailTrimmed,
-      });
-    } catch (emailError) {
-      logger.error('Failed to send OTP email:', emailError.message);
-      return jsonError(res, 500, 'Unable to send verification email at this time. Please try again later or contact support if the issue persists.');
-    }
+    // Send OTP email asynchronously - don't block response
+    sendEmailAsync(
+      () => sendOTPEmail(emailTrimmed, otp, user.name),
+      'resend-otp'
+    );
+    
+    const totalTime = Date.now() - startTime;
+    logger.info(`[ResendOTP] Success: ${totalTime}ms total`, { email: emailTrimmed });
+    
+    return jsonSuccess(res, 200, 'Verification code sent to your email. Please check your inbox.', {
+      email: emailTrimmed,
+    });
   } catch (err) {
-    logger.error('Resend OTP error:', err.message, err.stack);
+    const totalTime = Date.now() - startTime;
+    logger.error(`[ResendOTP] Error after ${totalTime}ms:`, {
+      error: err.message,
+      stack: err.stack,
+    });
     return jsonError(res, 500, 'Unable to resend verification code at this time. Please try again later or contact support if the issue persists.');
   }
 }

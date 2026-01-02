@@ -45,7 +45,7 @@ async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromNam
     throw new Error('SMTP_FROM is not configured. Please add it to your .env or .env.local file.');
   }
 
-  // Create transporter
+  // Create transporter with timeout configuration
   const transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
@@ -54,6 +54,9 @@ async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromNam
       user: smtpUsername,
       pass: smtpPassword,
     },
+    connectionTimeout: 10000, // 10 seconds to establish connection
+    socketTimeout: 10000, // 10 seconds for socket operations
+    greetingTimeout: 10000, // 10 seconds for SMTP greeting
   });
 
   // Normalize 'to' to array
@@ -70,7 +73,13 @@ async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromNam
     text: textBody || htmlBody.replace(/<[^>]*>/g, ''), // Strip HTML if no text body
   };
 
-  const info = await transporter.sendMail(mailOptions);
+  // Send with timeout wrapper
+  const sendPromise = transporter.sendMail(mailOptions);
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('SMTP send timeout after 10 seconds')), 10000)
+  );
+  
+  const info = await Promise.race([sendPromise, timeoutPromise]);
   
   logger.info(`Email sent via SMTP to: ${recipients.join(', ')}, Message ID: ${info.messageId}`);
   
@@ -123,6 +132,7 @@ async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 10000, // 10 second timeout to prevent hanging
     });
 
     // SMTP2Go API returns { data: { email_id: "...", ... } } on success
@@ -229,6 +239,35 @@ export async function sendEmail({
 
   logger.error('Email configuration error:', errorMsg);
   throw new Error(errorMsg);
+}
+
+/**
+ * Send email asynchronously without blocking (fire and forget)
+ * Logs errors but doesn't throw - useful for non-critical emails
+ * @param {Function} emailFn - Function that returns a promise for sending email
+ * @param {string} context - Context for logging (e.g., 'signup', 'verification')
+ * @returns {void} Returns immediately, email sends in background
+ */
+export function sendEmailAsync(emailFn, context = 'email') {
+  // Execute email sending in background without blocking
+  Promise.resolve()
+    .then(() => emailFn())
+    .then((result) => {
+      logger.info(`[${context}] Email sent successfully in background`, {
+        messageId: result?.messageId,
+        timestamp: new Date().toISOString(),
+      });
+    })
+    .catch((error) => {
+      // Log error but don't throw - email failure shouldn't block user flow
+      logger.error(`[${context}] Background email sending failed:`, {
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+    });
+  
+  // Return immediately - email is being sent in background
 }
 
 /**
