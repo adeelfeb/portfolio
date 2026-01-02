@@ -8,69 +8,19 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Production
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        env:
-          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+      - name: Setup SSH
         run: |
-          # Create .ssh directory if it doesn't exist
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Write the private key using environment variable (more reliable for multiline)
-          # Remove carriage returns, preserve newlines, ensure trailing newline
-          echo "$SSH_KEY" | tr -d '\r' | sed '$a\' > ~/.ssh/id_rsa
-          
-          # Set proper permissions (critical for SSH)
+          echo "${{ secrets.DROPLET_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Verify key format and show fingerprint for debugging
-          echo "🔍 Verifying SSH key format..."
-          if ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "✅ SSH key format is valid"
-            echo "Key fingerprint:"
-            ssh-keygen -l -f ~/.ssh/id_rsa
-          else
-            echo "❌ SSH key format verification failed!"
-            echo "Debugging information:"
-            echo "File exists: $([ -f ~/.ssh/id_rsa ] && echo 'yes' || echo 'no')"
-            echo "File size: $(wc -c < ~/.ssh/id_rsa 2>/dev/null || echo '0') bytes"
-            echo "File permissions: $(ls -l ~/.ssh/id_rsa 2>/dev/null || echo 'N/A')"
-            echo ""
-            echo "First 5 lines of key:"
-            head -n 5 ~/.ssh/id_rsa 2>/dev/null || echo "Cannot read file"
-            echo ""
-            echo "Last 5 lines of key:"
-            tail -n 5 ~/.ssh/id_rsa 2>/dev/null || echo "Cannot read file"
-            exit 1
-          fi
-
-      - name: Add server to known hosts
-        run: |
-          mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
 
-      - name: Test SSH connection
+      - name: Deploy
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o BatchMode=yes -o IdentitiesOnly=yes root@${{ secrets.DROPLET_HOST }} 'echo "SSH connection successful"'
-        continue-on-error: true
-
-      - name: Deploy to server
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o IdentitiesOnly=yes root@${{ secrets.DROPLET_HOST }} 'bash /opt/projects/portfolio/scripts/deploy.sh'
-
-      - name: Deployment status
-        run: echo "✅ Deployment completed successfully!"
-
-      - name: Cleanup SSH key
-        if: always()
-        run: |
-          rm -f ~/.ssh/id_rsa
-          echo "SSH key cleaned up"
+          ssh -i ~/.ssh/id_rsa root@${{ secrets.DROPLET_HOST }} \
+          "bash /opt/projects/portfolio/scripts/deploy.sh"
