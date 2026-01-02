@@ -25,6 +25,7 @@ export default function VerifyEmailPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   
   const email = router.query.email || '';
 
@@ -35,13 +36,23 @@ export default function VerifyEmailPage() {
     }
   }, [router.isReady, email, router]);
 
+  // Handle resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
   const isDisabled = useMemo(() => {
     return loading || !otp.trim() || otp.trim().length < 4;
   }, [otp, loading]);
 
   async function onResend(e) {
     e.preventDefault();
-    if (resending || !email) return;
+    if (resending || !email || resendCooldown > 0) return;
     
     setResending(true);
     setError('');
@@ -60,6 +71,8 @@ export default function VerifyEmailPage() {
         setError(data.message || 'Failed to resend code');
       } else {
         setSuccess('Verification code sent! Please check your email.');
+        // Start 40 second cooldown timer
+        setResendCooldown(40);
       }
     } catch (err) {
       setError('Failed to resend code. Please try again.');
@@ -170,10 +183,14 @@ export default function VerifyEmailPage() {
                 <button 
                     type="button" 
                     onClick={onResend} 
-                    disabled={resending}
+                    disabled={resending || resendCooldown > 0}
                     className="text-btn"
                 >
-                    {resending ? 'Sending...' : 'Resend Code'}
+                    {resending 
+                      ? 'Sending...' 
+                      : resendCooldown > 0 
+                        ? `Resend Code (${resendCooldown}s)` 
+                        : 'Resend Code'}
                 </button>
             </div>
           </form>

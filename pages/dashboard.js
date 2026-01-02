@@ -11,6 +11,8 @@ import PortfolioManager from '../components/dashboard/PortfolioManager';
 import NewYearResolutionManager from '../components/dashboard/NewYearResolutionManager';
 import SupportPanel from '../components/dashboard/SupportPanel';
 import ResourcesPanel from '../components/dashboard/ResourcesPanel';
+import HelpPanel from '../components/dashboard/HelpPanel';
+import PrivacyPanel from '../components/dashboard/PrivacyPanel';
 import { getUserFromRequest } from '../lib/auth';
 
 function serializeUser(user) {
@@ -52,6 +54,8 @@ const NAVIGATION_BY_ROLE = {
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
   ],
   admin: [
     { key: 'overview', label: 'Overview' },
@@ -59,6 +63,8 @@ const NAVIGATION_BY_ROLE = {
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
   ],
   hr: [
     { key: 'overview', label: 'Overview' },
@@ -66,6 +72,8 @@ const NAVIGATION_BY_ROLE = {
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
   ],
   hr_admin: [
     { key: 'overview', label: 'Overview' },
@@ -73,12 +81,16 @@ const NAVIGATION_BY_ROLE = {
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
   ],
   base_user: [
     { key: 'blogs', label: 'Blogs' },
     { key: 'resolutions', label: 'New Year Resolutions' },
     { key: 'resources', label: 'Resources' },
     { key: 'support', label: 'Support' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
   ],
 };
 
@@ -112,6 +124,16 @@ const SECTION_DESCRIPTORS = {
     subtitle: 'Get help and contact support.',
     hideHeader: true,
     body: () => <SupportPanel />,
+  },
+  help: {
+    subtitle: 'Professional development services and support.',
+    hideHeader: true,
+    body: () => <HelpPanel />,
+  },
+  privacy: {
+    subtitle: 'Privacy and confidentiality commitment.',
+    hideHeader: true,
+    body: () => <PrivacyPanel />,
   },
   'user-management': {
     subtitle: 'Manage access, roles, and permissions across your organization.',
@@ -431,19 +453,6 @@ export default function Dashboard({ user }) {
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
       >
-        <div className="disclaimer-banner">
-          <div className="disclaimer-content">
-            <div className="disclaimer-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                <path d="M9 12l2 2 4-4"></path>
-              </svg>
-            </div>
-            <div className="disclaimer-text">
-              <strong>Privacy & Confidentiality Commitment:</strong> This platform is an <strong>open-source project</strong> designed to help you maintain your New Year resolutions and write blogs for free. We <strong>do not collect, store, or sell your personal information</strong>. Your data privacy and confidentiality are of the <strong>highest importance to us</strong>. Enjoy managing your resolutions and todos with complete peace of mind.
-            </div>
-          </div>
-        </div>
         <section className={`section ${isOverviewSection ? 'section--compact' : ''}`}>
           {!isOverviewSection && !hideHeader && (
             <header className="section-header">
@@ -504,195 +513,7 @@ export default function Dashboard({ user }) {
           </div>
         </section>
 
-        <div className="promotion-banner">
-          <div className="promotion-content">
-            <div className="promotion-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-            </div>
-            <div className="promotion-text">
-              <strong>Need a Developer?</strong> I'm a <strong>Software Engineer</strong>, <strong>Website Developer</strong>, <strong>Full Stack Developer</strong>, and <strong>App Developer</strong> ready to help bring your projects, ventures, and ideas to life. Let's accomplish your goals in the coming years with cutting-edge AI and functionality that you can sell and grow with. <strong>Connect with us today!</strong>
-            </div>
-            <div className="promotion-links">
-              <a 
-                href="https://www.fiverr.com/s/EgQz3ey" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="promotion-link promotion-link--fiverr"
-                aria-label="Visit Fiverr Profile"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.004 15.588a.995.995 0 1 0 .002-1.99.995.995 0 0 0-.002 1.99zm-.996-3.705h-.85c-.546 0-.84.41-.84 1.105v2.535h-1.6v-3.64h-.85v-.89h.85v-.74c0-1.19.345-2.09 1.23-2.7.735-.48 1.67-.57 2.52-.57v.9c-.405 0-.795.03-1.14.15-.525.21-.78.75-.78 1.38v.58h1.52v.89zm-5.025 0h-3.6v6.24h1.6v-2.25h1.7c.99 0 1.65-.65 1.65-1.8 0-1.02-.62-2.19-2.35-2.19zm.1 2.7h-1.8v-1.8h1.8c.6 0 .9.35.9.9s-.3.9-.9.9zm-4.125-2.7h-1.6v6.24h1.6v-6.24zm-2.7 0H4.9v.9h1.375v5.34h1.6v-5.34h1.125v-.9zm-3.6 0H.9v.9h1.6v5.34h1.6v-5.34h1.125v-.9z"/>
-                </svg>
-                <span>Fiverr</span>
-              </a>
-              <a 
-                href="https://www.upwork.com/freelancers/~015f09e4ce1f66527f?p=1804023285153173504" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="promotion-link promotion-link--upwork"
-                aria-label="Visit Upwork Profile"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.561 13.158c-1.102 0-2.135-.467-3.074-1.227l.228-1.076.008-.042c.207-1.143.849-3.06 2.839-3.06 1.492 0 2.703 1.212 2.703 2.703-.001 1.489-1.212 2.702-2.704 2.702zm0-8.14c-2.539 0-4.51 1.649-5.31 4.366-1.22-1.834-2.148-4.036-2.687-5.892H7.828v7.112c-.002 1.406-1.141 2.546-2.547 2.546-1.405 0-2.543-1.14-2.545-2.546V3.492H0v7.112c0 2.914 2.37 5.303 5.281 5.303 2.913 0 5.283-2.389 5.283-5.303v-1.19c.529 1.107 1.182 2.229 1.974 3.221l-1.673 7.873h2.797l1.213-5.71c1.063.679 2.285 1.109 3.686 1.109 3 0 5.439-2.452 5.439-5.45 0-3-2.439-5.439-5.439-5.439z"/>
-                </svg>
-                <span>Upwork</span>
-              </a>
-              <a 
-                href="https://wa.me/923099670475" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="promotion-link promotion-link--whatsapp"
-                aria-label="Contact on WhatsApp"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                <span>WhatsApp</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
         <style jsx>{`
-          .disclaimer-banner {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(96, 165, 250, 0.3);
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
-            margin: -2rem -3rem 2rem -3rem;
-            padding: 1rem 3rem;
-          }
-
-          .disclaimer-content {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            max-width: 100%;
-          }
-
-          .disclaimer-icon {
-            flex-shrink: 0;
-            width: 24px;
-            height: 24px;
-            margin-top: 0.15rem;
-            color: #ffffff;
-            opacity: 0.95;
-          }
-
-          .disclaimer-text {
-            flex: 1;
-            color: #ffffff;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin: 0;
-          }
-
-          .disclaimer-text strong {
-            font-weight: 600;
-            color: #ffffff;
-          }
-
-          .promotion-banner {
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(110, 231, 183, 0.3);
-            box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);
-            margin: 2rem -3rem -2.5rem -3rem;
-            padding: 1.25rem 3rem;
-          }
-
-          .promotion-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1.5rem;
-            max-width: 100%;
-          }
-
-          .promotion-icon {
-            flex-shrink: 0;
-            width: 28px;
-            height: 28px;
-            color: #ffffff;
-            opacity: 0.95;
-            animation: pulse 2s ease-in-out infinite;
-          }
-
-          @keyframes pulse {
-            0%, 100% {
-              opacity: 0.95;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(1.05);
-            }
-          }
-
-          .promotion-text {
-            flex: 1;
-            color: #ffffff;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin: 0;
-          }
-
-          .promotion-text strong {
-            font-weight: 600;
-            color: #ffffff;
-          }
-
-          .promotion-links {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-shrink: 0;
-          }
-
-          .promotion-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-          }
-
-          .promotion-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          }
-
-          .promotion-link svg {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-          }
-
-          .promotion-link span {
-            white-space: nowrap;
-          }
-
           .section {
             display: grid;
             gap: 1rem;
@@ -1121,60 +942,7 @@ export default function Dashboard({ user }) {
           }
 
           @media (max-width: 960px) {
-            .disclaimer-banner {
-              margin: 0 -1.5rem 2rem -1.5rem;
-              padding: 1rem 1.5rem;
-              top: 0;
-            }
 
-            .disclaimer-content {
-              gap: 0.85rem;
-            }
-
-            .disclaimer-icon {
-              width: 20px;
-              height: 20px;
-              margin-top: 0.1rem;
-            }
-
-            .disclaimer-text {
-              font-size: 0.85rem;
-              line-height: 1.55;
-            }
-
-            .promotion-banner {
-              margin: 2rem -1.5rem -3rem -1.5rem;
-              padding: 1rem 1.5rem;
-            }
-
-            .promotion-content {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 1rem;
-            }
-
-            .promotion-icon {
-              width: 24px;
-              height: 24px;
-            }
-
-            .promotion-text {
-              font-size: 0.85rem;
-              line-height: 1.55;
-            }
-
-            .promotion-links {
-              width: 100%;
-              justify-content: flex-start;
-              gap: 0.75rem;
-            }
-
-            .promotion-link {
-              flex: 1;
-              justify-content: center;
-              padding: 0.55rem 0.85rem;
-              font-size: 0.8rem;
-            }
 
             .section-title {
               font-size: clamp(1.5rem, 4vw, 1.9rem);
@@ -1186,59 +954,6 @@ export default function Dashboard({ user }) {
           }
 
           @media (max-width: 720px) {
-            .disclaimer-banner {
-              margin: 0 -1.5rem 1.5rem -1.5rem;
-              padding: 0.9rem 1.5rem;
-            }
-
-            .disclaimer-content {
-              gap: 0.75rem;
-            }
-
-            .disclaimer-icon {
-              width: 18px;
-              height: 18px;
-              margin-top: 0.05rem;
-            }
-
-            .disclaimer-text {
-              font-size: 0.8rem;
-              line-height: 1.5;
-            }
-
-            .promotion-banner {
-              margin: 1.5rem -1.5rem -3rem -1.5rem;
-              padding: 0.9rem 1.5rem;
-            }
-
-            .promotion-content {
-              gap: 0.85rem;
-            }
-
-            .promotion-icon {
-              width: 22px;
-              height: 22px;
-            }
-
-            .promotion-text {
-              font-size: 0.8rem;
-              line-height: 1.5;
-            }
-
-            .promotion-links {
-              gap: 0.65rem;
-            }
-
-            .promotion-link {
-              padding: 0.5rem 0.75rem;
-              font-size: 0.75rem;
-            }
-
-            .promotion-link svg {
-              width: 16px;
-              height: 16px;
-            }
-
             .section {
               gap: 1.5rem;
             }
@@ -1278,63 +993,7 @@ export default function Dashboard({ user }) {
           }
 
           @media (max-width: 480px) {
-            .disclaimer-banner {
-              margin: 0 -1rem 1.5rem -1rem;
-              padding: 0.85rem 1rem;
-            }
 
-            .disclaimer-content {
-              gap: 0.65rem;
-            }
-
-            .disclaimer-icon {
-              width: 16px;
-              height: 16px;
-              margin-top: 0.05rem;
-            }
-
-            .disclaimer-text {
-              font-size: 0.75rem;
-              line-height: 1.45;
-            }
-
-            .promotion-banner {
-              margin: 1.5rem -1rem -2rem -1rem;
-              padding: 0.85rem 1rem;
-            }
-
-            .promotion-content {
-              flex-direction: column;
-              gap: 0.75rem;
-            }
-
-            .promotion-icon {
-              width: 20px;
-              height: 20px;
-            }
-
-            .promotion-text {
-              font-size: 0.75rem;
-              line-height: 1.45;
-            }
-
-            .promotion-links {
-              width: 100%;
-              flex-direction: column;
-              gap: 0.6rem;
-            }
-
-            .promotion-link {
-              width: 100%;
-              justify-content: center;
-              padding: 0.6rem 0.85rem;
-              font-size: 0.75rem;
-            }
-
-            .promotion-link svg {
-              width: 16px;
-              height: 16px;
-            }
 
             .section-header {
               gap: 0.4rem;
