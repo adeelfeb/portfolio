@@ -81,7 +81,10 @@ async function sendEmailViaSMTP({ to, subject, htmlBody, textBody, from, fromNam
   
   const info = await Promise.race([sendPromise, timeoutPromise]);
   
-  logger.info(`Email sent via SMTP to: ${recipients.join(', ')}, Message ID: ${info.messageId}`);
+  // Only log in development
+  if (process.env.NODE_ENV === 'development') {
+    logger.info(`Email sent via SMTP to: ${recipients.join(', ')}, Message ID: ${info.messageId}`);
+  }
   
   return {
     success: true,
@@ -127,7 +130,10 @@ async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName
   };
 
   try {
-    logger.info(`Sending email via API to: ${recipients.join(', ')}`);
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      logger.info(`Sending email via API to: ${recipients.join(', ')}`);
+    }
     const response = await axios.post(SMTP2GO_API_URL, emailData, {
       headers: {
         'Content-Type': 'application/json',
@@ -138,7 +144,10 @@ async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName
     // SMTP2Go API returns { data: { email_id: "...", ... } } on success
     if (response.data) {
       if (response.data.data && response.data.data.email_id) {
-        logger.info(`Email sent successfully. Message ID: ${response.data.data.email_id}`);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          logger.info(`Email sent successfully. Message ID: ${response.data.data.email_id}`);
+        }
         return {
           success: true,
           messageId: response.data.data.email_id,
@@ -147,7 +156,10 @@ async function sendEmailViaAPI({ to, subject, htmlBody, textBody, from, fromName
       }
       // Sometimes the response structure might be slightly different
       if (response.data.email_id) {
-        logger.info(`Email sent successfully. Message ID: ${response.data.email_id}`);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          logger.info(`Email sent successfully. Message ID: ${response.data.email_id}`);
+        }
         return {
           success: true,
           messageId: response.data.email_id,
@@ -197,16 +209,6 @@ export async function sendEmail({
   from,
   fromName,
 }) {
-  // Debug logging in development
-  if (process.env.NODE_ENV === 'development') {
-    logger.info('Email config check:', {
-      hasSMTP2GO_API_KEY: !!env.SMTP2GO_API_KEY,
-      hasSMTP_USERNAME: !!env.SMTP_USERNAME,
-      hasSMTP_PASSWORD: !!env.SMTP_PASSWORD,
-      SMTP2GO_FROM_EMAIL: env.SMTP2GO_FROM_EMAIL || 'Not set',
-      SMTP_FROM: env.SMTP_FROM || 'Not set',
-    });
-  }
 
   // Try REST API first if API key is available
   if (env.SMTP2GO_API_KEY && env.SMTP2GO_API_KEY.trim() !== '') {
@@ -253,13 +255,16 @@ export function sendEmailAsync(emailFn, context = 'email') {
   Promise.resolve()
     .then(() => emailFn())
     .then((result) => {
-      logger.info(`[${context}] Email sent successfully in background`, {
-        messageId: result?.messageId,
-        timestamp: new Date().toISOString(),
-      });
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        logger.info(`[${context}] Email sent successfully in background`, {
+          messageId: result?.messageId,
+          timestamp: new Date().toISOString(),
+        });
+      }
     })
     .catch((error) => {
-      // Log error but don't throw - email failure shouldn't block user flow
+      // Always log errors - these are important for production debugging
       logger.error(`[${context}] Background email sending failed:`, {
         error: error.message,
         stack: error.stack,
