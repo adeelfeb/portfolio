@@ -350,15 +350,80 @@ export async function sendWelcomeEmail(email, userName) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Welcome</title>
     </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px;">
-        <h2 style="color: #333; margin-top: 0;">Welcome, ${userName}!</h2>
-        <p>Your email has been successfully verified. Your account is now active and ready to use.</p>
-        <p>You can now log in and start using all the features available to you.</p>
-        <p>If you have any questions, feel free to reach out to our support team.</p>
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
-        <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
-      </div>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f7fa;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa; padding: 20px;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <table role="presentation" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #0070f3 0%, #3291ff 100%); padding: 40px 30px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">Welcome, ${userName}!</h1>
+                </td>
+              </tr>
+              
+              <!-- Main Content -->
+              <tr>
+                <td style="padding: 40px 30px;">
+                  <p style="color: #333; font-size: 16px; margin: 0 0 20px 0; line-height: 1.8;">
+                    Your email has been successfully verified. Your account is now active and ready to use.
+                  </p>
+                  <p style="color: #333; font-size: 16px; margin: 0 0 30px 0; line-height: 1.8;">
+                    You can now log in and start using all the features available to you.
+                  </p>
+                  
+                  <!-- Services Section -->
+                  <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #0070f3; padding: 25px; border-radius: 8px; margin: 30px 0;">
+                    <h2 style="color: #0070f3; margin: 0 0 15px 0; font-size: 22px; font-weight: 600;">🚀 Need Professional Services?</h2>
+                    <p style="color: #495057; font-size: 15px; margin: 0 0 15px 0; line-height: 1.7;">
+                      If you're looking for professional services in <strong style="color: #212529;">website development</strong>, <strong style="color: #212529;">programming & software</strong>, <strong style="color: #212529;">app development</strong>, <strong style="color: #212529;">deployment</strong>, <strong style="color: #212529;">SEO</strong>, or <strong style="color: #212529;">email marketing</strong>, we're here to help!
+                    </p>
+                    <p style="color: #495057; font-size: 15px; margin: 0 0 20px 0; line-height: 1.7;">
+                      <strong style="color: #28a745;">✨ Special Offer:</strong> Get <strong style="color: #dc3545;">discounted prices</strong> and <strong style="color: #0070f3;">free guidance</strong> for your project workflow!
+                    </p>
+                    
+                    <!-- Links Section -->
+                    <div style="margin-top: 25px;">
+                      <p style="color: #495057; font-size: 14px; margin: 0 0 12px 0; font-weight: 600;">Connect with us:</p>
+                      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <a href="https://www.fiverr.com/s/EgQz3ey" style="display: inline-block; background-color: #1dbf73; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-right: 10px;">📦 Fiverr</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <a href="https://www.upwork.com/freelancers/~015f09e4ce1f66527f?p=1804023285153173504" style="display: inline-block; background-color: #14a800; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-right: 10px;">💼 Upwork</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <a href="https://designndev.com/" style="display: inline-block; background-color: #0070f3; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">🌐 Our Website</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                  
+                  <p style="color: #6c757d; font-size: 14px; margin: 30px 0 0 0; line-height: 1.6;">
+                    If you have any questions, feel free to reach out to our support team.
+                  </p>
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                  <p style="color: #6c757d; font-size: 12px; margin: 0; line-height: 1.5;">
+                    This is an automated message, please do not reply.<br>
+                    © ${new Date().getFullYear()} Design & Dev. All rights reserved.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `;
@@ -370,10 +435,22 @@ Your email has been successfully verified. Your account is now active and ready 
 
 You can now log in and start using all the features available to you.
 
+Need Professional Services?
+
+If you're looking for professional services in website development, programming & software, app development, deployment, SEO, or email marketing, we're here to help!
+
+Special Offer: Get discounted prices and free guidance for your project workflow!
+
+Connect with us:
+- Fiverr: https://www.fiverr.com/s/EgQz3ey
+- Upwork: https://www.upwork.com/freelancers/~015f09e4ce1f66527f?p=1804023285153173504
+- Our Website: https://designndev.com/
+
 If you have any questions, feel free to reach out to our support team.
 
 ---
 This is an automated message, please do not reply.
+© ${new Date().getFullYear()} Design & Dev. All rights reserved.
   `;
 
   return sendEmail({
