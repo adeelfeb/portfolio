@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       try {
         const user = await authMiddleware(req, res);
         if (!user) return;
-        if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
+        if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin', 'developer'])(req, res)) return;
         const { name, email, password, role } = req.body || {};
         const trimmedName = typeof name === 'string' ? name.trim() : '';
         const trimmedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';

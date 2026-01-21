@@ -32,7 +32,7 @@ export default function PortfolioManager({ user }) {
     pages: 0,
   });
 
-  const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(user?.role?.toLowerCase());
+  const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(user?.role?.toLowerCase());
 
   // Form state
   const [formData, setFormData] = useState({

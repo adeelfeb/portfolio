@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   const user = await authMiddleware(req, res);
   if (!user) return;
 
-  if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) {
+  if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin', 'developer'])(req, res)) {
     return;
   }
 

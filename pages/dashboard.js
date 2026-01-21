@@ -59,6 +59,16 @@ const NAVIGATION_BY_ROLE = {
     { key: 'help', label: 'Help' },
     { key: 'privacy', label: 'Privacy' },
   ],
+  developer: [
+    { key: 'overview', label: 'Overview' },
+    { key: 'user-management', label: 'User Management' },
+    { key: 'blogs', label: 'Blogs' },
+    { key: 'portfolios', label: 'Portfolios' },
+    { key: 'add-origin', label: 'Add Origin' },
+    { key: 'api-endpoints', label: 'API Endpoints' },
+    { key: 'help', label: 'Help' },
+    { key: 'privacy', label: 'Privacy' },
+  ],
   admin: [
     { key: 'overview', label: 'Overview' },
     { key: 'blogs', label: 'Blogs' },

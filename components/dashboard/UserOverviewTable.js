@@ -15,9 +15,10 @@ const DATE_FORMAT_OPTIONS = {
   timeStyle: 'short',
 };
 
-const EDIT_ROLES = new Set(['superadmin', 'admin', 'hr', 'hr_admin']);
+const EDIT_ROLES = new Set(['superadmin', 'admin', 'hr', 'hr_admin', 'developer']);
 const ROLE_OPTIONS = [
   { value: 'superadmin', label: 'Super Admin' },
+  { value: 'developer', label: 'Developer' },
   { value: 'admin', label: 'Admin' },
   { value: 'hr_admin', label: 'HR Admin' },
   { value: 'hr', label: 'HR' },

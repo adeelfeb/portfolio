@@ -136,7 +136,7 @@ export async function getBlogById(req, res) {
 
     // Check if user is authenticated
     const user = req.user;
-    const isAdmin = user && ['superadmin', 'admin', 'hr_admin'].includes(user.role?.toLowerCase());
+    const isAdmin = user && ['superadmin', 'admin', 'hr_admin', 'developer'].includes(user.role?.toLowerCase());
 
     // Build the complete query
     let query;
@@ -232,7 +232,7 @@ export async function createBlog(req, res) {
     }
 
     // Check if user is admin - admins can publish directly
-    const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(req.user.role?.toLowerCase());
+    const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(req.user.role?.toLowerCase());
     
     // Base users can only create drafts or pending, not published
     let finalStatus = status;
@@ -313,7 +313,7 @@ export async function updateBlog(req, res) {
     }
 
     // Check permissions - only author or admin can update
-    const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(req.user.role?.toLowerCase());
+    const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(req.user.role?.toLowerCase());
     const isAuthor = blog.author.toString() === req.user._id.toString();
 
     if (!isAdmin && !isAuthor) {
@@ -362,7 +362,7 @@ export async function updateBlog(req, res) {
 
     // Handle status changes
     if (status !== undefined) {
-      const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(req.user.role?.toLowerCase());
+      const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(req.user.role?.toLowerCase());
       
       // Only admins can publish directly or change status
       if (isAdmin) {
@@ -410,7 +410,7 @@ export async function deleteBlog(req, res) {
     }
 
     // Check permissions - only author or admin can delete
-    const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(req.user.role?.toLowerCase());
+    const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(req.user.role?.toLowerCase());
     const isAuthor = blog.author.toString() === req.user._id.toString();
 
     if (!isAdmin && !isAuthor) {
@@ -435,7 +435,7 @@ export async function publishBlog(req, res) {
       return jsonError(res, 401, 'Authentication required');
     }
 
-    const isAdmin = ['superadmin', 'admin', 'hr_admin'].includes(req.user.role?.toLowerCase());
+    const isAdmin = ['superadmin', 'admin', 'hr_admin', 'developer'].includes(req.user.role?.toLowerCase());
     if (!isAdmin) {
       return jsonError(res, 403, 'Only admins can publish blogs');
     }

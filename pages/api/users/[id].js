@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         let normalizedRole = null;
         let roleDoc = null;
         if (Object.prototype.hasOwnProperty.call(body, 'role')) {
-          if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
+          if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin', 'developer'])(req, res)) return;
           normalizedRole =
             typeof body.role === 'string' && body.role.trim()
               ? body.role.trim().toLowerCase()
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
       try {
         const currentUser = await authMiddleware(req, res);
         if (!currentUser) return;
-        if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin'])(req, res)) return;
+        if (!roleMiddleware(['admin', 'superadmin', 'hr', 'hr_admin', 'developer'])(req, res)) return;
         const user = await User.findByIdAndDelete(id).select('-password');
         if (!user) return jsonError(res, 404, 'User not found');
         return jsonSuccess(res, 200, 'User deleted', { user });

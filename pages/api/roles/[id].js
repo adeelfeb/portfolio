@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
   const user = await authMiddleware(req, res);
   if (!user) return;
-  if (!roleMiddleware(['admin', 'superadmin'])(req, res)) return;
+  if (!roleMiddleware(['admin', 'superadmin', 'developer'])(req, res)) return;
   return deleteRole(req, res);
 }
 
