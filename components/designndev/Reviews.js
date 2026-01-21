@@ -81,11 +81,23 @@ const reviews = [
 
 export default function Reviews() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        // Show 2 reviews on mobile/tablet, 3 on desktop
         // Cycle through all reviews
         return (prevIndex + 1) % reviews.length
       })
@@ -94,10 +106,12 @@ export default function Reviews() {
     return () => clearInterval(interval)
   }, [])
 
-  // Get visible reviews - show 2-3 at a time
+  // Get visible reviews - show 1 on mobile, 3 on desktop
   const getVisibleReviews = () => {
     const reviewsToShow = []
-    for (let i = 0; i < 3; i++) {
+    const numToShow = isMobile ? 1 : 3
+    
+    for (let i = 0; i < numToShow; i++) {
       const index = (currentIndex + i) % reviews.length
       reviewsToShow.push(reviews[index])
     }

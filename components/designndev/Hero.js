@@ -13,6 +13,9 @@ export default function Hero() {
     // Initialize Vanta effect after scripts are loaded
     const initVanta = () => {
       if (typeof window !== 'undefined' && window.VANTA && vantaRef.current && !vantaEffect.current) {
+        // Detect if device is mobile
+        const isMobile = window.innerWidth < 768
+        
         vantaEffect.current = window.VANTA.GLOBE({
           el: vantaRef.current,
           mouseControls: true,
@@ -20,10 +23,10 @@ export default function Hero() {
           gyroControls: false,
           minHeight: 200.00,
           minWidth: 200.00,
-          scale: 1.00,
-          scaleMobile: 1.00,
+          scale: isMobile ? 0.6 : 1.00,
+          scaleMobile: 0.6,
           color: 0xffffff,
-          size: 1.30,
+          size: isMobile ? 0.8 : 1.30,
           backgroundColor: 0x0
         })
       }
@@ -102,7 +105,7 @@ export default function Hero() {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 md:py-12">
         <div className="relative max-w-4xl">
-          <div className="text-left p-6 sm:p-8 md:p-10 lg:p-12">
+          <div className="text-left p-6 sm:p-8 md:p-10 lg:p-12 md:backdrop-blur-0 backdrop-blur-sm md:bg-transparent bg-black/20 rounded-2xl md:rounded-none">
             {/* Main Headline */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
