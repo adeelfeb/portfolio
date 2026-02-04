@@ -77,6 +77,11 @@ const ValentineUrlSchema = new mongoose.Schema(
       enum: THEME_COLORS,
       default: 'rose',
     },
+    decorations: {
+      type: [String],
+      enum: ['flowers', 'teddy', 'chocolate', 'hearts'],
+      default: [],
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

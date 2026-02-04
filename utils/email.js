@@ -514,7 +514,7 @@ export async function sendValentineLinkEmail(to, { recipientName, linkUrl, theme
   const isDark = t === 'vintage' && c === 'crimson';
   const textColor = isDark ? '#fef2f2' : '#1f2937';
   const mutedColor = isDark ? '#d6d3d1' : '#6b7280';
-  const subject = customSubject && customSubject.trim() ? customSubject.trim() : `You've got something special, ${recipientName || 'there'} 💝`;
+  const subject = customSubject && customSubject.trim() ? customSubject.trim() : `You've got something special, ${recipientName || 'there'}`;
   const defaultIntro = 'Click the link below to open your message. This link is just for you.';
   const introParagraph = customBody && customBody.trim() ? customBody.trim() : defaultIntro;
   const introEscaped = introParagraph.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br />');
@@ -534,7 +534,7 @@ export async function sendValentineLinkEmail(to, { recipientName, linkUrl, theme
             <table role="presentation" style="max-width: 480px; width:100%; border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid ${themeStyles.border};">
               <tr>
                 <td style="padding: 40px 32px; text-align: center;">
-                  <p style="font-size: 32px; margin: 0 0 16px 0; line-height: 1;">❤</p>
+                  <p style="font-size: 32px; margin: 0 0 16px 0; line-height: 1;"><span style="display: inline-block; width: 28px; height: 28px; background: linear-gradient(135deg, #be123c, #e11d48); border-radius: 50%; transform: rotate(-45deg); box-shadow: 0 2px 8px rgba(190,18,60,0.4);"></span></p>
                   <h1 style="color: ${textColor}; font-size: 22px; font-weight: 700; margin: 0 0 8px 0;">You've got something special</h1>
                   ${recipientName ? `<p style="color: ${mutedColor}; font-size: 16px; margin: 0 0 24px 0;">For ${recipientName}</p>` : ''}
                   <p style="color: ${mutedColor}; font-size: 15px; margin: 0 0 24px 0; line-height: 1.5;">${introEscaped}</p>
@@ -558,7 +558,7 @@ export async function sendValentineLinkEmail(to, { recipientName, linkUrl, theme
 
   const textBody = (customBody && customBody.trim()
     ? customBody.trim() + '\n\n'
-    : `You've got something special${recipientName ? `, ${recipientName}` : ''} 💝\n\n`) +
+    : `You've got something special${recipientName ? `, ${recipientName}` : ''}\n\n`) +
     'Open your message by visiting this link (it\'s just for you):\n\n' +
     linkUrl + '\n\n' +
     'This link is private. Do not share it with others.';

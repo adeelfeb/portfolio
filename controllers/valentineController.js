@@ -38,6 +38,7 @@ function sanitizeForOwner(valentine) {
     buttonText: valentine.buttonText,
     theme: valentine.theme,
     themeColor: valentine.themeColor,
+    decorations: Array.isArray(valentine.decorations) ? valentine.decorations : [],
     createdBy: valentine.createdBy?._id || valentine.createdBy,
     createdByName: valentine.createdByName,
     createdAt: valentine.createdAt,
@@ -55,6 +56,7 @@ function sanitizeForPublic(valentine) {
     buttonText: valentine.buttonText,
     theme: valentine.theme,
     themeColor: valentine.themeColor,
+    decorations: Array.isArray(valentine.decorations) ? valentine.decorations : [],
   };
 }
 
@@ -93,6 +95,7 @@ export async function createValentineUrl(req, res) {
       buttonText,
       theme,
       themeColor,
+      decorations,
     } = req.body;
 
     if (!recipientName || !recipientName.trim()) {
@@ -127,6 +130,7 @@ export async function createValentineUrl(req, res) {
       buttonText: (buttonText || '').trim() || 'Open',
       theme: theme || 'classic',
       themeColor: themeColor || 'rose',
+      decorations: Array.isArray(decorations) ? decorations.filter((d) => ['flowers', 'teddy', 'chocolate', 'hearts'].includes(d)) : [],
       createdBy: req.user._id,
       createdByName: req.user.name || '',
     });
@@ -222,6 +226,7 @@ export async function updateValentineUrl(req, res) {
       buttonText,
       theme,
       themeColor,
+      decorations,
     } = req.body;
     if (recipientName !== undefined) doc.recipientName = recipientName.trim();
     const emailTrimmed = recipientEmail !== undefined && recipientEmail && typeof recipientEmail === 'string'
@@ -236,6 +241,7 @@ export async function updateValentineUrl(req, res) {
     if (buttonText !== undefined) doc.buttonText = buttonText.trim();
     if (theme !== undefined) doc.theme = theme;
     if (themeColor !== undefined) doc.themeColor = themeColor;
+    if (decorations !== undefined) doc.decorations = Array.isArray(decorations) ? decorations.filter((d) => ['flowers', 'teddy', 'chocolate', 'hearts'].includes(d)) : [];
     await doc.save();
 
     let emailSent = false;

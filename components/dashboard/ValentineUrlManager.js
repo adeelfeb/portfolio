@@ -116,6 +116,7 @@ export default function ValentineUrlManager() {
     buttonText: 'Open',
     theme: 'classic',
     themeColor: 'rose',
+    decorations: [],
   });
 
   useEffect(() => {
@@ -221,6 +222,7 @@ export default function ValentineUrlManager() {
       buttonText: 'Open',
       theme: 'classic',
       themeColor: 'rose',
+      decorations: [],
     });
     setEditingId(null);
     setShowForm(false);
@@ -238,9 +240,23 @@ export default function ValentineUrlManager() {
       buttonText: item.buttonText || 'Open',
       theme: item.theme || 'classic',
       themeColor: item.themeColor || 'rose',
+      decorations: Array.isArray(item.decorations) ? item.decorations : [],
     });
     setEditingId({ id: item.id });
     setShowForm(true);
+  }
+
+  const DECORATION_OPTIONS = [
+    { value: 'flowers', label: 'Flowers' },
+    { value: 'teddy', label: 'Teddy bear' },
+    { value: 'chocolate', label: 'Chocolate' },
+    { value: 'hearts', label: 'Hearts' },
+  ];
+
+  function toggleDecoration(value) {
+    const list = formData.decorations || [];
+    const next = list.includes(value) ? list.filter((d) => d !== value) : [...list, value];
+    setFormData({ ...formData, decorations: next });
   }
 
   const showEmailOptions = formData.recipientEmail && formData.recipientEmail.trim().length > 0;
@@ -302,7 +318,7 @@ export default function ValentineUrlManager() {
                     type="text"
                     value={formData.emailSubject}
                     onChange={(e) => setFormData({ ...formData, emailSubject: e.target.value })}
-                    placeholder="e.g. You've got something special, Jane 💝"
+                    placeholder="e.g. You've got something special, Jane"
                     maxLength={200}
                     disabled={saving}
                   />
@@ -385,6 +401,23 @@ export default function ValentineUrlManager() {
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+            <div className="valentine-form-group">
+              <label>Page decorations (optional)</label>
+              <p className="valentine-hint">Show animated icons on the shared page. Select any combination.</p>
+              <div className="valentine-decorations">
+                {DECORATION_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="valentine-decoration-check">
+                    <input
+                      type="checkbox"
+                      checked={(formData.decorations || []).includes(opt.value)}
+                      onChange={() => toggleDecoration(opt.value)}
+                      disabled={saving}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
             <div className="valentine-form-actions">
@@ -573,6 +606,24 @@ export default function ValentineUrlManager() {
           font-size: 0.95rem;
           font-weight: 600;
           color: #334155;
+        }
+        .valentine-decorations {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem 1.25rem;
+          margin-top: 0.5rem;
+        }
+        .valentine-decoration-check {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+          color: #334155;
+          cursor: pointer;
+        }
+        .valentine-decoration-check input {
+          width: 1rem;
+          height: 1rem;
         }
         .valentine-form-actions {
           display: flex;
