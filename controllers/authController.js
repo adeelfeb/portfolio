@@ -271,8 +271,23 @@ export async function login(req, res) {
     
     // Check if email is verified (skip for loved_one role)
     if (user.role !== 'loved_one' && !user.isEmailVerified) {
-      // Offer to resend OTP
-      return jsonError(res, 403, 'Please verify your email before logging in. Check your inbox for the verification code, or request a new one.');
+      // Send a fresh verification code and tell the frontend to show the code input
+      const otp = generateOTP();
+      const otpExpires = generateOTPExpiry();
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+      await user.save();
+      sendEmailAsync(
+        () => sendOTPEmail(user.email, otp, user.name),
+        'login-unverified-otp'
+      );
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email. We\'ve sent a new code to your inbox—enter it below.',
+        needs_verification: true,
+        email: user.email,
+      });
     }
     
     await ensureUserHasRole(user);

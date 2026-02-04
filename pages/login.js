@@ -66,6 +66,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const hasCheckedAuth = useRef(false);
+  // When login is blocked by unverified email, show verification code input
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
 
   // Get redirect destination from query params - memoize to prevent unnecessary re-renders
   const redirectTo = useMemo(() => {
@@ -167,6 +171,71 @@ export default function LoginPage() {
     return !identifierValid || !passwordValid;
   }, [identifier, password, loading]);
 
+  const isVerifyDisabled = useMemo(() => {
+    if (loading) return true;
+    return !verificationCode.trim() || verificationCode.trim().length < 4;
+  }, [verificationCode, loading]);
+
+  async function onVerifySubmit(e) {
+    e.preventDefault();
+    if (isVerifyDisabled) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: pendingEmail, otp: verificationCode.trim() }),
+      });
+      const text = await res.text();
+      let data = {};
+      if (text && text.trim()) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          setError('Server error. Please try again.');
+          setLoading(false);
+          return;
+        }
+      }
+      if (!res.ok || !data.success) {
+        setError(formatErrorMessage(data, 'Invalid or expired code. Try again or request a new one.'));
+        setLoading(false);
+        return;
+      }
+      if (data.data && data.data.token) {
+        localStorage.setItem('token', data.data.token);
+      }
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_redirect_time');
+      }
+      const redirectDest = router.query.redirect || '/dashboard';
+      if (redirectDest === '/dashboard' || !router.query.redirect) {
+        router.replace('/dashboard').then(() => {
+          if (typeof window !== 'undefined') {
+            window.location.hash = 'resolutions';
+          }
+        });
+      } else {
+        router.replace(redirectDest);
+      }
+    } catch (err) {
+      console.error('[Login] Verify error', err);
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function backToSignIn() {
+    setNeedsVerification(false);
+    setPendingEmail('');
+    setVerificationCode('');
+    setError('');
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     if (isDisabled) return;
@@ -215,15 +284,16 @@ export default function LoginPage() {
       
       // Handle API errors gracefully
       if (!res.ok || !data.success) {
-        const errorMessage = formatErrorMessage(data, "We couldn't sign you in with those credentials.");
-        
-        // Check if email verification is required
-        if (res.status === 403 && (errorMessage.includes('verify') || errorMessage.includes('verification'))) {
-          setError(errorMessage + ' You can request a new verification code from the signup page.');
-        } else {
-          setError(errorMessage);
+        // Unverified email: show verification code input (backend already sent a new code)
+        if (res.status === 403 && data.needs_verification && data.email) {
+          setPendingEmail(data.email);
+          setNeedsVerification(true);
+          setError('');
+          setLoading(false);
+          return;
         }
-        
+        const errorMessage = formatErrorMessage(data, "We couldn't sign you in with those credentials.");
+        setError(errorMessage);
         setLoading(false);
         return;
       }
@@ -293,42 +363,76 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="form" noValidate>
-            <label className="field">
-              <span>Email or Username</span>
-              <input
-                type="text"
-                inputMode="text"
-                autoComplete="username email"
-                id="login-identifier"
-                name="identifier"
-                placeholder="you@example.com or username"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                id="login-password"
-                name="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={5}
-                disabled={loading}
-              />
-            </label>
-            <button type="submit" disabled={isDisabled}>
-              {loading && <span className="spinner" aria-hidden="true" />}
-              <span>{loading ? 'Signing you in…' : 'Sign In'}</span>
-            </button>
-          </form>
+          {needsVerification ? (
+            <>
+              <p className="verify-prompt">
+                We&apos;ve sent a verification code to <strong>{pendingEmail}</strong>. Enter it below to sign in.
+              </p>
+              <form onSubmit={onVerifySubmit} className="form" noValidate>
+                <label className="field">
+                  <span>Verification Code</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    id="login-verify-code"
+                    name="otp"
+                    placeholder="Enter 6-digit code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    disabled={loading}
+                  />
+                </label>
+                <button type="submit" disabled={isVerifyDisabled}>
+                  {loading && <span className="spinner" aria-hidden="true" />}
+                  <span>{loading ? 'Verifying…' : 'Verify & Sign In'}</span>
+                </button>
+              </form>
+              <button type="button" className="back-link" onClick={backToSignIn} disabled={loading}>
+                ← Back to sign in
+              </button>
+            </>
+          ) : (
+            <>
+              <form onSubmit={onSubmit} className="form" noValidate>
+                <label className="field">
+                  <span>Email or Username</span>
+                  <input
+                    type="text"
+                    inputMode="text"
+                    autoComplete="username email"
+                    id="login-identifier"
+                    name="identifier"
+                    placeholder="you@example.com or username"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </label>
+                <label className="field">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    id="login-password"
+                    name="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={5}
+                    disabled={loading}
+                  />
+                </label>
+                <button type="submit" disabled={isDisabled}>
+                  {loading && <span className="spinner" aria-hidden="true" />}
+                  <span>{loading ? 'Signing you in…' : 'Sign In'}</span>
+                </button>
+              </form>
+            </>
+          )}
 
           <footer className="card-footer">
             <span>Need an account?</span>
@@ -377,6 +481,33 @@ export default function LoginPage() {
         .card-header p {
           color: #4b5d73;
           line-height: 1.5;
+        }
+        .verify-prompt {
+          color: #4b5d73;
+          line-height: 1.5;
+          margin: 0;
+          font-size: 0.95rem;
+        }
+        .verify-prompt strong {
+          color: #102a43;
+        }
+        .back-link {
+          background: none;
+          border: none;
+          padding: 0;
+          font-size: 0.95rem;
+          color: #0070f3;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: center;
+          margin-top: -0.5rem;
+        }
+        .back-link:hover:not(:disabled) {
+          text-decoration: underline;
+        }
+        .back-link:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
         }
         .alert {
           border-radius: 0.75rem;
