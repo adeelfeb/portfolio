@@ -67,11 +67,13 @@ export default function ValentineUrlManager() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [copiedSlug, setCopiedSlug] = useState(null);
   const [formData, setFormData] = useState({
     recipientName: '',
+    recipientEmail: '',
     welcomeText: "You've got something special",
     mainMessage: '',
     buttonText: 'Open',
@@ -122,6 +124,7 @@ export default function ValentineUrlManager() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     try {
       const url = editingId ? `/api/valentine/${editingId.id}` : '/api/valentine';
       const method = editingId ? 'PUT' : 'POST';
@@ -136,6 +139,9 @@ export default function ValentineUrlManager() {
       const data = await res.json();
       if (data.success) {
         await fetchList();
+        const emailSent = data.data?.emailSent;
+        setSuccessMessage(emailSent ? 'Link saved. Email sent to the recipient.' : 'Link saved.');
+        setTimeout(() => setSuccessMessage(''), 5000);
         resetForm();
       } else {
         setError(data.message || 'Failed to save');
@@ -166,6 +172,7 @@ export default function ValentineUrlManager() {
   function resetForm() {
     setFormData({
       recipientName: '',
+      recipientEmail: '',
       welcomeText: "You've got something special",
       mainMessage: '',
       buttonText: 'Open',
@@ -179,6 +186,7 @@ export default function ValentineUrlManager() {
   function handleEdit(item) {
     setFormData({
       recipientName: item.recipientName,
+      recipientEmail: item.recipientEmail || '',
       welcomeText: item.welcomeText || "You've got something special",
       mainMessage: item.mainMessage || '',
       buttonText: item.buttonText || 'Open',
@@ -208,6 +216,7 @@ export default function ValentineUrlManager() {
       </div>
 
       {error && <div className="valentine-alert">{error}</div>}
+      {successMessage && <div className="valentine-success">{successMessage}</div>}
 
       {showForm && (
         <div className="valentine-form-card">
@@ -224,6 +233,16 @@ export default function ValentineUrlManager() {
                 disabled={!!editingId}
               />
               {editingId && <span className="valentine-hint">Slug cannot be changed after creation.</span>}
+            </div>
+            <div className="valentine-form-group">
+              <label>Recipient email (optional)</label>
+              <input
+                type="email"
+                value={formData.recipientEmail}
+                onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
+                placeholder="e.g. jane@example.com"
+              />
+              <span className="valentine-hint">If provided, we&apos;ll send the link to this address with themed styling.</span>
             </div>
             <div className="valentine-form-group">
               <label>Welcome text</label>
@@ -396,6 +415,14 @@ export default function ValentineUrlManager() {
           background: #fef2f2;
           border: 1px solid #fecaca;
           color: #b91c1c;
+          border-radius: 0.5rem;
+          font-size: 0.9rem;
+        }
+        .valentine-success {
+          padding: 0.75rem 1rem;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          color: #047857;
           border-radius: 0.5rem;
           font-size: 0.9rem;
         }

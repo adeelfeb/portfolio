@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import connectDB from '../lib/db';
 import ValentineUrl from '../models/ValentineUrl';
 import { jsonError, jsonSuccess } from '../lib/response';
+import { sendValentineLinkEmail } from '../utils/email';
 
 function toSlug(str) {
   if (!str || typeof str !== 'string') return '';
@@ -28,6 +29,7 @@ function sanitizeForOwner(valentine) {
     id,
     slug: valentine.slug,
     recipientName: valentine.recipientName,
+    recipientEmail: valentine.recipientEmail || null,
     welcomeText: valentine.welcomeText,
     mainMessage: valentine.mainMessage,
     buttonText: valentine.buttonText,
@@ -79,6 +81,7 @@ export async function createValentineUrl(req, res) {
     }
     const {
       recipientName,
+      recipientEmail,
       welcomeText,
       mainMessage,
       buttonText,
@@ -89,6 +92,8 @@ export async function createValentineUrl(req, res) {
     if (!recipientName || !recipientName.trim()) {
       return jsonError(res, 400, 'Recipient name is required');
     }
+
+    const emailTrimmed = recipientEmail && typeof recipientEmail === 'string' ? recipientEmail.trim().toLowerCase() : null;
 
     let slug = generateSecureSlug(recipientName.trim());
     let exists = await ValentineUrl.findOne({ slug });
@@ -107,6 +112,7 @@ export async function createValentineUrl(req, res) {
       slug,
       secretToken,
       recipientName: recipientName.trim(),
+      recipientEmail: emailTrimmed || null,
       welcomeText: (welcomeText || '').trim() || "You've got something special",
       mainMessage: (mainMessage || '').trim(),
       buttonText: (buttonText || '').trim() || 'Open',
@@ -116,9 +122,26 @@ export async function createValentineUrl(req, res) {
       createdByName: req.user.name || '',
     });
 
+    let emailSent = false;
+    if (emailTrimmed) {
+      try {
+        const fullUrl = `${getBaseUrl(req)}/valentine/${doc.slug}`;
+        await sendValentineLinkEmail(emailTrimmed, {
+          recipientName: doc.recipientName,
+          linkUrl: fullUrl,
+          theme: doc.theme,
+          themeColor: doc.themeColor,
+        });
+        emailSent = true;
+      } catch (err) {
+        console.error('Valentine link email failed:', err.message);
+      }
+    }
+
     return jsonSuccess(res, 201, 'Valentine URL created', {
       valentineUrl: sanitizeForOwner(doc),
       fullUrl: `${getBaseUrl(req)}/valentine/${doc.slug}`,
+      emailSent,
     });
   } catch (error) {
     console.error('Error creating Valentine URL:', error);
@@ -178,6 +201,7 @@ export async function updateValentineUrl(req, res) {
     }
     const {
       recipientName,
+      recipientEmail,
       welcomeText,
       mainMessage,
       buttonText,
@@ -185,15 +209,38 @@ export async function updateValentineUrl(req, res) {
       themeColor,
     } = req.body;
     if (recipientName !== undefined) doc.recipientName = recipientName.trim();
+    const emailTrimmed = recipientEmail !== undefined && recipientEmail && typeof recipientEmail === 'string'
+      ? recipientEmail.trim().toLowerCase()
+      : (doc.recipientEmail || null);
+    if (recipientEmail !== undefined) doc.recipientEmail = emailTrimmed || null;
     if (welcomeText !== undefined) doc.welcomeText = welcomeText.trim();
     if (mainMessage !== undefined) doc.mainMessage = mainMessage.trim();
     if (buttonText !== undefined) doc.buttonText = buttonText.trim();
     if (theme !== undefined) doc.theme = theme;
     if (themeColor !== undefined) doc.themeColor = themeColor;
     await doc.save();
+
+    let emailSent = false;
+    const emailProvidedThisRequest = recipientEmail !== undefined && typeof recipientEmail === 'string' && recipientEmail.trim().length > 0;
+    if (emailProvidedThisRequest && emailTrimmed) {
+      try {
+        const fullUrl = `${getBaseUrl(req)}/valentine/${doc.slug}`;
+        await sendValentineLinkEmail(emailTrimmed, {
+          recipientName: doc.recipientName,
+          linkUrl: fullUrl,
+          theme: doc.theme,
+          themeColor: doc.themeColor,
+        });
+        emailSent = true;
+      } catch (err) {
+        console.error('Valentine link email failed:', err.message);
+      }
+    }
+
     return jsonSuccess(res, 200, 'Valentine URL updated', {
       valentineUrl: sanitizeForOwner(doc),
       fullUrl: `${getBaseUrl(req)}/valentine/${doc.slug}`,
+      emailSent,
     });
   } catch (error) {
     console.error('Error updating Valentine URL:', error);

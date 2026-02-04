@@ -452,3 +452,113 @@ This is an automated message. Please do not reply.
   });
 }
 
+/**
+ * Theme colors for Valentine email (inline-safe for email clients)
+ * Keys: theme_color (e.g. classic_rose) -> { bg, primary, border }
+ */
+const VALENTINE_EMAIL_THEMES = {
+  classic_rose: { bg: '#fef2f2', primary: '#be123c', border: '#fecaca' },
+  classic_crimson: { bg: '#450a0a', primary: '#fecaca', border: '#991b1b' },
+  classic_blush: { bg: '#fff1f2', primary: '#db2777', border: '#fbcfe8' },
+  classic_gold: { bg: '#fffbeb', primary: '#b45309', border: '#fde68a' },
+  classic_lavender: { bg: '#f5f3ff', primary: '#6d28d9', border: '#c4b5fd' },
+  classic_coral: { bg: '#fff7ed', primary: '#c2410c', border: '#fed7aa' },
+  romantic_rose: { bg: '#fdf2f8', primary: '#9d174d', border: '#f9a8d4' },
+  romantic_crimson: { bg: '#7f1d1d', primary: '#fecaca', border: '#b91c1c' },
+  romantic_blush: { bg: '#fce7f3', primary: '#be185d', border: '#f9a8d4' },
+  romantic_gold: { bg: '#fef9c3', primary: '#a16207', border: '#fcd34d' },
+  romantic_lavender: { bg: '#ede9fe', primary: '#5b21b6', border: '#c4b5fd' },
+  romantic_coral: { bg: '#ffedd5', primary: '#c2410c', border: '#fdba74' },
+  minimal_rose: { bg: '#ffffff', primary: '#e11d48', border: '#fecaca' },
+  minimal_crimson: { bg: '#fafafa', primary: '#b91c1c', border: '#fecaca' },
+  minimal_blush: { bg: '#fffbff', primary: '#db2777', border: '#fce7f3' },
+  minimal_gold: { bg: '#fffbeb', primary: '#b45309', border: '#fef3c7' },
+  minimal_lavender: { bg: '#faf5ff', primary: '#6d28d9', border: '#ede9fe' },
+  minimal_coral: { bg: '#fff7ed', primary: '#c2410c', border: '#ffedd5' },
+  vintage_rose: { bg: '#fefce8', primary: '#a16207', border: '#fef3c7' },
+  vintage_crimson: { bg: '#292524', primary: '#fecaca', border: '#57534e' },
+  vintage_blush: { bg: '#fefce8', primary: '#9d174d', border: '#fef3c7' },
+  vintage_gold: { bg: '#fefce8', primary: '#92400e', border: '#fde68a' },
+  vintage_lavender: { bg: '#faf5ff', primary: '#5b21b6', border: '#ede9fe' },
+  vintage_coral: { bg: '#fff7ed', primary: '#9a3412', border: '#ffedd5' },
+  blush_rose: { bg: '#fff1f2', primary: '#be123c', border: '#fda4af' },
+  blush_crimson: { bg: '#fef2f2', primary: '#b91c1c', border: '#fca5a5' },
+  blush_blush: { bg: '#fdf2f8', primary: '#9d174d', border: '#f9a8d4' },
+  blush_gold: { bg: '#fefce8', primary: '#a16207', border: '#fde047' },
+  blush_lavender: { bg: '#f5f3ff', primary: '#5b21b6', border: '#a78bfa' },
+  blush_coral: { bg: '#fff7ed', primary: '#c2410c', border: '#fdba74' },
+};
+
+function getValentineEmailTheme(theme, themeColor) {
+  const key = `${theme || 'classic'}_${themeColor || 'rose'}`;
+  return VALENTINE_EMAIL_THEMES[key] || VALENTINE_EMAIL_THEMES.classic_rose;
+}
+
+/**
+ * Send Valentine link email to recipient
+ * @param {string} to - Recipient email
+ * @param {Object} opts - { recipientName, linkUrl, theme, themeColor }
+ * @returns {Promise<Object>} Response from sendEmail
+ */
+export async function sendValentineLinkEmail(to, { recipientName, linkUrl, theme, themeColor }) {
+  const themeStyles = getValentineEmailTheme(theme, themeColor);
+  const isDark = theme === 'vintage' && themeColor === 'crimson';
+  const textColor = isDark ? '#fef2f2' : '#1f2937';
+  const mutedColor = isDark ? '#d6d3d1' : '#6b7280';
+  const subject = `You've got something special, ${recipientName || 'there'} 💝`;
+
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+    </head>
+    <body style="margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; background-color: ${themeStyles.bg};">
+      <table role="presentation" style="width:100%; border-collapse: collapse; background-color: ${themeStyles.bg}; padding: 32px 16px;">
+        <tr>
+          <td align="center" style="padding: 24px 0;">
+            <table role="presentation" style="max-width: 480px; width:100%; border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid ${themeStyles.border};">
+              <tr>
+                <td style="padding: 40px 32px; text-align: center;">
+                  <p style="font-size: 32px; margin: 0 0 16px 0; line-height: 1;">❤</p>
+                  <h1 style="color: ${textColor}; font-size: 22px; font-weight: 700; margin: 0 0 8px 0;">You've got something special</h1>
+                  ${recipientName ? `<p style="color: ${mutedColor}; font-size: 16px; margin: 0 0 24px 0;">For ${recipientName}</p>` : ''}
+                  <p style="color: ${mutedColor}; font-size: 15px; margin: 0 0 24px 0; line-height: 1.5;">Click the link below to open your message. This link is just for you.</p>
+                  <a href="${linkUrl}" style="display: inline-block; background-color: ${themeStyles.primary}; color: ${themeStyles.primary === '#fecaca' || themeStyles.primary === '#fca5a5' ? '#1f2937' : '#ffffff'}; text-decoration: none; font-weight: 600; font-size: 16px; padding: 14px 28px; border-radius: 9999px; margin: 8px 0;">Open your message</a>
+                  <p style="color: ${mutedColor}; font-size: 13px; margin: 24px 0 0 0;">If the button doesn't work, copy and paste this link into your browser:</p>
+                  <p style="color: ${mutedColor}; font-size: 12px; margin: 8px 0 0 0; word-break: break-all;">${linkUrl}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color: ${themeStyles.bg}; padding: 20px 32px; border-top: 1px solid ${themeStyles.border};">
+                  <p style="color: ${mutedColor}; font-size: 12px; margin: 0; line-height: 1.5;">This link is private. Do not share it with others.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const textBody = `
+You've got something special${recipientName ? `, ${recipientName}` : ''} 💝
+
+Open your message by visiting this link (it's just for you):
+
+${linkUrl}
+
+This link is private. Do not share it with others.
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject,
+    htmlBody,
+    textBody,
+  });
+}
+
