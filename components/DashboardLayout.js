@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 // Category mapping for navigation items
 const getNavCategory = (key) => {
   const hr = ['overview', 'blogs', 'portfolios', 'add-origin'];
-  const all = ['api-endpoints', 'user-management', 'resources', 'support', 'help', 'privacy', 'updates', 'activity'];
-  
+  const valentine = ['valentine-urls'];
+  const all = ['api-endpoints', 'user-management', 'resources', 'support', 'help', 'privacy', 'updates', 'activity', 'resolutions'];
+  if (valentine.includes(key)) return 'valentine';
   if (hr.includes(key)) return 'hr';
   return 'all';
 };
@@ -315,15 +316,15 @@ export default function DashboardLayout({
 
         .sidebar {
           width: min(236px, 21vw);
-          background: linear-gradient(180deg, #0a1324 0%, #0f172a 40%, #132344 100%);
+          background: linear-gradient(180deg, #1a0a10 0%, #1e0f18 35%, #1a1324 70%, #132344 100%);
           color: #e2e8f0;
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
           height: 100%;
           padding: 0;
-          border-right: 1px solid rgba(37, 99, 235, 0.2);
-          box-shadow: 16px 0 42px rgba(2, 6, 23, 0.4);
+          border-right: 1px solid rgba(225, 29, 72, 0.18);
+          box-shadow: 16px 0 42px rgba(30, 10, 18, 0.45);
           transition: transform 0.3s ease;
           position: relative;
           overflow: hidden;
@@ -335,10 +336,11 @@ export default function DashboardLayout({
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(circle at 25% -10%, rgba(59, 130, 246, 0.35), transparent 60%),
-            radial-gradient(circle at 85% 0%, rgba(14, 165, 233, 0.25), transparent 65%),
-            linear-gradient(180deg, rgba(99, 102, 241, 0.1), transparent 70%);
-          opacity: 0.95;
+            radial-gradient(circle at 20% 10%, rgba(225, 29, 72, 0.2), transparent 55%),
+            radial-gradient(circle at 25% -10%, rgba(59, 130, 246, 0.28), transparent 60%),
+            radial-gradient(circle at 85% 0%, rgba(244, 63, 94, 0.12), transparent 65%),
+            linear-gradient(180deg, rgba(225, 29, 72, 0.06), transparent 50%);
+          opacity: 0.98;
           pointer-events: none;
           z-index: 0;
         }
@@ -575,6 +577,48 @@ export default function DashboardLayout({
         
         .nav-button--all.is-active .nav-icon {
           filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.6));
+        }
+
+        /* Valentine Links - Rose/Valentine theme */
+        .nav-button--valentine {
+          background: linear-gradient(135deg, rgba(225, 29, 72, 0.28), rgba(190, 18, 60, 0.18));
+          color: #ffe4e9;
+          border-color: rgba(253, 164, 175, 0.4);
+        }
+
+        .nav-button--valentine:hover,
+        .nav-button--valentine:focus-visible {
+          outline: none;
+          background: linear-gradient(135deg, rgba(244, 63, 94, 0.45), rgba(225, 29, 72, 0.3));
+          transform: translateX(4px);
+          box-shadow: 0 20px 38px rgba(225, 29, 72, 0.35);
+          border-color: rgba(253, 164, 175, 0.55);
+          color: #fff5f7;
+        }
+
+        .nav-button--valentine.is-active {
+          background: linear-gradient(135deg, rgba(251, 113, 133, 0.5), rgba(225, 29, 72, 0.45));
+          box-shadow: inset 0 0 0 1px rgba(253, 164, 175, 0.6), 0 6px 20px rgba(225, 29, 72, 0.3);
+          color: #fff;
+          border-color: rgba(253, 164, 175, 0.6);
+        }
+
+        .nav-button--valentine.is-active::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 60%;
+          background: linear-gradient(180deg, #f43f5e, #e11d48);
+          border-radius: 0 4px 4px 0;
+          box-shadow: 0 0 8px rgba(225, 29, 72, 0.5);
+        }
+
+        .nav-button--valentine.is-active .nav-icon {
+          filter: drop-shadow(0 0 4px rgba(251, 113, 133, 0.7));
+          color: #fff;
         }
 
         .nav-icon {

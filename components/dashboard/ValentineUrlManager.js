@@ -636,7 +636,7 @@ export default function ValentineUrlManager() {
                       <span className="valentine-analytics-stat-label">“{analyticsData.buttonText || 'Open'}” clicks</span>
                     </div>
                   </div>
-                  <p className="valentine-analytics-hint">Each visit is one page load. “{analyticsData.buttonText || 'Open'}” is how many times the main button was pressed across all visits.</p>
+                  <p className="valentine-analytics-hint">Each visit is one page load. “{analyticsData.buttonText || 'Open'}” is how many times the main button was pressed in that visit.</p>
                   {analyticsData.byReferrer && analyticsData.byReferrer.length > 0 && (
                     <div className="valentine-analytics-section">
                       <h4>Visits by source</h4>
@@ -662,23 +662,77 @@ export default function ValentineUrlManager() {
                       </div>
                     </div>
                   )}
-                  {analyticsData.recentVisits && analyticsData.recentVisits.length > 0 && (
-                    <div className="valentine-analytics-section">
-                      <h4>Recent visits</h4>
-                      <ul className="valentine-analytics-visits">
-                        {analyticsData.recentVisits.map((v, i) => (
-                          <li key={i}>
-                            <span className="valentine-analytics-visit-date">{new Date(v.visitedAt).toLocaleString()}</span>
-                            <span className="valentine-analytics-visit-source" title={v.referrer}>{v.referrer.length > 40 ? v.referrer.slice(0, 40) + '…' : v.referrer}</span>
-                            <span className="valentine-analytics-visit-clicks">“{analyticsData.buttonText || 'Open'}” × {v.buttonClicks}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {(!analyticsData.byReferrer || analyticsData.byReferrer.length === 0) && (!analyticsData.recentVisits || analyticsData.recentVisits.length === 0) && (
-                    <p className="valentine-analytics-empty">No visit data yet. Share the link to see analytics here.</p>
-                  )}
+                  <div className="valentine-analytics-section valentine-analytics-all-visits-section">
+                    <h4>
+                      All visits
+                      <span className="valentine-analytics-count">
+                        {analyticsData.allVisits && analyticsData.allVisits.length > 0
+                          ? ` (${analyticsData.allVisits.length} record${analyticsData.allVisits.length === 1 ? '' : 's'}, latest → oldest)`
+                          : ' (latest → oldest)'}
+                      </span>
+                    </h4>
+                    {analyticsData.allVisits && analyticsData.allVisits.length > 0 ? (
+                      <div className="valentine-analytics-scroll-wrap">
+                        <table className="valentine-analytics-table valentine-analytics-all-table">
+                          <thead>
+                            <tr>
+                              <th>Date & time</th>
+                              <th>Source</th>
+                              <th>Device</th>
+                              <th>Browser</th>
+                              <th>Access / source info</th>
+                              <th>“{analyticsData.buttonText || 'Open'}”</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analyticsData.allVisits.map((v, i) => {
+                              let accessSummary = '—';
+                              let accessJson = '';
+                              try {
+                                if (v.accessPayload && typeof v.accessPayload === 'string') {
+                                  const parsed = JSON.parse(v.accessPayload);
+                                  const parts = [];
+                                  if (parsed.origin) parts.push(parsed.origin);
+                                  if (parsed.platform) parts.push(parsed.platform);
+                                  if (parsed.timezone) parts.push(parsed.timezone);
+                                  if (parsed.screen) parts.push(parsed.screen);
+                                  accessSummary = parts.length ? parts.join(' · ') : '(see details)';
+                                  accessJson = JSON.stringify(parsed, null, 2);
+                                } else if (v.accessPayload && typeof v.accessPayload === 'object') {
+                                  accessSummary = v.accessPayload.origin || v.accessPayload.platform || '(see details)';
+                                  accessJson = JSON.stringify(v.accessPayload, null, 2);
+                                }
+                              } catch (_) {
+                                accessSummary = v.accessPayload ? String(v.accessPayload).slice(0, 40) + '…' : '—';
+                                accessJson = v.accessPayload || '';
+                              }
+                              return (
+                                <tr key={i}>
+                                  <td className="valentine-analytics-cell-date">{new Date(v.visitedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</td>
+                                  <td className="valentine-analytics-cell-source" title={v.referrer}>{v.referrer.length > 36 ? v.referrer.slice(0, 36) + '…' : v.referrer}</td>
+                                  <td className="valentine-analytics-cell-device">{v.deviceType || '—'}</td>
+                                  <td className="valentine-analytics-cell-browser">{v.browser || '—'}</td>
+                                  <td className="valentine-analytics-cell-access">
+                                    {accessJson ? (
+                                      <details className="valentine-access-details">
+                                        <summary title={accessJson}>{accessSummary.length > 50 ? accessSummary.slice(0, 50) + '…' : accessSummary}</summary>
+                                        <pre className="valentine-access-json">{accessJson}</pre>
+                                      </details>
+                                    ) : (
+                                      <span>—</span>
+                                    )}
+                                  </td>
+                                  <td className="valentine-analytics-cell-clicks">{v.buttonClicks}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="valentine-analytics-empty">No visit records yet. Share the link to see details here.</p>
+                    )}
+                  </div>
                 </>
               ) : null}
             </div>
@@ -1165,11 +1219,12 @@ export default function ValentineUrlManager() {
         .valentine-modal {
           background: linear-gradient(180deg, #ffffff 0%, #fefafb 100%);
           border: 1px solid rgba(225, 29, 72, 0.12);
-          border-radius: 1.35rem;
-          box-shadow: 0 24px 56px rgba(30, 10, 18, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-          max-width: 34rem;
+          border-radius: 1.4rem;
+          box-shadow: 0 28px 64px rgba(30, 10, 18, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+          max-width: 52rem;
           width: 100%;
-          max-height: 85vh;
+          max-height: 92vh;
+          min-height: 24rem;
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -1233,9 +1288,28 @@ export default function ValentineUrlManager() {
           color: #be123c;
         }
         .valentine-modal-body {
-          padding: 1.5rem;
+          padding: 1.6rem;
           overflow-y: auto;
+          overflow-x: hidden;
           background: #fff;
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .valentine-modal-body::-webkit-scrollbar {
+          width: 10px;
+        }
+        .valentine-modal-body::-webkit-scrollbar-track {
+          background: #f8fafc;
+          border-radius: 10px;
+        }
+        .valentine-modal-body::-webkit-scrollbar-thumb {
+          background: rgba(225, 29, 72, 0.25);
+          border-radius: 10px;
+        }
+        .valentine-modal-body::-webkit-scrollbar-thumb:hover {
+          background: rgba(225, 29, 72, 0.4);
         }
         .valentine-analytics-loading {
           text-align: center;
@@ -1311,14 +1385,126 @@ export default function ValentineUrlManager() {
           border-left: 3px solid rgba(225, 29, 72, 0.35);
         }
         .valentine-analytics-section {
-          margin-bottom: 1.35rem;
+          margin-bottom: 1.5rem;
+        }
+        .valentine-analytics-section:last-child {
+          margin-bottom: 0;
         }
         .valentine-analytics-section h4 {
-          margin: 0 0 0.6rem 0;
-          font-size: 0.95rem;
+          margin: 0 0 0.65rem 0;
+          font-size: 1rem;
           font-weight: 700;
           color: #1e0a12;
           letter-spacing: -0.01em;
+        }
+        .valentine-analytics-count {
+          font-weight: 500;
+          color: #64748b;
+          font-size: 0.85em;
+        }
+        .valentine-analytics-all-visits-section {
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .valentine-analytics-all-visits-section h4 {
+          flex-shrink: 0;
+        }
+        .valentine-analytics-scroll-wrap {
+          overflow-y: auto;
+          overflow-x: auto;
+          max-height: min(28rem, 50vh);
+          border: 1px solid rgba(225, 29, 72, 0.15);
+          border-radius: 0.75rem;
+          box-shadow: 0 2px 12px rgba(225, 29, 72, 0.06);
+          margin-top: 0.5rem;
+        }
+        .valentine-analytics-scroll-wrap::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .valentine-analytics-scroll-wrap::-webkit-scrollbar-track {
+          background: #f8fafc;
+          border-radius: 8px;
+        }
+        .valentine-analytics-scroll-wrap::-webkit-scrollbar-thumb {
+          background: rgba(225, 29, 72, 0.28);
+          border-radius: 8px;
+        }
+        .valentine-analytics-scroll-wrap::-webkit-scrollbar-thumb:hover {
+          background: rgba(225, 29, 72, 0.4);
+        }
+        .valentine-analytics-all-table thead {
+          position: sticky;
+          top: 0;
+          z-index: 1;
+          background: linear-gradient(180deg, #fef7f8 0%, #fdf2f4 100%);
+          box-shadow: 0 2px 4px rgba(225, 29, 72, 0.06);
+        }
+        .valentine-analytics-all-table th {
+          white-space: nowrap;
+        }
+        .valentine-analytics-cell-date {
+          white-space: nowrap;
+          font-size: 0.82rem;
+          color: #475569;
+        }
+        .valentine-analytics-cell-source {
+          max-width: 12rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .valentine-analytics-cell-device,
+        .valentine-analytics-cell-browser {
+          font-weight: 500;
+          color: #334155;
+        }
+        .valentine-analytics-cell-clicks {
+          font-weight: 600;
+          color: #9d174d;
+          text-align: center;
+        }
+        .valentine-analytics-cell-access {
+          max-width: 14rem;
+          vertical-align: top;
+        }
+        .valentine-access-details {
+          font-size: 0.82rem;
+          cursor: pointer;
+        }
+        .valentine-access-details summary {
+          list-style: none;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #475569;
+          padding: 0.2rem 0;
+        }
+        .valentine-access-details summary::-webkit-details-marker {
+          display: none;
+        }
+        .valentine-access-details summary::before {
+          content: '▸ ';
+          color: #9d174d;
+          font-size: 0.7rem;
+        }
+        .valentine-access-details[open] summary::before {
+          content: '▾ ';
+        }
+        .valentine-access-json {
+          margin: 0.5rem 0 0 0;
+          padding: 0.6rem;
+          background: #f8fafc;
+          border: 1px solid rgba(225, 29, 72, 0.12);
+          border-radius: 0.4rem;
+          font-size: 0.75rem;
+          font-family: ui-monospace, monospace;
+          color: #334155;
+          white-space: pre-wrap;
+          word-break: break-all;
+          max-height: 12rem;
+          overflow-y: auto;
         }
         .valentine-analytics-table-wrap {
           overflow-x: auto;
@@ -1405,6 +1591,16 @@ export default function ValentineUrlManager() {
           border-radius: 0.75rem;
         }
 
+        @media (max-width: 768px) {
+          .valentine-modal {
+            max-width: 95vw;
+            max-height: 90vh;
+          }
+          .valentine-analytics-scroll-wrap {
+            max-height: min(22rem, 45vh);
+          }
+        }
+
         @media (max-width: 640px) {
           .valentine-form-row {
             grid-template-columns: 1fr;
@@ -1419,14 +1615,25 @@ export default function ValentineUrlManager() {
             font-size: 1.4rem;
           }
           .valentine-modal {
+            max-width: 98vw;
             max-height: 90vh;
+            border-radius: 1.2rem;
+          }
+          .valentine-modal-body {
+            padding: 1.2rem;
           }
           .valentine-analytics-summary {
             grid-template-columns: 1fr;
           }
-          .valentine-analytics-visits li {
-            grid-template-columns: 1fr;
-            gap: 0.25rem;
+          .valentine-analytics-all-table {
+            font-size: 0.82rem;
+          }
+          .valentine-analytics-all-table th,
+          .valentine-analytics-all-table td {
+            padding: 0.5rem 0.6rem;
+          }
+          .valentine-analytics-cell-source {
+            max-width: 8rem;
           }
         }
       `}</style>

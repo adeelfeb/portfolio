@@ -318,9 +318,26 @@ export async function getValentineBySlug(req, res) {
   }
 }
 
-const VALENTINE_TRACK_QUEUE_KEY = 'valentine_track_queue';
 const MAX_EVENTS_PER_BATCH = 50;
 const MAX_REFERRER_LENGTH = 512;
+const MAX_USER_AGENT_LENGTH = 512;
+const MAX_ACCESS_PAYLOAD_LENGTH = 4096;
+
+function parseUserAgent(ua) {
+  if (!ua || typeof ua !== 'string') return { deviceType: 'Unknown', browser: 'Unknown' };
+  const u = ua.trim().slice(0, MAX_USER_AGENT_LENGTH);
+  let deviceType = 'Desktop';
+  if (/iPad|Tablet|PlayBook|Silk/i.test(u)) deviceType = 'Tablet';
+  else if (/Mobile|Android|iPhone|iPod|webOS|BlackBerry|IEMobile|Opera Mini|Windows Phone/i.test(u)) deviceType = 'Mobile';
+  let browser = 'Unknown';
+  if (/Edg\//i.test(u)) browser = 'Edge';
+  else if (/Chrome\//i.test(u) && !/Edg\//i.test(u)) browser = 'Chrome';
+  else if (/Firefox\//i.test(u)) browser = 'Firefox';
+  else if (/Safari\//i.test(u) && !/Chrome\//i.test(u)) browser = 'Safari';
+  else if (/Opera|OPR\//i.test(u)) browser = 'Opera';
+  else if (/MSIE|Trident\//i.test(u)) browser = 'IE';
+  return { deviceType, browser };
+}
 
 export async function trackValentineEvents(req, res) {
   if (req.method !== 'POST') {
@@ -329,6 +346,10 @@ export async function trackValentineEvents(req, res) {
   }
   try {
     await connectDB();
+    const requestUserAgent =
+      (req.headers && typeof req.headers['user-agent'] === 'string' && req.headers['user-agent'].trim())
+        ? req.headers['user-agent'].trim().slice(0, MAX_USER_AGENT_LENGTH)
+        : '';
     const body = typeof req.body === 'object' && req.body !== null ? req.body : {};
     let events = Array.isArray(body.events) ? body.events : [];
     if (events.length > MAX_EVENTS_PER_BATCH) {
@@ -360,16 +381,49 @@ export async function trackValentineEvents(req, res) {
           ev.referrer != null && typeof ev.referrer === 'string'
             ? ev.referrer.trim().slice(0, MAX_REFERRER_LENGTH)
             : '';
+        let userAgentRaw =
+          ev.userAgent != null && typeof ev.userAgent === 'string'
+            ? ev.userAgent.trim().slice(0, MAX_USER_AGENT_LENGTH)
+            : '';
+        if (!userAgentRaw && requestUserAgent) userAgentRaw = requestUserAgent;
+        let accessPayloadStr = '';
+        if (ev.accessPayload != null) {
+          try {
+            const raw =
+              typeof ev.accessPayload === 'string'
+                ? ev.accessPayload
+                : JSON.stringify(ev.accessPayload);
+            accessPayloadStr = raw.trim().slice(0, MAX_ACCESS_PAYLOAD_LENGTH);
+          } catch (_) {}
+        }
+        const { deviceType, browser } = parseUserAgent(userAgentRaw);
         const visitedAt = ev.timestamp ? new Date(ev.timestamp) : new Date();
         if (!row.visit) {
-          row.visit = { visitedAt, referrer };
+          row.visit = {
+            visitedAt,
+            referrer,
+            userAgent: userAgentRaw,
+            deviceType,
+            browser,
+            accessPayload: accessPayloadStr,
+          };
         }
       } else if (type === 'button_click') {
         row.buttonClicks += 1;
       }
     }
     for (const [, row] of byKey) {
-      if (!row.visit) row.visit = { visitedAt: new Date(), referrer: '' };
+      if (!row.visit) {
+        const { deviceType, browser } = parseUserAgent(requestUserAgent);
+        row.visit = {
+          visitedAt: new Date(),
+          referrer: '',
+          userAgent: requestUserAgent,
+          deviceType: deviceType || 'Unknown',
+          browser: browser || 'Unknown',
+          accessPayload: '',
+        };
+      }
       await ValentineVisit.findOneAndUpdate(
         { valentineId: row.valentineId, sessionId: row.sessionId },
         {
@@ -377,6 +431,10 @@ export async function trackValentineEvents(req, res) {
             slug: row.slug,
             visitedAt: row.visit.visitedAt,
             referrer: row.visit.referrer,
+            userAgent: row.visit.userAgent || '',
+            deviceType: row.visit.deviceType || 'Unknown',
+            browser: row.visit.browser || 'Unknown',
+            accessPayload: row.visit.accessPayload || '',
           },
           $inc: { buttonClicks: row.buttonClicks },
         },
@@ -441,21 +499,25 @@ export async function getValentineAnalytics(req, res) {
       ]),
       ValentineVisit.find({ valentineId })
         .sort({ visitedAt: -1 })
-        .limit(30)
-        .select('visitedAt referrer buttonClicks')
+        .select('visitedAt referrer buttonClicks userAgent deviceType browser accessPayload')
         .lean(),
     ]);
+    const allVisits = recentVisits.map((v) => ({
+      visitedAt: v.visitedAt,
+      referrer: v.referrer || '(direct)',
+      buttonClicks: v.buttonClicks || 0,
+      deviceType: v.deviceType || 'Unknown',
+      browser: v.browser || 'Unknown',
+      userAgent: v.userAgent ? v.userAgent.slice(0, 120) : '',
+      accessPayload: v.accessPayload || '',
+    }));
     return jsonSuccess(res, 200, 'Analytics retrieved', {
       analytics: {
         totalVisits: totalStats.totalVisits || 0,
         totalButtonClicks: totalStats.totalButtonClicks || 0,
         buttonText: doc.buttonText || 'Open',
         byReferrer,
-        recentVisits: recentVisits.map((v) => ({
-          visitedAt: v.visitedAt,
-          referrer: v.referrer || '(direct)',
-          buttonClicks: v.buttonClicks || 0,
-        })),
+        allVisits,
       },
     });
   } catch (error) {

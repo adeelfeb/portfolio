@@ -29,6 +29,30 @@ const ValentineVisitSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2048,
     },
+    userAgent: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1024,
+    },
+    deviceType: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 32,
+    },
+    browser: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 64,
+    },
+    accessPayload: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 4096,
+    },
     buttonClicks: {
       type: Number,
       default: 0,
