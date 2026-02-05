@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import connectDB from '../lib/db';
 import ValentineUrl from '../models/ValentineUrl';
+import ValentineVisit from '../models/ValentineVisit';
 import { jsonError, jsonSuccess } from '../lib/response';
 import { sendValentineLinkEmail } from '../utils/email';
 
@@ -314,5 +315,151 @@ export async function getValentineBySlug(req, res) {
   } catch (error) {
     console.error('Error fetching Valentine by slug:', error);
     return jsonError(res, 500, 'Failed to load page', error.message);
+  }
+}
+
+const VALENTINE_TRACK_QUEUE_KEY = 'valentine_track_queue';
+const MAX_EVENTS_PER_BATCH = 50;
+const MAX_REFERRER_LENGTH = 512;
+
+export async function trackValentineEvents(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return jsonError(res, 405, 'Method not allowed');
+  }
+  try {
+    await connectDB();
+    const body = typeof req.body === 'object' && req.body !== null ? req.body : {};
+    let events = Array.isArray(body.events) ? body.events : [];
+    if (events.length > MAX_EVENTS_PER_BATCH) {
+      events = events.slice(0, MAX_EVENTS_PER_BATCH);
+    }
+    if (events.length === 0) {
+      return jsonSuccess(res, 200, 'No events to process', { processed: 0 });
+    }
+    const slugToValentineId = new Map();
+    const byKey = new Map();
+    for (const ev of events) {
+      const type = ev && ev.type;
+      const slug = ev && typeof ev.slug === 'string' ? ev.slug.trim().toLowerCase() : '';
+      const sessionId = ev && typeof ev.sessionId === 'string' ? ev.sessionId.trim().slice(0, 128) : '';
+      if (!slug || !sessionId || (type !== 'visit' && type !== 'button_click')) continue;
+      if (!slugToValentineId.has(slug)) {
+        const v = await ValentineUrl.findOne({ slug }).select('_id').lean();
+        if (!v) continue;
+        slugToValentineId.set(slug, v._id.toString());
+      }
+      const valentineId = slugToValentineId.get(slug);
+      const key = `${valentineId}:${sessionId}`;
+      if (!byKey.has(key)) {
+        byKey.set(key, { valentineId, slug, sessionId, visit: null, buttonClicks: 0 });
+      }
+      const row = byKey.get(key);
+      if (type === 'visit') {
+        const referrer =
+          ev.referrer != null && typeof ev.referrer === 'string'
+            ? ev.referrer.trim().slice(0, MAX_REFERRER_LENGTH)
+            : '';
+        const visitedAt = ev.timestamp ? new Date(ev.timestamp) : new Date();
+        if (!row.visit) {
+          row.visit = { visitedAt, referrer };
+        }
+      } else if (type === 'button_click') {
+        row.buttonClicks += 1;
+      }
+    }
+    for (const [, row] of byKey) {
+      if (!row.visit) row.visit = { visitedAt: new Date(), referrer: '' };
+      await ValentineVisit.findOneAndUpdate(
+        { valentineId: row.valentineId, sessionId: row.sessionId },
+        {
+          $set: {
+            slug: row.slug,
+            visitedAt: row.visit.visitedAt,
+            referrer: row.visit.referrer,
+          },
+          $inc: { buttonClicks: row.buttonClicks },
+        },
+        { upsert: true }
+      );
+    }
+    return jsonSuccess(res, 200, 'Events processed', { processed: byKey.size });
+  } catch (error) {
+    console.error('Valentine track error:', error);
+    return jsonError(res, 500, 'Failed to record events', error.message);
+  }
+}
+
+export async function getValentineAnalytics(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const id = (req.query.id || req.query.slug || '').toString().trim();
+    if (!id) {
+      return jsonError(res, 400, 'ID or slug is required');
+    }
+    const isSlug = id.includes('-') && !/^[a-f0-9]{24}$/i.test(id);
+    const doc = await ValentineUrl.findOne(
+      isSlug ? { slug: id.toLowerCase(), createdBy: req.user._id } : { _id: id, createdBy: req.user._id }
+    ).lean();
+    if (!doc) {
+      return jsonError(res, 404, 'Valentine URL not found');
+    }
+    const valentineId = doc._id;
+    const [totalStats, byReferrer, recentVisits] = await Promise.all([
+      ValentineVisit.aggregate([
+        { $match: { valentineId } },
+        {
+          $group: {
+            _id: null,
+            totalVisits: { $sum: 1 },
+            totalButtonClicks: { $sum: '$buttonClicks' },
+          },
+        },
+      ]).then((r) => r[0] || { totalVisits: 0, totalButtonClicks: 0 }),
+      ValentineVisit.aggregate([
+        { $match: { valentineId } },
+        {
+          $group: {
+            _id: { $cond: [{ $eq: ['$referrer', ''] }, '(direct)', '$referrer'] },
+            visits: { $sum: 1 },
+            buttonClicks: { $sum: '$buttonClicks' },
+          },
+        },
+        { $sort: { visits: -1 } },
+        { $limit: 20 },
+        {
+          $project: {
+            referrer: '$_id',
+            visits: 1,
+            buttonClicks: 1,
+            _id: 0,
+          },
+        },
+      ]),
+      ValentineVisit.find({ valentineId })
+        .sort({ visitedAt: -1 })
+        .limit(30)
+        .select('visitedAt referrer buttonClicks')
+        .lean(),
+    ]);
+    return jsonSuccess(res, 200, 'Analytics retrieved', {
+      analytics: {
+        totalVisits: totalStats.totalVisits || 0,
+        totalButtonClicks: totalStats.totalButtonClicks || 0,
+        buttonText: doc.buttonText || 'Open',
+        byReferrer,
+        recentVisits: recentVisits.map((v) => ({
+          visitedAt: v.visitedAt,
+          referrer: v.referrer || '(direct)',
+          buttonClicks: v.buttonClicks || 0,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching Valentine analytics:', error);
+    return jsonError(res, 500, 'Failed to load analytics', error.message);
   }
 }

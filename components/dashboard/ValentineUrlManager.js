@@ -104,6 +104,16 @@ function CheckIcon({ size = 18 }) {
   );
 }
 
+function ChartIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
 export default function ValentineUrlManager() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +123,9 @@ export default function ValentineUrlManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [copiedSlug, setCopiedSlug] = useState(null);
+  const [analyticsItem, setAnalyticsItem] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [formData, setFormData] = useState({
     recipientName: '',
     recipientEmail: '',
@@ -252,6 +265,52 @@ export default function ValentineUrlManager() {
     });
     setEditingId({ id: item.id });
     setShowForm(true);
+  }
+
+  async function openAnalytics(item) {
+    setAnalyticsItem(item);
+    setAnalyticsData(null);
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/valentine/analytics?id=${encodeURIComponent(item.id)}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const data = await res.json();
+      if (data.success && data.data?.analytics) {
+        setAnalyticsData(data.data.analytics);
+      } else {
+        setAnalyticsData({ error: data.message || 'Failed to load analytics' });
+      }
+    } catch (err) {
+      setAnalyticsData({ error: 'Unable to load analytics.' });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
+  function closeAnalytics() {
+    setAnalyticsItem(null);
+    setAnalyticsData(null);
+  }
+
+  async function refreshAnalytics() {
+    if (!analyticsItem) return;
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/valentine/analytics?id=${encodeURIComponent(analyticsItem.id)}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const data = await res.json();
+      if (data.success && data.data?.analytics) {
+        setAnalyticsData(data.data.analytics);
+      } else {
+        setAnalyticsData({ error: data.message || 'Failed to load analytics' });
+      }
+    } catch (err) {
+      setAnalyticsData({ error: 'Unable to load analytics.' });
+    } finally {
+      setAnalyticsLoading(false);
+    }
   }
 
   const DECORATION_OPTIONS = [
@@ -518,6 +577,10 @@ export default function ValentineUrlManager() {
                           <LinkIcon size={18} />
                           Open
                         </a>
+                        <button type="button" className="valentine-icon-btn" onClick={() => openAnalytics(item)} title="Analytics">
+                          <ChartIcon size={18} />
+                          Analytics
+                        </button>
                         <button type="button" className="valentine-icon-btn" onClick={() => handleEdit(item)} title="Edit">
                           <EditIcon size={18} />
                           Edit
@@ -541,6 +604,85 @@ export default function ValentineUrlManager() {
               ))}
             </ul>
           ) : null}
+        </div>
+      )}
+
+      {analyticsItem && (
+        <div className="valentine-modal-backdrop" onClick={closeAnalytics} role="dialog" aria-modal="true" aria-labelledby="analytics-modal-title">
+          <div className="valentine-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="valentine-modal-header">
+              <h3 id="analytics-modal-title">Analytics — For: {analyticsItem.recipientName}</h3>
+              <div className="valentine-modal-actions">
+                <button type="button" className="valentine-modal-refresh" onClick={refreshAnalytics} disabled={analyticsLoading} aria-label="Refresh analytics" title="Refresh">
+                  ↻
+                </button>
+                <button type="button" className="valentine-modal-close" onClick={closeAnalytics} aria-label="Close">×</button>
+              </div>
+            </div>
+            <div className="valentine-modal-body">
+              {analyticsLoading ? (
+                <div className="valentine-analytics-loading">Loading analytics…</div>
+              ) : analyticsData?.error ? (
+                <div className="valentine-analytics-error">{analyticsData.error}</div>
+              ) : analyticsData ? (
+                <>
+                  <div className="valentine-analytics-summary">
+                    <div className="valentine-analytics-stat">
+                      <span className="valentine-analytics-stat-value">{analyticsData.totalVisits ?? 0}</span>
+                      <span className="valentine-analytics-stat-label">Link visits</span>
+                    </div>
+                    <div className="valentine-analytics-stat">
+                      <span className="valentine-analytics-stat-value">{analyticsData.totalButtonClicks ?? 0}</span>
+                      <span className="valentine-analytics-stat-label">“{analyticsData.buttonText || 'Open'}” clicks</span>
+                    </div>
+                  </div>
+                  <p className="valentine-analytics-hint">Each visit is one page load. “{analyticsData.buttonText || 'Open'}” is how many times the main button was pressed across all visits.</p>
+                  {analyticsData.byReferrer && analyticsData.byReferrer.length > 0 && (
+                    <div className="valentine-analytics-section">
+                      <h4>Visits by source</h4>
+                      <div className="valentine-analytics-table-wrap">
+                        <table className="valentine-analytics-table">
+                          <thead>
+                            <tr>
+                              <th>Source</th>
+                              <th>Visits</th>
+                              <th>“{analyticsData.buttonText || 'Open'}” clicks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analyticsData.byReferrer.map((row, i) => (
+                              <tr key={i}>
+                                <td title={row.referrer}>{row.referrer.length > 48 ? row.referrer.slice(0, 48) + '…' : row.referrer}</td>
+                                <td>{row.visits}</td>
+                                <td>{row.buttonClicks}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {analyticsData.recentVisits && analyticsData.recentVisits.length > 0 && (
+                    <div className="valentine-analytics-section">
+                      <h4>Recent visits</h4>
+                      <ul className="valentine-analytics-visits">
+                        {analyticsData.recentVisits.map((v, i) => (
+                          <li key={i}>
+                            <span className="valentine-analytics-visit-date">{new Date(v.visitedAt).toLocaleString()}</span>
+                            <span className="valentine-analytics-visit-source" title={v.referrer}>{v.referrer.length > 40 ? v.referrer.slice(0, 40) + '…' : v.referrer}</span>
+                            <span className="valentine-analytics-visit-clicks">“{analyticsData.buttonText || 'Open'}” × {v.buttonClicks}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(!analyticsData.byReferrer || analyticsData.byReferrer.length === 0) && (!analyticsData.recentVisits || analyticsData.recentVisits.length === 0) && (
+                    <p className="valentine-analytics-empty">No visit data yet. Share the link to see analytics here.</p>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
 
@@ -660,31 +802,33 @@ export default function ValentineUrlManager() {
         }
 
         .valentine-alert {
-          padding: 0.85rem 1.1rem;
-          background: #fef2f2;
+          padding: 0.9rem 1.15rem;
+          background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
           border: 1px solid #fecaca;
-          color: #b91c1c;
-          border-radius: 0.75rem;
+          color: #991b1b;
+          border-radius: 0.8rem;
           font-size: 0.9rem;
           line-height: 1.5;
+          box-shadow: 0 2px 8px rgba(185, 28, 28, 0.06);
         }
         .valentine-success {
-          padding: 0.85rem 1.1rem;
-          background: #ecfdf5;
+          padding: 0.9rem 1.15rem;
+          background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
           border: 1px solid #a7f3d0;
-          color: #047857;
-          border-radius: 0.75rem;
+          color: #065f46;
+          border-radius: 0.8rem;
           font-size: 0.9rem;
           line-height: 1.5;
+          box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08);
         }
 
         /* Form card */
         .valentine-form-card {
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 1.25rem;
+          background: linear-gradient(180deg, #ffffff 0%, #fefafb 100%);
+          border: 1px solid rgba(225, 29, 72, 0.12);
+          border-radius: 1.3rem;
           padding: 1.75rem;
-          box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+          box-shadow: 0 4px 24px rgba(225, 29, 72, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
         }
         .valentine-form-title {
           margin: 0 0 1.25rem 0;
@@ -834,27 +978,30 @@ export default function ValentineUrlManager() {
         /* Empty state */
         .valentine-empty {
           text-align: center;
-          padding: 2.75rem 1.5rem;
-          background: linear-gradient(180deg, #fef7f8 0%, #fff 100%);
-          border: 1px dashed rgba(225, 29, 72, 0.25);
-          border-radius: 1.25rem;
+          padding: 2.85rem 1.6rem;
+          background: linear-gradient(180deg, #fef7f8 0%, #fff5f7 50%, #fff 100%);
+          border: 1px dashed rgba(225, 29, 72, 0.28);
+          border-radius: 1.3rem;
           color: #64748b;
+          box-shadow: 0 2px 16px rgba(225, 29, 72, 0.04);
         }
         .valentine-empty-icon {
-          margin-bottom: 1rem;
+          margin-bottom: 1.1rem;
           color: #e11d48;
-          opacity: 0.85;
+          opacity: 0.9;
+          filter: drop-shadow(0 2px 8px rgba(225, 29, 72, 0.2));
         }
         .valentine-empty-title {
           margin: 0 0 0.5rem 0;
-          font-size: 1.15rem;
-          font-weight: 600;
-          color: #0f172a;
+          font-size: 1.18rem;
+          font-weight: 700;
+          color: #1e0a12;
+          letter-spacing: -0.02em;
         }
         .valentine-empty-desc {
-          margin: 0 0 1.25rem 0;
+          margin: 0 0 1.35rem 0;
           font-size: 0.95rem;
-          line-height: 1.5;
+          line-height: 1.55;
           max-width: 36ch;
           margin-left: auto;
           margin-right: auto;
@@ -867,7 +1014,7 @@ export default function ValentineUrlManager() {
         .valentine-list-wrap {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 1.25rem;
         }
         .valentine-list {
           list-style: none;
@@ -875,51 +1022,55 @@ export default function ValentineUrlManager() {
           padding: 0;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 1.25rem;
         }
         .valentine-card {
           position: relative;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 1.1rem;
+          background: linear-gradient(180deg, #ffffff 0%, #fefafb 100%);
+          border: 1px solid rgba(225, 29, 72, 0.14);
+          border-radius: 1.15rem;
           overflow: hidden;
-          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-          transition: box-shadow 0.2s ease, border-color 0.2s ease;
+          box-shadow: 0 2px 12px rgba(225, 29, 72, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+          transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
         }
         .valentine-card:hover {
-          box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
-          border-color: #fecaca;
+          box-shadow: 0 8px 24px rgba(225, 29, 72, 0.1), 0 2px 8px rgba(15, 23, 42, 0.06);
+          border-color: rgba(225, 29, 72, 0.28);
         }
         .valentine-card-accent {
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, #e11d48, #f43f5e);
+          height: 4px;
+          background: linear-gradient(90deg, #be123c 0%, #e11d48 50%, #f43f5e 100%);
+          box-shadow: 0 1px 8px rgba(225, 29, 72, 0.25);
         }
         .valentine-card-body {
-          padding: 1.25rem 1.25rem 1.25rem;
+          padding: 1.35rem 1.35rem 1.35rem;
         }
         .valentine-card-top {
           display: flex;
           flex-wrap: wrap;
           align-items: center;
           gap: 0.75rem;
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.85rem;
         }
         .valentine-card-recipient {
           font-weight: 600;
-          color: #0f172a;
-          font-size: 1rem;
+          color: #1e0a12;
+          font-size: 1.02rem;
+          letter-spacing: -0.01em;
         }
         .valentine-card-theme {
-          font-size: 0.78rem;
-          color: #64748b;
-          background: #f1f5f9;
-          padding: 0.3rem 0.6rem;
-          border-radius: 0.4rem;
-          font-weight: 500;
+          font-size: 0.75rem;
+          color: #9d174d;
+          background: rgba(225, 29, 72, 0.1);
+          padding: 0.35rem 0.65rem;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          text-transform: capitalize;
         }
         .valentine-card-actions {
           display: flex;
@@ -931,26 +1082,28 @@ export default function ValentineUrlManager() {
           display: inline-flex;
           align-items: center;
           gap: 0.4rem;
-          padding: 0.45rem 0.75rem;
+          padding: 0.5rem 0.8rem;
           font-size: 0.85rem;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 0.5rem;
-          color: #475569;
+          background: #fff;
+          border: 1px solid rgba(225, 29, 72, 0.15);
+          border-radius: 0.55rem;
+          color: #64748b;
           text-decoration: none;
           cursor: pointer;
-          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .valentine-icon-btn:hover {
-          background: #e2e8f0;
-          color: #334155;
+          background: #fef7f8;
+          color: #be123c;
+          border-color: rgba(225, 29, 72, 0.25);
+          box-shadow: 0 2px 8px rgba(225, 29, 72, 0.08);
         }
         .valentine-icon-btn:focus-visible {
-          outline: 2px solid #64748b;
+          outline: 2px solid #e11d48;
           outline-offset: 2px;
         }
         .valentine-icon-btn.valentine-copied {
-          background: #ecfdf5;
+          background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
           color: #047857;
           border-color: #a7f3d0;
         }
@@ -958,34 +1111,298 @@ export default function ValentineUrlManager() {
           background: #fef2f2;
           color: #b91c1c;
           border-color: #fecaca;
+          box-shadow: 0 2px 8px rgba(185, 28, 28, 0.1);
         }
         .valentine-card-url {
           display: block;
           width: 100%;
           margin: 0;
-          padding: 0.6rem 0.75rem;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 0.5rem;
+          padding: 0.75rem 0.9rem;
+          background: linear-gradient(135deg, #fef7f8 0%, #fdf2f4 100%);
+          border: 1px solid rgba(225, 29, 72, 0.18);
+          border-radius: 0.6rem;
           cursor: pointer;
           text-align: left;
-          transition: background 0.2s ease, border-color 0.2s ease;
+          transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .valentine-card-url:hover {
-          background: #f1f5f9;
-          border-color: #cbd5e1;
+          background: linear-gradient(135deg, #fef2f2 0%, #fce7f3 100%);
+          border-color: rgba(225, 29, 72, 0.3);
+          box-shadow: 0 2px 12px rgba(225, 29, 72, 0.08);
         }
         .valentine-card-url code {
-          font-size: 0.8rem;
-          color: #64748b;
+          font-size: 0.82rem;
+          color: #831843;
           word-break: break-all;
-          font-family: ui-monospace, monospace;
+          font-family: ui-monospace, 'SF Mono', monospace;
+          letter-spacing: 0.01em;
         }
         .valentine-card-preview {
-          margin: 0.6rem 0 0 0;
+          margin: 0.65rem 0 0 0;
           font-size: 0.9rem;
           color: #64748b;
-          line-height: 1.5;
+          line-height: 1.55;
+          font-style: italic;
+        }
+
+        /* Analytics modal */
+        .valentine-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(30, 10, 18, 0.55);
+          backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 1.25rem;
+          animation: valentine-fade-in 0.22s ease;
+        }
+        @keyframes valentine-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .valentine-modal {
+          background: linear-gradient(180deg, #ffffff 0%, #fefafb 100%);
+          border: 1px solid rgba(225, 29, 72, 0.12);
+          border-radius: 1.35rem;
+          box-shadow: 0 24px 56px rgba(30, 10, 18, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+          max-width: 34rem;
+          width: 100%;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .valentine-modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1.35rem 1.5rem;
+          background: linear-gradient(135deg, #fef7f8 0%, #fff5f7 100%);
+          border-bottom: 1px solid rgba(225, 29, 72, 0.12);
+        }
+        .valentine-modal-header h3 {
+          margin: 0;
+          font-size: 1.12rem;
+          font-weight: 700;
+          color: #1e0a12;
+          letter-spacing: -0.02em;
+        }
+        .valentine-modal-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .valentine-modal-refresh {
+          width: 2.25rem;
+          height: 2.25rem;
+          border: 1px solid rgba(225, 29, 72, 0.2);
+          background: #fff;
+          border-radius: 0.6rem;
+          font-size: 1.15rem;
+          line-height: 1;
+          color: #9d174d;
+          cursor: pointer;
+          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .valentine-modal-refresh:hover:not(:disabled) {
+          background: #fef7f8;
+          border-color: rgba(225, 29, 72, 0.35);
+          color: #be123c;
+        }
+        .valentine-modal-refresh:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .valentine-modal-close {
+          width: 2.25rem;
+          height: 2.25rem;
+          border: 1px solid rgba(225, 29, 72, 0.2);
+          background: #fff;
+          border-radius: 0.6rem;
+          font-size: 1.3rem;
+          line-height: 1;
+          color: #64748b;
+          cursor: pointer;
+          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .valentine-modal-close:hover {
+          background: #fef2f2;
+          border-color: rgba(225, 29, 72, 0.3);
+          color: #be123c;
+        }
+        .valentine-modal-body {
+          padding: 1.5rem;
+          overflow-y: auto;
+          background: #fff;
+        }
+        .valentine-analytics-loading {
+          text-align: center;
+          padding: 2.25rem;
+          color: #9d174d;
+          font-size: 0.95rem;
+          font-weight: 500;
+        }
+        .valentine-analytics-error {
+          text-align: center;
+          padding: 2rem;
+          color: #b91c1c;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 0.75rem;
+          font-size: 0.9rem;
+        }
+        .valentine-analytics-summary {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 1.15rem;
+        }
+        .valentine-analytics-stat {
+          padding: 1.2rem 1rem;
+          border-radius: 0.85rem;
+          text-align: center;
+          border: 1px solid transparent;
+          transition: box-shadow 0.2s ease;
+        }
+        .valentine-analytics-stat:first-child {
+          background: linear-gradient(135deg, #fef7f8 0%, #fce7f3 100%);
+          border-color: rgba(225, 29, 72, 0.15);
+          box-shadow: 0 2px 12px rgba(225, 29, 72, 0.08);
+        }
+        .valentine-analytics-stat:last-child {
+          background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+          border-color: rgba(5, 150, 105, 0.2);
+          box-shadow: 0 2px 12px rgba(5, 150, 105, 0.08);
+        }
+        .valentine-analytics-stat-value {
+          display: block;
+          font-size: 1.65rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+        }
+        .valentine-analytics-stat:first-child .valentine-analytics-stat-value {
+          color: #9d174d;
+        }
+        .valentine-analytics-stat:last-child .valentine-analytics-stat-value {
+          color: #047857;
+        }
+        .valentine-analytics-stat-label {
+          display: block;
+          font-size: 0.8rem;
+          margin-top: 0.25rem;
+          font-weight: 500;
+        }
+        .valentine-analytics-stat:first-child .valentine-analytics-stat-label {
+          color: #831843;
+        }
+        .valentine-analytics-stat:last-child .valentine-analytics-stat-label {
+          color: #065f46;
+        }
+        .valentine-analytics-hint {
+          margin: 0 0 1.35rem 0;
+          font-size: 0.84rem;
+          color: #64748b;
+          line-height: 1.55;
+          padding: 0.65rem 0.85rem;
+          background: #f8fafc;
+          border-radius: 0.6rem;
+          border-left: 3px solid rgba(225, 29, 72, 0.35);
+        }
+        .valentine-analytics-section {
+          margin-bottom: 1.35rem;
+        }
+        .valentine-analytics-section h4 {
+          margin: 0 0 0.6rem 0;
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #1e0a12;
+          letter-spacing: -0.01em;
+        }
+        .valentine-analytics-table-wrap {
+          overflow-x: auto;
+          border: 1px solid rgba(225, 29, 72, 0.15);
+          border-radius: 0.65rem;
+          box-shadow: 0 2px 8px rgba(225, 29, 72, 0.05);
+        }
+        .valentine-analytics-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.88rem;
+        }
+        .valentine-analytics-table th,
+        .valentine-analytics-table td {
+          padding: 0.6rem 0.85rem;
+          text-align: left;
+          border-bottom: 1px solid rgba(225, 29, 72, 0.08);
+        }
+        .valentine-analytics-table th {
+          background: linear-gradient(180deg, #fef7f8 0%, #fdf2f4 100%);
+          font-weight: 600;
+          color: #831843;
+          font-size: 0.82rem;
+          letter-spacing: 0.02em;
+        }
+        .valentine-analytics-table tbody tr:hover {
+          background: #fef7f8;
+        }
+        .valentine-analytics-table td {
+          color: #334155;
+        }
+        .valentine-analytics-visits {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          border: 1px solid rgba(225, 29, 72, 0.12);
+          border-radius: 0.65rem;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(225, 29, 72, 0.04);
+        }
+        .valentine-analytics-visits li {
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          gap: 0.85rem;
+          padding: 0.65rem 0.9rem;
+          border-bottom: 1px solid rgba(225, 29, 72, 0.06);
+          font-size: 0.85rem;
+          align-items: center;
+          background: #fff;
+          transition: background 0.2s ease;
+        }
+        .valentine-analytics-visits li:nth-child(even) {
+          background: #fefafb;
+        }
+        .valentine-analytics-visits li:hover {
+          background: #fef7f8;
+        }
+        .valentine-analytics-visits li:last-child {
+          border-bottom: none;
+        }
+        .valentine-analytics-visit-date {
+          color: #64748b;
+          font-size: 0.82rem;
+        }
+        .valentine-analytics-visit-source {
+          color: #475569;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .valentine-analytics-visit-clicks {
+          color: #9d174d;
+          font-weight: 600;
+          font-size: 0.84rem;
+        }
+        .valentine-analytics-empty {
+          margin: 0;
+          font-size: 0.9rem;
+          color: #64748b;
+          text-align: center;
+          padding: 1.25rem;
+          background: #fef7f8;
+          border: 1px dashed rgba(225, 29, 72, 0.2);
+          border-radius: 0.75rem;
         }
 
         @media (max-width: 640px) {
@@ -1000,6 +1417,16 @@ export default function ValentineUrlManager() {
           }
           .valentine-hero-title {
             font-size: 1.4rem;
+          }
+          .valentine-modal {
+            max-height: 90vh;
+          }
+          .valentine-analytics-summary {
+            grid-template-columns: 1fr;
+          }
+          .valentine-analytics-visits li {
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
           }
         }
       `}</style>

@@ -124,6 +124,61 @@ const DECORATION_POSITIONS = [
 ];
 
 const FALLING_HEARTS_COUNT = 18;
+const TRACK_QUEUE_KEY = 'valentine_track_queue';
+const SESSION_ID_KEY = 'valentine_sid';
+const FLUSH_INTERVAL_MS = 60000;
+
+function getOrCreateSessionId() {
+  if (typeof window === 'undefined') return '';
+  try {
+    let sid = sessionStorage.getItem(SESSION_ID_KEY);
+    if (!sid) {
+      sid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+      sessionStorage.setItem(SESSION_ID_KEY, sid);
+    }
+    return sid;
+  } catch {
+    return '';
+  }
+}
+
+function pushTrackEvent(ev) {
+  try {
+    const raw = localStorage.getItem(TRACK_QUEUE_KEY);
+    const queue = Array.isArray(raw ? JSON.parse(raw) : null) ? JSON.parse(raw) : [];
+    queue.push(ev);
+    localStorage.setItem(TRACK_QUEUE_KEY, JSON.stringify(queue));
+  } catch {
+    // ignore
+  }
+}
+
+function flushTrackQueue(slug, sessionId) {
+  if (typeof window === 'undefined' || !slug || !sessionId) return;
+  try {
+    const raw = localStorage.getItem(TRACK_QUEUE_KEY);
+    const queue = Array.isArray(raw ? JSON.parse(raw) : null) ? JSON.parse(raw) : [];
+    const toSend = queue.filter((e) => e.slug === slug && e.sessionId === sessionId);
+    if (toSend.length === 0) return;
+    const rest = queue.filter((e) => !(e.slug === slug && e.sessionId === sessionId));
+    localStorage.setItem(TRACK_QUEUE_KEY, JSON.stringify(rest));
+    fetch('/api/valentine/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events: toSend }),
+      keepalive: true,
+    }).catch(() => {
+      // re-queue on failure so we don't lose events
+      try {
+        const r = localStorage.getItem(TRACK_QUEUE_KEY);
+        const prev = Array.isArray(r ? JSON.parse(r) : null) ? JSON.parse(r) : [];
+        localStorage.setItem(TRACK_QUEUE_KEY, JSON.stringify([...prev, ...toSend]));
+      } catch {}
+    });
+  } catch {
+    // ignore
+  }
+}
 
 export async function getServerSideProps() {
   return { props: {} };
@@ -160,6 +215,26 @@ export default function ValentinePage() {
     })();
     return () => { cancelled = true; };
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug || !page) return;
+    const sessionId = getOrCreateSessionId();
+    pushTrackEvent({
+      type: 'visit',
+      slug,
+      sessionId,
+      referrer: typeof document !== 'undefined' ? (document.referrer || '').slice(0, 512) : '',
+      timestamp: new Date().toISOString(),
+    });
+    const flush = () => flushTrackQueue(slug, sessionId);
+    const onBeforeUnload = () => flush();
+    const interval = setInterval(flush, FLUSH_INTERVAL_MS);
+    if (typeof window !== 'undefined') window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== 'undefined') window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [slug, page]);
 
   const decorations = useMemo(() => {
     const raw = page?.decorations;
@@ -292,7 +367,16 @@ export default function ValentinePage() {
               type="button"
               className="valentine-cta"
               style={{ background: accentColor, color: isLightButton ? '#1f2937' : '#fff' }}
-              onClick={() => setRevealed(true)}
+              onClick={() => {
+                const sid = getOrCreateSessionId();
+                pushTrackEvent({
+                  type: 'button_click',
+                  slug,
+                  sessionId: sid,
+                  timestamp: new Date().toISOString(),
+                });
+                setRevealed(true);
+              }}
             >
               {page.buttonText}
             </button>
