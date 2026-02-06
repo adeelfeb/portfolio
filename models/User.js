@@ -33,6 +33,8 @@ const UserSchema = new mongoose.Schema(
     otpExpires: { type: Date, default: null },
     // Account status - when true, user cannot login
     isPaused: { type: Boolean, default: false, index: true },
+    // Valentine links: how many links the user can still create (base users start with 1)
+    valentineCredits: { type: Number, default: 1, min: 0 },
   },
   {
     timestamps: true,

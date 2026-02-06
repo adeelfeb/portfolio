@@ -137,7 +137,7 @@ export default function LoginPage() {
             router.replace('/dashboard').then(() => {
               // Set hash after navigation completes
               if (typeof window !== 'undefined') {
-                window.location.hash = 'resolutions';
+                window.location.hash = 'valentine-urls';
               }
             });
           } else {
@@ -215,7 +215,7 @@ export default function LoginPage() {
       if (redirectDest === '/dashboard' || !router.query.redirect) {
         router.replace('/dashboard').then(() => {
           if (typeof window !== 'undefined') {
-            window.location.hash = 'resolutions';
+            window.location.hash = 'valentine-urls';
           }
         });
       } else {
@@ -315,7 +315,7 @@ export default function LoginPage() {
         // Use router.replace then set hash to avoid Next.js router issues
         router.replace('/dashboard').then(() => {
           if (typeof window !== 'undefined') {
-            window.location.hash = 'resolutions';
+            window.location.hash = 'valentine-urls';
           }
         });
       } else {

@@ -1,9 +1,16 @@
 import crypto from 'crypto';
 import connectDB from '../lib/db';
+import User from '../models/User';
 import ValentineUrl from '../models/ValentineUrl';
 import ValentineVisit from '../models/ValentineVisit';
+import ValentineCreditRequest from '../models/ValentineCreditRequest';
 import { jsonError, jsonSuccess } from '../lib/response';
 import { sendValentineLinkEmail } from '../utils/email';
+
+const DEFAULT_CREDITS = 1;
+const CREDITS_PER_PACK = 5;
+const PRICE_USD = 2;
+const PRICE_PKR = 500; // Pakistani Rupees
 
 function toSlug(str) {
   if (!str || typeof str !== 'string') return '';
@@ -79,11 +86,35 @@ export async function getMyValentineUrls(req, res) {
   }
 }
 
+export async function getValentineCredits(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const user = await User.findById(req.user._id).select('valentineCredits').lean();
+    const credits = user?.valentineCredits != null ? Math.max(0, Number(user.valentineCredits)) : DEFAULT_CREDITS;
+    return jsonSuccess(res, 200, 'Credits retrieved', { credits });
+  } catch (error) {
+    console.error('Error fetching Valentine credits:', error);
+    return jsonError(res, 500, 'Failed to fetch credits', error.message);
+  }
+}
+
 export async function createValentineUrl(req, res) {
   try {
     await connectDB();
     if (!req.user) {
       return jsonError(res, 401, 'Authentication required');
+    }
+    let user = await User.findById(req.user._id).select('valentineCredits').lean();
+    if (user?.valentineCredits == null) {
+      await User.findByIdAndUpdate(req.user._id, { $set: { valentineCredits: DEFAULT_CREDITS } });
+      user = { ...user, valentineCredits: DEFAULT_CREDITS };
+    }
+    const credits = Math.max(0, Number(user.valentineCredits));
+    if (credits < 1) {
+      return jsonError(res, 403, 'No credits left. Request more credits to create additional Valentine links.', 'INSUFFICIENT_CREDITS');
     }
     const {
       recipientName,
@@ -155,6 +186,10 @@ export async function createValentineUrl(req, res) {
       }
     }
 
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { valentineCredits: -1 },
+    });
+
     return jsonSuccess(res, 201, 'Valentine URL created', {
       valentineUrl: sanitizeForOwner(doc),
       fullUrl: `${getBaseUrl(req)}/valentine/${doc.slug}`,
@@ -166,6 +201,106 @@ export async function createValentineUrl(req, res) {
       return jsonError(res, 400, 'This URL already exists. Please try again.');
     }
     return jsonError(res, 500, 'Failed to create Valentine URL', error.message);
+  }
+}
+
+export async function createCreditRequest(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const requestedCredits = Math.max(1, Math.min(100, Number(req.body.requestedCredits) || CREDITS_PER_PACK));
+    const message = (req.body.message && String(req.body.message).trim().slice(0, 500)) || '';
+    const doc = await ValentineCreditRequest.create({
+      user: req.user._id,
+      userEmail: req.user.email || '',
+      userName: req.user.name || '',
+      requestedCredits,
+      amountUsd: PRICE_USD * Math.ceil(requestedCredits / CREDITS_PER_PACK),
+      amountPkr: PRICE_PKR * Math.ceil(requestedCredits / CREDITS_PER_PACK),
+      message,
+      status: 'pending',
+    });
+    return jsonSuccess(res, 201, 'Credit request submitted. After payment the developer will add your credits.', {
+      request: {
+        id: doc._id.toString(),
+        requestedCredits: doc.requestedCredits,
+        amountUsd: doc.amountUsd,
+        amountPkr: doc.amountPkr,
+        status: doc.status,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating credit request:', error);
+    return jsonError(res, 500, 'Failed to submit request', error.message);
+  }
+}
+
+export async function getCreditRequests(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const list = await ValentineCreditRequest.find()
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email')
+      .lean();
+    const requests = list.map((r) => ({
+      id: r._id.toString(),
+      userId: r.user?._id?.toString() || r.user?.toString(),
+      userName: r.userName || r.user?.name,
+      userEmail: r.userEmail || r.user?.email,
+      requestedCredits: r.requestedCredits,
+      amountUsd: r.amountUsd,
+      amountPkr: r.amountPkr ?? r.amountInr,
+      message: r.message,
+      status: r.status,
+      processedAt: r.processedAt,
+      notes: r.notes,
+      createdAt: r.createdAt,
+    }));
+    return jsonSuccess(res, 200, 'Credit requests retrieved', { requests });
+  } catch (error) {
+    console.error('Error fetching credit requests:', error);
+    return jsonError(res, 500, 'Failed to fetch credit requests', error.message);
+  }
+}
+
+export async function fulfillCreditRequest(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const { id } = req.query;
+    if (!id) {
+      return jsonError(res, 400, 'Request ID is required');
+    }
+    const request = await ValentineCreditRequest.findById(id);
+    if (!request) {
+      return jsonError(res, 404, 'Credit request not found');
+    }
+    if (request.status !== 'pending') {
+      return jsonError(res, 400, 'Request already processed');
+    }
+    await ValentineCreditRequest.findByIdAndUpdate(id, {
+      status: 'paid',
+      processedAt: new Date(),
+      processedBy: req.user._id,
+      notes: (request.notes || '') + (req.body.notes ? `\n${String(req.body.notes).trim().slice(0, 500)}` : ''),
+    });
+    await User.findByIdAndUpdate(request.user, {
+      $inc: { valentineCredits: request.requestedCredits },
+    });
+    return jsonSuccess(res, 200, 'Credits added to user', {
+      requestId: id,
+      creditsAdded: request.requestedCredits,
+    });
+  } catch (error) {
+    console.error('Error fulfilling credit request:', error);
+    return jsonError(res, 500, 'Failed to fulfill request', error.message);
   }
 }
 

@@ -10,7 +10,7 @@ export async function getServerSideProps(context) {
   const user = await getUserFromRequest(req);
 
   if (user) {
-    return { redirect: { destination: '/dashboard#resolutions', permanent: false } };
+    return { redirect: { destination: '/dashboard#valentine-urls', permanent: false } };
   }
 
   // No user session, show home page

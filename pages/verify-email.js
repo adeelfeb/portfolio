@@ -132,7 +132,7 @@ export default function VerifyEmailPage() {
       
       // Redirect immediately - cookies are set synchronously
       // Use window.location for hash navigation as Next.js router doesn't handle hashes well
-      window.location.href = '/dashboard#resolutions';
+      window.location.href = '/dashboard#valentine-urls';
       
     } catch (err) {
       setError(err.message || "Verification failed. Please try again.");

@@ -121,7 +121,7 @@ export default function SignupPage() {
           // Use router.replace then set hash to avoid Next.js router issues
           router.replace('/dashboard').then(() => {
             if (typeof window !== 'undefined') {
-              window.location.hash = 'resolutions';
+              window.location.hash = 'valentine-urls';
             }
           });
           return;
@@ -222,7 +222,7 @@ export default function SignupPage() {
         // Use router.replace then set hash to avoid Next.js router issues
         router.replace('/dashboard').then(() => {
           if (typeof window !== 'undefined') {
-            window.location.hash = 'resolutions';
+            window.location.hash = 'valentine-urls';
           }
         });
       }

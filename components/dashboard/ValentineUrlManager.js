@@ -126,6 +126,12 @@ export default function ValentineUrlManager() {
   const [analyticsItem, setAnalyticsItem] = useState(null);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [credits, setCredits] = useState(null);
+  const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
+  const [creditRequestCredits, setCreditRequestCredits] = useState(5);
+  const [creditRequestMessage, setCreditRequestMessage] = useState('');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
+  const [requestSuccess, setRequestSuccess] = useState(false);
   const [formData, setFormData] = useState({
     recipientName: '',
     recipientEmail: '',
@@ -142,7 +148,22 @@ export default function ValentineUrlManager() {
 
   useEffect(() => {
     fetchList();
+    fetchCredits();
   }, []);
+
+  async function fetchCredits() {
+    try {
+      const res = await fetch('/api/valentine/credits', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const data = await res.json();
+      if (data.success && data.data != null) {
+        setCredits(data.data.credits ?? 0);
+      }
+    } catch {
+      setCredits(0);
+    }
+  }
 
   async function fetchList() {
     try {
@@ -199,17 +220,67 @@ export default function ValentineUrlManager() {
       const data = await res.json();
       if (data.success) {
         await fetchList();
+        await fetchCredits();
         const emailSent = data.data?.emailSent;
         setSuccessMessage(emailSent ? 'Link saved. Email sent to the recipient.' : 'Link saved.');
         setTimeout(() => setSuccessMessage(''), 5000);
         resetForm();
       } else {
-        setError(data.message || 'Failed to save');
+        if (data.error === 'INSUFFICIENT_CREDITS' || (res.status === 403 && data.message && data.message.includes('credits'))) {
+          setCredits(0);
+          setShowNoCreditsModal(true);
+        } else {
+          setError(data.message || 'Failed to save');
+        }
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  function openCreateForm() {
+    const c = credits != null ? credits : 1;
+    if (c < 1) {
+      setShowNoCreditsModal(true);
+    } else {
+      setShowForm(true);
+    }
+  }
+
+  async function submitCreditRequest(e) {
+    e.preventDefault();
+    setRequestSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/valentine/credit-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          requestedCredits: Math.max(1, Math.min(100, Number(creditRequestCredits) || 5)),
+          message: (creditRequestMessage || '').trim().slice(0, 500),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRequestSuccess(true);
+        setTimeout(() => {
+          setShowNoCreditsModal(false);
+          setRequestSuccess(false);
+          setCreditRequestMessage('');
+          setCreditRequestCredits(5);
+        }, 3000);
+      } else {
+        setError(data.message || 'Failed to submit request');
+      }
+    } catch (err) {
+      setError('Failed to submit request. Please try again.');
+    } finally {
+      setRequestSubmitting(false);
     }
   }
 
@@ -343,11 +414,16 @@ export default function ValentineUrlManager() {
           <p className="valentine-hero-desc">
             Create a unique, secure link with a custom message and theme. Only people with the link can see the page.
           </p>
+          {credits != null && (
+            <p className="valentine-hero-credits" aria-live="polite">
+              Credits left: <strong>{credits}</strong> {credits === 1 ? 'link' : 'links'}
+            </p>
+          )}
           {!showForm && (
             <button
               type="button"
               className="valentine-btn-primary"
-              onClick={() => setShowForm(true)}
+              onClick={openCreateForm}
               aria-label="Create new Valentine link"
             >
               <HeartIcon size={20} />
@@ -365,6 +441,69 @@ export default function ValentineUrlManager() {
       {successMessage && (
         <div className="valentine-success" role="status">
           {successMessage}
+        </div>
+      )}
+
+      {showNoCreditsModal && (
+        <div className="valentine-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="valentine-no-credits-title">
+          <div className="valentine-modal">
+            <h3 id="valentine-no-credits-title" className="valentine-modal-title">No credits left</h3>
+            {!requestSuccess ? (
+              <>
+                <p className="valentine-modal-p">
+                  You need more credits to create additional Valentine links. Request more credits and pay the invoice; after payment the developer will add credits to your account.
+                </p>
+                <p className="valentine-modal-p valentine-modal-pricing">
+                  <strong>5 credits</strong> for <strong>$2 USD</strong> / <strong>Rs 500 PKR</strong> (Pakistani Rupees). You can request any number of credits; the developer will send you an invoice. After paying, your credits will be added.
+                </p>
+                <form onSubmit={submitCreditRequest} className="valentine-credit-request-form">
+                  <div className="valentine-form-group">
+                    <label htmlFor="valentine-request-credits">Number of credits to request</label>
+                    <input
+                      id="valentine-request-credits"
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={creditRequestCredits}
+                      onChange={(e) => setCreditRequestCredits(Number(e.target.value) || 5)}
+                      disabled={requestSubmitting}
+                    />
+                  </div>
+                  <div className="valentine-form-group">
+                    <label htmlFor="valentine-request-message">Message (optional)</label>
+                    <textarea
+                      id="valentine-request-message"
+                      value={creditRequestMessage}
+                      onChange={(e) => setCreditRequestMessage(e.target.value)}
+                      placeholder="e.g. I need 10 credits for multiple links"
+                      rows={2}
+                      maxLength={500}
+                      disabled={requestSubmitting}
+                    />
+                  </div>
+                  <div className="valentine-modal-actions">
+                    <button
+                      type="button"
+                      className="valentine-btn-secondary"
+                      onClick={() => { setShowNoCreditsModal(false); setCreditRequestMessage(''); setCreditRequestCredits(5); }}
+                      disabled={requestSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="valentine-btn-primary"
+                      disabled={requestSubmitting}
+                    >
+                      {requestSubmitting ? 'Submitting…' : 'Request'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <p className="valentine-modal-success">Request submitted. After payment the developer will add your credits.</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -547,7 +686,7 @@ export default function ValentineUrlManager() {
               <button
                 type="button"
                 className="valentine-btn-primary valentine-empty-cta"
-                onClick={() => setShowForm(true)}
+                onClick={openCreateForm}
               >
                 <HeartIcon size={20} />
                 Create your first link
@@ -809,6 +948,14 @@ export default function ValentineUrlManager() {
           font-size: 0.95rem;
           line-height: 1.6;
         }
+        .valentine-hero-credits {
+          margin: 0;
+          font-size: 0.9rem;
+          color: #64748b;
+        }
+        .valentine-hero-credits strong {
+          color: #be123c;
+        }
         .valentine-hero-content .valentine-btn-primary {
           align-self: flex-start;
           margin-top: 0.25rem;
@@ -853,6 +1000,74 @@ export default function ValentineUrlManager() {
         .valentine-btn-secondary:focus-visible {
           outline: 2px solid #64748b;
           outline-offset: 2px;
+        }
+
+        /* No-credits modal */
+        .valentine-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 1rem;
+        }
+        .valentine-modal {
+          background: white;
+          border-radius: 1rem;
+          padding: 1.5rem;
+          max-width: 420px;
+          width: 100%;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          border: 1px solid #e2e8f0;
+        }
+        .valentine-modal-title {
+          margin: 0 0 0.75rem 0;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .valentine-modal-p {
+          margin: 0 0 0.75rem 0;
+          font-size: 0.9rem;
+          color: #475569;
+          line-height: 1.5;
+        }
+        .valentine-modal-pricing {
+          margin-bottom: 1rem;
+          font-size: 0.85rem;
+          color: #64748b;
+        }
+        .valentine-credit-request-form .valentine-form-group {
+          margin-bottom: 1rem;
+        }
+        .valentine-credit-request-form label {
+          display: block;
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: #334155;
+          margin-bottom: 0.35rem;
+        }
+        .valentine-credit-request-form input,
+        .valentine-credit-request-form textarea {
+          width: 100%;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 0.5rem;
+          font-size: 0.9rem;
+        }
+        .valentine-modal-actions {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.25rem;
+          justify-content: flex-end;
+        }
+        .valentine-modal-success {
+          margin: 0;
+          color: #059669;
+          font-weight: 500;
+          font-size: 0.95rem;
         }
 
         .valentine-alert {

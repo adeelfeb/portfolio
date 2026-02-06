@@ -10,6 +10,7 @@ import BlogManager from '../components/dashboard/BlogManager';
 import PortfolioManager from '../components/dashboard/PortfolioManager';
 import NewYearResolutionManager from '../components/dashboard/NewYearResolutionManager';
 import ValentineUrlManager from '../components/dashboard/ValentineUrlManager';
+import CreditRequestsPanel from '../components/dashboard/CreditRequestsPanel';
 import SupportPanel from '../components/dashboard/SupportPanel';
 import ResourcesPanel from '../components/dashboard/ResourcesPanel';
 import HelpPanel from '../components/dashboard/HelpPanel';
@@ -56,6 +57,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'blogs', label: 'Blogs' },
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
     { key: 'help', label: 'Help' },
@@ -68,6 +70,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'blogs', label: 'Blogs' },
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
     { key: 'help', label: 'Help' },
@@ -144,6 +147,11 @@ const SECTION_DESCRIPTORS = {
     subtitle: 'Create secure Valentine links with custom messages and themes.',
     hideHeader: true,
     body: () => <ValentineUrlManager />,
+  },
+  'credit-requests': {
+    subtitle: 'View and fulfill Valentine credit requests. Mark as paid and add credits to users.',
+    hideHeader: true,
+    body: () => <CreditRequestsPanel />,
   },
   resources: {
     subtitle: 'Centralize guidelines, FAQs, and documentation.',
