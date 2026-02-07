@@ -12,6 +12,7 @@ import NewYearResolutionManager from '../components/dashboard/NewYearResolutionM
 import ValentineUrlManager from '../components/dashboard/ValentineUrlManager';
 import ValentineUrlMonitor from '../components/dashboard/ValentineUrlMonitor';
 import CreditRequestsPanel from '../components/dashboard/CreditRequestsPanel';
+import BackupPanel from '../components/dashboard/BackupPanel';
 import SupportPanel from '../components/dashboard/SupportPanel';
 import ResourcesPanel from '../components/dashboard/ResourcesPanel';
 import HelpPanel from '../components/dashboard/HelpPanel';
@@ -61,6 +62,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
+    { key: 'backup', label: 'Backup' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
     { key: 'help', label: 'Help' },
@@ -76,6 +78,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
+    { key: 'backup', label: 'Backup' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
     { key: 'help', label: 'Help' },
@@ -174,6 +177,11 @@ const SECTION_DESCRIPTORS = {
     },
     hideHeader: true,
     body: (user) => <CreditRequestsPanel user={user} />,
+  },
+  backup: {
+    subtitle: 'Export all database collections to JSON or Excel. Import a backup file to add entries (invalid or duplicate rows are skipped). Developer and super admin only.',
+    hideHeader: true,
+    body: (user) => <BackupPanel user={user} />,
   },
   resources: {
     subtitle: 'Centralize guidelines, FAQs, and documentation.',
