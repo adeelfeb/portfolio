@@ -177,7 +177,7 @@ export async function createValentineUrl(req, res) {
       mainMessage: (mainMessage || '').trim(),
       buttonText: (buttonText || '').trim() || 'Open',
       buttonTextNo: (typeof buttonTextNo === 'string' ? buttonTextNo.trim() : '') || 'Maybe later',
-      theme: theme || 'classic',
+      theme: theme || 'romantic',
       themeColor: themeColor || 'rose',
       decorations: Array.isArray(decorations) ? decorations.filter((d) => ['flowers', 'teddy', 'chocolate', 'hearts'].includes(d)) : [],
       replyPromptLabel: (typeof replyPromptLabel === 'string' && replyPromptLabel.trim()) ? replyPromptLabel.trim().slice(0, 120) : 'Write a message to the sender',

@@ -78,7 +78,7 @@ const ValentineUrlSchema = new mongoose.Schema(
     theme: {
       type: String,
       enum: VALENTINE_THEMES,
-      default: 'classic',
+      default: 'romantic',
     },
     themeColor: {
       type: String,

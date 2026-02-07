@@ -144,7 +144,7 @@ export default function ValentineUrlManager({ user }) {
     buttonTextNo: 'Maybe later',
     replyPromptLabel: 'Write a message to the sender',
     replyMaxLength: 500,
-    theme: 'classic',
+    theme: 'romantic',
     themeColor: 'rose',
     decorations: [],
   });
@@ -322,7 +322,7 @@ export default function ValentineUrlManager({ user }) {
       buttonTextNo: 'Maybe later',
       replyPromptLabel: 'Write a message to the sender',
       replyMaxLength: 500,
-      theme: 'classic',
+      theme: 'romantic',
       themeColor: 'rose',
       decorations: [],
     });
@@ -343,7 +343,7 @@ export default function ValentineUrlManager({ user }) {
       buttonTextNo: item.buttonTextNo ?? 'Maybe later',
       replyPromptLabel: item.replyPromptLabel ?? 'Write a message to the sender',
       replyMaxLength: typeof item.replyMaxLength === 'number' ? item.replyMaxLength : 500,
-      theme: item.theme || 'classic',
+      theme: item.theme || 'romantic',
       themeColor: item.themeColor || 'rose',
       decorations: Array.isArray(item.decorations) ? item.decorations : [],
     });
@@ -873,7 +873,6 @@ export default function ValentineUrlManager({ user }) {
                               <p className="valentine-analytics-reply-message">{r.message}</p>
                               <span className="valentine-analytics-reply-meta">
                                 {new Date(r.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
-                                {r.sessionId ? ` · ${r.sessionId}` : ''}
                               </span>
                             </li>
                           ))}
@@ -1534,10 +1533,10 @@ export default function ValentineUrlManager({ user }) {
           border: 1px solid rgba(225, 29, 72, 0.12);
           border-radius: 1.4rem;
           box-shadow: 0 28px 64px rgba(30, 10, 18, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-          max-width: 52rem;
+          max-width: 54rem;
           width: 100%;
-          max-height: 92vh;
-          min-height: 24rem;
+          max-height: 90vh;
+          min-height: 20rem;
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -1603,26 +1602,32 @@ export default function ValentineUrlManager({ user }) {
         .valentine-modal-body {
           padding: 1.6rem;
           overflow-y: auto;
-          overflow-x: hidden;
+          overflow-x: auto;
           background: #fff;
-          flex: 1;
+          flex: 1 1 auto;
           min-height: 0;
-          display: flex;
-          flex-direction: column;
+          -webkit-overflow-scrolling: touch;
         }
         .valentine-modal-body::-webkit-scrollbar {
-          width: 10px;
+          width: 12px;
+          height: 12px;
         }
         .valentine-modal-body::-webkit-scrollbar-track {
-          background: #f8fafc;
-          border-radius: 10px;
+          background: #f1f5f9;
+          border-radius: 12px;
+          margin: 4px;
         }
         .valentine-modal-body::-webkit-scrollbar-thumb {
-          background: rgba(225, 29, 72, 0.25);
-          border-radius: 10px;
+          background: rgba(225, 29, 72, 0.35);
+          border-radius: 12px;
+          border: 3px solid #f1f5f9;
         }
         .valentine-modal-body::-webkit-scrollbar-thumb:hover {
-          background: rgba(225, 29, 72, 0.4);
+          background: rgba(225, 29, 72, 0.5);
+        }
+        .valentine-modal-body::-webkit-scrollbar-corner {
+          background: #f1f5f9;
+          border-radius: 0 0 0.5rem 0;
         }
         .valentine-analytics-loading {
           text-align: center;
@@ -1716,7 +1721,8 @@ export default function ValentineUrlManager({ user }) {
           padding: 0;
           border: 1px solid rgba(225, 29, 72, 0.15);
           border-radius: 0.75rem;
-          overflow: hidden;
+          overflow: visible;
+          max-height: none;
         }
         .valentine-analytics-reply-item {
           padding: 0.85rem 1rem;
@@ -1744,34 +1750,31 @@ export default function ValentineUrlManager({ user }) {
           font-size: 0.85em;
         }
         .valentine-analytics-all-visits-section {
-          flex: 1;
+          flex: none;
           min-height: 0;
-          display: flex;
-          flex-direction: column;
         }
         .valentine-analytics-all-visits-section h4 {
           flex-shrink: 0;
         }
         .valentine-analytics-scroll-wrap {
-          overflow-y: auto;
           overflow-x: auto;
-          max-height: min(28rem, 50vh);
+          overflow-y: visible;
+          max-height: none;
           border: 1px solid rgba(225, 29, 72, 0.15);
           border-radius: 0.75rem;
           box-shadow: 0 2px 12px rgba(225, 29, 72, 0.06);
           margin-top: 0.5rem;
         }
         .valentine-analytics-scroll-wrap::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
+          height: 10px;
         }
         .valentine-analytics-scroll-wrap::-webkit-scrollbar-track {
           background: #f8fafc;
-          border-radius: 8px;
+          border-radius: 10px;
         }
         .valentine-analytics-scroll-wrap::-webkit-scrollbar-thumb {
           background: rgba(225, 29, 72, 0.28);
-          border-radius: 8px;
+          border-radius: 10px;
         }
         .valentine-analytics-scroll-wrap::-webkit-scrollbar-thumb:hover {
           background: rgba(225, 29, 72, 0.4);
@@ -1935,10 +1938,7 @@ export default function ValentineUrlManager({ user }) {
         @media (max-width: 768px) {
           .valentine-modal {
             max-width: 95vw;
-            max-height: 90vh;
-          }
-          .valentine-analytics-scroll-wrap {
-            max-height: min(22rem, 45vh);
+            max-height: 88vh;
           }
         }
 

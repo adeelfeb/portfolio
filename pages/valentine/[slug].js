@@ -46,7 +46,7 @@ const THEME_STYLES = {
 };
 
 function getThemeVars(theme, color) {
-  const themeMap = THEME_STYLES[theme] || THEME_STYLES.classic;
+  const themeMap = THEME_STYLES[theme] || THEME_STYLES.romantic;
   return themeMap[color] || themeMap.rose;
 }
 
@@ -131,17 +131,17 @@ const DECORATION_COMPONENTS = [
 ];
 
 const DECORATION_POSITIONS = [
-  { top: '8%', left: '6%', delay: 0, duration: 4 },
-  { top: '12%', right: '8%', delay: 0.5, duration: 5 },
-  { bottom: '15%', left: '5%', delay: 1, duration: 4.5 },
-  { bottom: '20%', right: '6%', delay: 0.3, duration: 5.2 },
-  { top: '45%', left: '2%', delay: 1.2, duration: 4.8 },
-  { top: '50%', right: '3%', delay: 0.8, duration: 5 },
-  { bottom: '40%', left: '8%', delay: 0.6, duration: 4.2 },
-  { bottom: '35%', right: '5%', delay: 1.5, duration: 5.5 },
+  { top: '6%', left: '8%', delay: 0, duration: 5.2 },
+  { top: '10%', right: '10%', delay: 0.6, duration: 5.8 },
+  { bottom: '12%', left: '6%', delay: 1, duration: 5 },
+  { bottom: '18%', right: '8%', delay: 0.4, duration: 5.4 },
+  { top: '42%', left: '4%', delay: 1.4, duration: 5.6 },
+  { top: '48%', right: '5%', delay: 0.9, duration: 5.2 },
+  { bottom: '38%', left: '10%', delay: 0.7, duration: 5.3 },
+  { bottom: '32%', right: '6%', delay: 1.6, duration: 5.7 },
 ];
 
-const FALLING_HEARTS_COUNT = 18;
+const FALLING_HEARTS_COUNT = 22;
 const TRACK_QUEUE_KEY = 'valentine_track_queue';
 const SESSION_ID_KEY = 'valentine_sid';
 const FLUSH_INTERVAL_MS = 60000;
@@ -384,21 +384,21 @@ export default function ValentinePage() {
   }, []);
 
   const ambientBg = useMemo(() => {
-    const hearts = Array.from({ length: 24 }, (_, i) => ({
+    const hearts = Array.from({ length: 28 }, (_, i) => ({
       id: `h-${i}`,
-      left: `${(i * 13 + 2) % 98}%`,
-      top: `${(i * 17 + 5) % 95}%`,
-      size: 8 + (i % 4) * 2,
-      delay: (i * 0.25) % 4,
-      duration: 3 + (i % 3) * 0.8,
+      left: `${(i * 11 + 3) % 96}%`,
+      top: `${(i * 19 + 4) % 94}%`,
+      size: 10 + (i % 5) * 3,
+      delay: (i * 0.2) % 4.5,
+      duration: 4 + (i % 4) * 0.6,
     }));
-    const sparkles = Array.from({ length: 12 }, (_, i) => ({
+    const sparkles = Array.from({ length: 16 }, (_, i) => ({
       id: `s-${i}`,
-      left: `${(i * 19 + 7) % 94}%`,
-      top: `${(i * 23 + 3) % 92}%`,
-      size: 10 + (i % 3) * 4,
-      delay: (i * 0.4) % 3,
-      duration: 2.5 + (i % 2) * 0.5,
+      left: `${(i * 17 + 5) % 93}%`,
+      top: `${(i * 21 + 6) % 91}%`,
+      size: 12 + (i % 4) * 5,
+      delay: (i * 0.35) % 3.5,
+      duration: 3 + (i % 3) * 0.4,
     }));
     return { hearts, sparkles };
   }, []);
@@ -520,7 +520,7 @@ export default function ValentinePage() {
                 animationDuration: `${duration}s`,
               }}
             >
-              <Svg size={36} color={accentColor} />
+              <Svg size={44} color={accentColor} />
             </div>
           ))}
         </div>
@@ -537,7 +537,7 @@ export default function ValentinePage() {
                   animationDelay: `${delay}s`,
                 }}
               >
-                <HeartSvg size={28} color={accentColor} />
+                <HeartSvg size={32} color={accentColor} />
               </div>
             ))}
           </div>
@@ -545,7 +545,7 @@ export default function ValentinePage() {
 
         <div className={`valentine-card ${revealed ? 'valentine-card-revealed' : ''}`}>
           <div className={`valentine-main-icon ${revealed ? 'valentine-heart-explode' : ''}`}>
-            <HeartSvg size={56} color={accentColor} />
+            <HeartSvg size={64} color={accentColor} />
           </div>
           <h1 className="valentine-welcome">{page.welcomeText}</h1>
           <p className="valentine-recipient">For {page.recipientName}</p>
@@ -650,33 +650,33 @@ export default function ValentinePage() {
           will-change: transform;
         }
         .valentine-bg-orb-1 {
-          width: min(320px, 70vw);
-          height: min(320px, 70vw);
-          background: rgba(253, 164, 175, 0.45);
-          top: -100px;
-          left: -80px;
+          width: min(380px, 75vw);
+          height: min(380px, 75vw);
+          background: rgba(253, 164, 175, 0.5);
+          top: -120px;
+          left: -100px;
           animation-delay: 0s;
         }
         .valentine-bg-orb-2 {
-          width: min(260px, 55vw);
-          height: min(260px, 55vw);
-          background: rgba(251, 207, 232, 0.4);
-          bottom: -60px;
-          right: -60px;
+          width: min(300px, 60vw);
+          height: min(300px, 60vw);
+          background: rgba(251, 207, 232, 0.45);
+          bottom: -80px;
+          right: -80px;
           animation-delay: -4s;
         }
         .valentine-bg-orb-3 {
-          width: min(200px, 45vw);
-          height: min(200px, 45vw);
-          background: rgba(253, 242, 248, 0.5);
-          top: 35%;
-          right: 5%;
+          width: min(220px, 48vw);
+          height: min(220px, 48vw);
+          background: rgba(253, 242, 248, 0.55);
+          top: 32%;
+          right: 4%;
           animation-delay: -6s;
         }
         @keyframes v-orb-float {
-          0%, 100% { transform: scale(1) translate(0, 0); }
-          33% { transform: scale(1.06) translate(12px, -8px); }
-          66% { transform: scale(1.03) translate(-6px, 10px); }
+          0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+          33% { transform: scale(1.08) translate(15px, -10px); opacity: 0.5; }
+          66% { transform: scale(1.04) translate(-8px, 12px); opacity: 0.45; }
         }
         .valentine-ambient-layer {
           position: absolute;
@@ -687,19 +687,20 @@ export default function ValentinePage() {
         }
         .valentine-ambient-heart {
           position: absolute;
-          opacity: 0.5;
-          animation: v-ambient-float 5s ease-in-out infinite;
+          opacity: 0.55;
+          animation: v-ambient-float 6s ease-in-out infinite;
           will-change: transform;
         }
         .valentine-ambient-heart svg {
           width: 100%;
           height: 100%;
           display: block;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
         }
         .valentine-ambient-sparkle {
           position: absolute;
-          opacity: 0.45;
-          animation: v-sparkle 3s ease-in-out infinite;
+          opacity: 0.5;
+          animation: v-sparkle 3.5s ease-in-out infinite;
           will-change: transform, opacity;
         }
         .valentine-ambient-sparkle svg {
@@ -708,12 +709,12 @@ export default function ValentinePage() {
           display: block;
         }
         @keyframes v-ambient-float {
-          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.5; }
-          50% { transform: translateY(-12px) rotate(8deg) scale(1.1); opacity: 0.7; }
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.55; }
+          50% { transform: translateY(-14px) rotate(10deg) scale(1.12); opacity: 0.75; }
         }
         @keyframes v-sparkle {
-          0%, 100% { transform: scale(1); opacity: 0.4; }
-          50% { transform: scale(1.2); opacity: 0.7; }
+          0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.45; }
+          50% { transform: scale(1.25) rotate(5deg); opacity: 0.75; }
         }
         .valentine-decorations-layer {
           position: absolute;
@@ -724,11 +725,12 @@ export default function ValentinePage() {
         }
         .valentine-decoration-item {
           position: absolute;
-          width: clamp(28px, 7vw, 44px);
-          height: clamp(28px, 7vw, 44px);
-          opacity: 0.6;
-          animation: v-float-tilt 4s ease-in-out infinite;
+          width: clamp(36px, 9vw, 56px);
+          height: clamp(36px, 9vw, 56px);
+          opacity: 0.72;
+          animation: v-float-tilt 5s ease-in-out infinite;
           will-change: transform;
+          filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
         }
         .valentine-decoration-item svg {
           width: 100%;
@@ -737,9 +739,9 @@ export default function ValentinePage() {
         }
         @keyframes v-float-tilt {
           0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-          25% { transform: translateY(-8px) rotate(-5deg) scale(1.02); }
-          50% { transform: translateY(-4px) rotate(5deg) scale(1.04); }
-          75% { transform: translateY(-12px) rotate(-3deg) scale(1.02); }
+          25% { transform: translateY(-10px) rotate(-6deg) scale(1.05); }
+          50% { transform: translateY(-5px) rotate(6deg) scale(1.08); }
+          75% { transform: translateY(-12px) rotate(-4deg) scale(1.04); }
         }
         .valentine-heart-rain {
           position: fixed;
@@ -753,32 +755,33 @@ export default function ValentinePage() {
         }
         .valentine-falling-heart {
           position: absolute;
-          top: -40px;
-          opacity: 0.7;
+          top: -48px;
+          opacity: 0.75;
           animation: v-fall linear infinite;
+          filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
         }
         .valentine-falling-heart svg {
-          width: 28px;
-          height: 28px;
+          width: 32px;
+          height: 32px;
           display: block;
         }
         @keyframes v-fall {
-          0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
-          100% { transform: translateY(100vh) rotate(180deg); opacity: 0.2; }
+          0% { transform: translateY(0) rotate(0deg); opacity: 0.85; }
+          100% { transform: translateY(100vh) rotate(180deg); opacity: 0.15; }
         }
         .valentine-card {
-          max-width: min(28rem, 92vw);
+          max-width: min(30rem, 92vw);
           width: 100%;
           text-align: center;
-          padding: clamp(1.5rem, 5vw, 2.5rem);
-          border-radius: 1.5rem;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(14px);
-          border: 1px solid rgba(255, 255, 255, 0.7);
+          padding: clamp(1.75rem, 5vw, 2.75rem);
+          border-radius: 1.75rem;
+          box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+          background: rgba(255, 255, 255, 0.94);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
           position: relative;
           z-index: 1;
-          animation: v-card-in 0.5s ease-out, v-tilt-bounce 3s ease-in-out 0.6s infinite;
+          animation: v-card-in 0.55s ease-out, v-tilt-bounce 3.5s ease-in-out 0.7s infinite;
         }
         .valentine-card-revealed {
           animation: v-card-in 0.5s ease-out, v-tilt-bounce 3s ease-in-out 0.6s infinite;
@@ -794,35 +797,39 @@ export default function ValentinePage() {
           75% { transform: rotate(-2deg); }
         }
         .valentine-main-icon {
-          margin-bottom: 1rem;
+          margin-bottom: 1.15rem;
           line-height: 1;
           display: flex;
           justify-content: center;
           align-items: center;
-          animation: v-heart-soft 2.5s ease-in-out infinite;
+          animation: v-heart-soft 2.8s ease-in-out infinite;
+          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
         }
         .valentine-heart-explode {
-          animation: v-heart-explode 0.6s ease-out forwards;
+          animation: v-heart-explode 0.65s ease-out forwards;
         }
         @keyframes v-heart-soft {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.06); }
+          50% { transform: scale(1.08); }
         }
         @keyframes v-heart-explode {
           0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.4); opacity: 0.9; }
-          100% { transform: scale(1.2); opacity: 0.95; }
+          50% { transform: scale(1.45); opacity: 0.92; }
+          100% { transform: scale(1.25); opacity: 0.96; }
         }
         .valentine-welcome {
-          font-size: clamp(1.25rem, 4vw, 1.5rem);
+          font-size: clamp(1.35rem, 4vw, 1.6rem);
           font-weight: 700;
           margin: 0 0 0.5rem 0;
           color: #1f2937;
+          letter-spacing: -0.02em;
+          line-height: 1.3;
         }
         .valentine-recipient {
-          font-size: clamp(0.9rem, 2.5vw, 1rem);
+          font-size: clamp(0.95rem, 2.5vw, 1.05rem);
           color: #6b7280;
           margin: 0 0 1.5rem 0;
+          letter-spacing: 0.01em;
         }
         .valentine-cta {
           padding: 0.875rem 2rem;
@@ -925,8 +932,8 @@ export default function ValentinePage() {
           font-style: italic;
         }
         @media (max-width: 480px) {
-          .valentine-decoration-item { opacity: 0.5; width: clamp(24px, 8vw, 36px); height: clamp(24px, 8vw, 36px); }
-          .valentine-falling-heart svg { width: 22px; height: 22px; }
+          .valentine-decoration-item { opacity: 0.65; width: clamp(30px, 8vw, 42px); height: clamp(30px, 8vw, 42px); }
+          .valentine-falling-heart svg { width: 26px; height: 26px; }
         }
       `}</style>
     </>
