@@ -10,6 +10,7 @@ import BlogManager from '../components/dashboard/BlogManager';
 import PortfolioManager from '../components/dashboard/PortfolioManager';
 import NewYearResolutionManager from '../components/dashboard/NewYearResolutionManager';
 import ValentineUrlManager from '../components/dashboard/ValentineUrlManager';
+import ValentineUrlMonitor from '../components/dashboard/ValentineUrlMonitor';
 import CreditRequestsPanel from '../components/dashboard/CreditRequestsPanel';
 import SupportPanel from '../components/dashboard/SupportPanel';
 import ResourcesPanel from '../components/dashboard/ResourcesPanel';
@@ -57,6 +58,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'user-management', label: 'User Management' },
     { key: 'blogs', label: 'Blogs' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
     { key: 'add-origin', label: 'Add Origin' },
@@ -71,6 +73,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'blogs', label: 'Blogs' },
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
     { key: 'add-origin', label: 'Add Origin' },
@@ -155,6 +158,11 @@ const SECTION_DESCRIPTORS = {
     },
     hideHeader: true,
     body: (user) => <ValentineUrlManager user={user} />,
+  },
+  'valentine-monitor': {
+    subtitle: 'Developer-only: view all Valentine links, creators, full details, and utilization trends. Read-only.',
+    hideHeader: true,
+    body: (user) => <ValentineUrlMonitor user={user} />,
   },
   'credit-requests': {
     subtitle: (user) => {

@@ -730,6 +730,142 @@ export async function trackValentineEvents(req, res) {
   }
 }
 
+function sanitizeForMonitor(valentine, creator) {
+  if (!valentine) return null;
+  const id = valentine._id?.toString?.() || valentine._id;
+  const buttonTextNoRaw = valentine.buttonTextNo;
+  const buttonTextNo = (typeof buttonTextNoRaw === 'string' && buttonTextNoRaw.trim()) ? buttonTextNoRaw.trim() : 'Maybe later';
+  return {
+    id,
+    slug: valentine.slug,
+    recipientName: valentine.recipientName,
+    recipientEmail: valentine.recipientEmail || null,
+    emailSubject: valentine.emailSubject || null,
+    emailBody: valentine.emailBody || null,
+    emailTheme: valentine.emailTheme || null,
+    welcomeText: valentine.welcomeText,
+    mainMessage: valentine.mainMessage,
+    buttonText: valentine.buttonText,
+    buttonTextNo,
+    theme: valentine.theme,
+    themeColor: valentine.themeColor,
+    decorations: Array.isArray(valentine.decorations) ? valentine.decorations : [],
+    replyPromptLabel: (valentine.replyPromptLabel && String(valentine.replyPromptLabel).trim()) ? valentine.replyPromptLabel.trim() : 'Write a message to the sender',
+    replyMaxLength: typeof valentine.replyMaxLength === 'number' && valentine.replyMaxLength >= 100 ? Math.min(2000, valentine.replyMaxLength) : 500,
+    createdAt: valentine.createdAt,
+    updatedAt: valentine.updatedAt,
+    createdBy: valentine.createdBy?._id?.toString?.() || valentine.createdBy?.toString?.() || valentine.createdBy,
+    createdByName: valentine.createdByName || creator?.name,
+    creator: creator ? {
+      id: creator._id?.toString?.(),
+      name: creator.name,
+      email: creator.email || null,
+      role: creator.role || 'base_user',
+    } : null,
+  };
+}
+
+export async function getValentineMonitorData(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const role = (req.user.role || '').toLowerCase();
+    if (role !== 'developer' && role !== 'superadmin') {
+      return jsonError(res, 403, 'Developer access required');
+    }
+
+    const list = await ValentineUrl.find()
+      .sort({ createdAt: -1 })
+      .populate('createdBy', 'name email role')
+      .lean();
+
+    const valentineIds = list.map((v) => v._id);
+
+    const [visitStats, repliesByValentine, visitsByDay, creationsByDay] = await Promise.all([
+      ValentineVisit.aggregate([
+        { $match: { valentineId: { $in: valentineIds } } },
+        {
+          $group: {
+            _id: '$valentineId',
+            totalVisits: { $sum: 1 },
+            totalButtonClicks: { $sum: '$buttonClicks' },
+          },
+        },
+      ]),
+      ValentineReply.aggregate([
+        { $match: { valentineId: { $in: valentineIds } } },
+        {
+          $group: {
+            _id: '$valentineId',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      ValentineVisit.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$visitedAt' } },
+            visits: { $sum: 1 },
+            buttonClicks: { $sum: '$buttonClicks' },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      ValentineUrl.aggregate([
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+    ]);
+
+    const statsMap = new Map();
+    visitStats.forEach((s) => {
+      statsMap.set(s._id.toString(), { totalVisits: s.totalVisits, totalButtonClicks: s.totalButtonClicks });
+    });
+    const repliesMap = new Map();
+    repliesByValentine.forEach((r) => {
+      repliesMap.set(r._id.toString(), r.count);
+    });
+
+    const items = list.map((v) => {
+      const full = sanitizeForMonitor(v, v.createdBy);
+      const stats = statsMap.get(v._id.toString()) || { totalVisits: 0, totalButtonClicks: 0 };
+      const replyCount = repliesMap.get(v._id.toString()) || 0;
+      return {
+        ...full,
+        totalVisits: stats.totalVisits,
+        totalButtonClicks: stats.totalButtonClicks,
+        replyCount,
+      };
+    });
+
+    const trending = {
+      visitsByDay: visitsByDay.map((d) => ({ date: d._id, visits: d.visits, buttonClicks: d.buttonClicks })),
+      creationsByDay: creationsByDay.map((d) => ({ date: d._id, count: d.count })),
+    };
+
+    return jsonSuccess(res, 200, 'Monitor data retrieved', {
+      items,
+      trending,
+      summary: {
+        totalLinks: items.length,
+        totalVisits: items.reduce((acc, i) => acc + (i.totalVisits || 0), 0),
+        totalButtonClicks: items.reduce((acc, i) => acc + (i.totalButtonClicks || 0), 0),
+        totalReplies: items.reduce((acc, i) => acc + (i.replyCount || 0), 0),
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching Valentine monitor data:', error);
+    return jsonError(res, 500, 'Failed to fetch monitor data', error.message);
+  }
+}
+
 export async function getValentineAnalytics(req, res) {
   try {
     await connectDB();
