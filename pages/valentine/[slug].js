@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
@@ -240,6 +240,43 @@ export default function ValentinePage() {
   const [replySending, setReplySending] = useState(false);
   const [repliesLeft, setRepliesLeft] = useState(5);
   const [replySuccess, setReplySuccess] = useState(false);
+  const [runawayOffset, setRunawayOffset] = useState({ x: 0, y: 0 });
+  const runawayBtnRef = useRef(null);
+
+  useEffect(() => {
+    if (revealed || !page || typeof document === 'undefined') return;
+    const btn = runawayBtnRef.current;
+    if (!btn) return;
+    const threshold = 120;
+    const runDistance = 95;
+    const maxOffset = 130;
+
+    function handleMove(e) {
+      const rect = btn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const mx = e.clientX;
+      const my = e.clientY;
+      const dx = cx - mx;
+      const dy = cy - my;
+      const d = Math.hypot(dx, dy);
+      if (d < threshold && d > 1) {
+        const factor = runDistance / d;
+        let ox = dx * factor;
+        let oy = dy * factor;
+        ox = Math.max(-maxOffset, Math.min(maxOffset, ox));
+        oy = Math.max(-maxOffset, Math.min(maxOffset, oy));
+        setRunawayOffset({ x: ox, y: oy });
+      } else {
+        setRunawayOffset((prev) => ({
+          x: Math.abs(prev.x) < 1 ? 0 : prev.x * 0.8,
+          y: Math.abs(prev.y) < 1 ? 0 : prev.y * 0.8,
+        }));
+      }
+    }
+    document.addEventListener('mousemove', handleMove);
+    return () => document.removeEventListener('mousemove', handleMove);
+  }, [revealed, page]);
 
   useEffect(() => {
     if (!slug) return;
@@ -570,16 +607,25 @@ export default function ValentinePage() {
               >
                 {page.buttonText}
               </button>
-              <button
-                type="button"
-                className="valentine-cta valentine-cta-no"
-                style={{ borderColor: vars.secondary, color: vars.primary }}
-                disabled
-                aria-disabled="true"
-                title="This button is just for fun — always disabled"
-              >
-                {page.buttonTextNo}
-              </button>
+              <div className="valentine-runaway-wrap" aria-hidden>
+                <span className="valentine-runaway-ghost">{page.buttonTextNo}</span>
+                <button
+                  ref={runawayBtnRef}
+                  type="button"
+                  className="valentine-cta valentine-cta-no valentine-cta-runaway"
+                  style={{
+                    borderColor: vars.secondary,
+                    color: vars.primary,
+                    transform: `translate(${runawayOffset.x}px, ${runawayOffset.y}px)`,
+                  }}
+                  disabled
+                  aria-disabled="true"
+                  tabIndex={-1}
+                  title="This button is just for fun — always disabled"
+                >
+                  {page.buttonTextNo}
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -855,6 +901,26 @@ export default function ValentinePage() {
           justify-content: center;
           align-items: center;
           width: 100%;
+        }
+        .valentine-runaway-wrap {
+          position: relative;
+          display: inline-block;
+        }
+        .valentine-runaway-ghost {
+          display: inline-block;
+          padding: 0.875rem 2rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          visibility: hidden;
+          pointer-events: none;
+          white-space: nowrap;
+        }
+        .valentine-cta-runaway {
+          position: absolute;
+          left: 0;
+          top: 0;
+          transition: transform 0.15s ease-out;
+          pointer-events: auto;
         }
         .valentine-cta-no {
           background: transparent !important;
