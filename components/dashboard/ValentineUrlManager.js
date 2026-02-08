@@ -225,6 +225,30 @@ export default function ValentineUrlManager({ user }) {
     setSuccessMessage('');
     setSaving(true);
     try {
+      const textsToCheck = [
+        formData.recipientName,
+        formData.emailSubject,
+        formData.emailBody,
+        formData.welcomeText,
+        formData.mainMessage,
+        formData.buttonText,
+        formData.buttonTextNo ?? 'Maybe later',
+        formData.replyPromptLabel ?? 'Write a message to the sender',
+      ].filter(Boolean);
+      const checkRes = await fetch('/api/moderation/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ texts: textsToCheck }),
+      });
+      const checkData = await checkRes.json();
+      if (checkData.success && checkData.data?.blocked) {
+        setError(checkData.data.message || 'Your message contains words that are not allowed. Please remove them to avoid your emails being marked as spam.');
+        setSaving(false);
+        return;
+      }
       const url = editingId ? `/api/valentine/${editingId.id}` : '/api/valentine';
       const method = editingId ? 'PUT' : 'POST';
       const payload = {
@@ -259,7 +283,9 @@ export default function ValentineUrlManager({ user }) {
         setTimeout(() => setSuccessMessage(''), 5000);
         resetForm();
       } else {
-        if (data.error === 'INSUFFICIENT_CREDITS' || (res.status === 403 && data.message && data.message.includes('credits'))) {
+        if (data.error === 'CONTENT_BLOCKED') {
+          setError(data.message || 'Your message contains words that are not allowed. Please remove them to avoid your emails being marked as spam.');
+        } else if (data.error === 'INSUFFICIENT_CREDITS' || (res.status === 403 && data.message && data.message.includes('credits'))) {
           setCredits(0);
           setShowNoCreditsModal(true);
         } else {

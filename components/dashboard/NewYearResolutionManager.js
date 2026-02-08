@@ -136,6 +136,21 @@ export default function NewYearResolutionManager() {
     setError('');
     
     try {
+      const textsToCheck = [formData.title, formData.description].filter(Boolean);
+      const checkRes = await fetch('/api/moderation/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ texts: textsToCheck }),
+      });
+      const checkData = await checkRes.json();
+      if (checkData.success && checkData.data?.blocked) {
+        setError(checkData.data.message || 'Your text contains words that are not allowed. Please remove them.');
+        return;
+      }
+
       const url = editingId 
         ? `/api/resolutions/${editingId}` 
         : '/api/resolutions';
@@ -165,7 +180,11 @@ export default function NewYearResolutionManager() {
           }, 100);
         }
       } else {
-        setError(data.message || 'Operation failed');
+        if (data.error === 'CONTENT_BLOCKED') {
+          setError(data.message || 'Your text contains words that are not allowed. Please remove them.');
+        } else {
+          setError(data.message || 'Operation failed');
+        }
       }
     } catch (err) {
       setError('An error occurred');

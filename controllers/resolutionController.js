@@ -1,6 +1,7 @@
 import connectDB from '../lib/db';
 import Resolution from '../models/Resolution';
 import { jsonError, jsonSuccess } from '../lib/response';
+import { checkFields, getBlockedMessage } from '../lib/contentModeration';
 
 export async function getResolutions(req, res) {
   try {
@@ -19,6 +20,11 @@ export async function createResolution(req, res) {
     
     if (!title) {
       return jsonError(res, 400, 'Title is required');
+    }
+
+    const moderation = checkFields({ title: title.trim(), description: description || '' });
+    if (moderation.blocked) {
+      return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
     }
 
     const resolution = await Resolution.create({
@@ -52,7 +58,16 @@ export async function updateResolution(req, res) {
     // Prevent updating user field
     delete updates.user;
     delete updates._id;
-    
+
+    const textToCheck = {
+      title: updates.title !== undefined ? updates.title : resolution.title,
+      description: updates.description !== undefined ? updates.description : resolution.description,
+    };
+    const updateModeration = checkFields(textToCheck);
+    if (updateModeration.blocked) {
+      return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
+    }
+
     resolution = await Resolution.findByIdAndUpdate(id, { ...updates, updatedAt: Date.now() }, { new: true, runValidators: true });
 
     return jsonSuccess(res, 200, 'Resolution updated successfully', { resolution });

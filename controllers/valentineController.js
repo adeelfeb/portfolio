@@ -8,6 +8,7 @@ import ValentineCreditRequest from '../models/ValentineCreditRequest';
 import { MAX_REPLIES_PER_SESSION, DEFAULT_MESSAGE_MAX_LENGTH } from '../models/ValentineReply';
 import { jsonError, jsonSuccess } from '../lib/response';
 import { sendValentineLinkEmail } from '../utils/email';
+import { checkText, checkFields, getBlockedMessage } from '../lib/contentModeration';
 
 const DEFAULT_CREDITS = 1;
 const LINK_CREDITS_PER_PACK = 10;
@@ -157,6 +158,20 @@ export async function createValentineUrl(req, res) {
 
     if (!recipientName || !recipientName.trim()) {
       return jsonError(res, 400, 'Recipient name is required');
+    }
+
+    const moderation = checkFields({
+      recipientName: recipientName.trim(),
+      emailSubject: body.emailSubject,
+      emailBody: body.emailBody,
+      welcomeText: body.welcomeText,
+      mainMessage: body.mainMessage,
+      buttonText: body.buttonText,
+      buttonTextNo: body.buttonTextNo,
+      replyPromptLabel: body.replyPromptLabel,
+    });
+    if (moderation.blocked) {
+      return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
     }
 
     const emailTrimmed = recipientEmail && typeof recipientEmail === 'string' ? recipientEmail.trim().toLowerCase() : null;
@@ -458,6 +473,21 @@ export async function updateValentineUrl(req, res) {
     if (replyPromptLabel !== undefined) $set.replyPromptLabel = (typeof replyPromptLabel === 'string' && replyPromptLabel.trim()) ? replyPromptLabel.trim().slice(0, 120) : 'Write a message to the sender';
     if (replyMaxLength !== undefined) $set.replyMaxLength = typeof replyMaxLength === 'number' && replyMaxLength >= 100 ? Math.min(2000, replyMaxLength) : 500;
 
+    const effective = {
+      recipientName: $set.recipientName ?? existing.recipientName,
+      emailSubject: $set.emailSubject !== undefined ? $set.emailSubject : existing.emailSubject,
+      emailBody: $set.emailBody !== undefined ? $set.emailBody : existing.emailBody,
+      welcomeText: $set.welcomeText !== undefined ? $set.welcomeText : existing.welcomeText,
+      mainMessage: $set.mainMessage !== undefined ? $set.mainMessage : existing.mainMessage,
+      buttonText: $set.buttonText !== undefined ? $set.buttonText : existing.buttonText,
+      buttonTextNo: $set.buttonTextNo !== undefined ? $set.buttonTextNo : existing.buttonTextNo,
+      replyPromptLabel: $set.replyPromptLabel !== undefined ? $set.replyPromptLabel : existing.replyPromptLabel,
+    };
+    const updateModeration = checkFields(effective);
+    if (updateModeration.blocked) {
+      return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
+    }
+
     const doc = await ValentineUrl.findOneAndUpdate(
       { _id: id, createdBy: req.user._id },
       { $set },
@@ -635,6 +665,10 @@ export async function submitValentineReply(req, res) {
     }
     if (!message) {
       return jsonError(res, 400, 'Message cannot be empty');
+    }
+    const replyModeration = checkText(message);
+    if (replyModeration.blocked) {
+      return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
     }
     const valentineId = valentine._id;
     const count = await ValentineReply.countDocuments({ valentineId, sessionId });
