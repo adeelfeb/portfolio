@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
@@ -240,43 +240,42 @@ export default function ValentinePage() {
   const [replySending, setReplySending] = useState(false);
   const [repliesLeft, setRepliesLeft] = useState(5);
   const [replySuccess, setReplySuccess] = useState(false);
-  const [runawayOffset, setRunawayOffset] = useState({ x: 0, y: 0 });
+  const [runawayPosition, setRunawayPosition] = useState(null);
   const runawayBtnRef = useRef(null);
+  const runawayWrapRef = useRef(null);
+  const runawayPositionRef = useRef(null);
 
   useEffect(() => {
-    if (revealed || !page || typeof document === 'undefined') return;
+    runawayPositionRef.current = runawayPosition;
+  }, [runawayPosition]);
+
+  const getRandomNumber = useCallback((num) => Math.floor(Math.random() * (num + 1)), []);
+
+  // Runaway button: same logic as reference — random position on mouseover/click, smooth easeOutCirc, full viewport
+  const handleRunawayMove = useCallback(() => {
+    if (revealed || typeof window === 'undefined') return;
     const btn = runawayBtnRef.current;
     if (!btn) return;
-    const threshold = 120;
-    const runDistance = 95;
-    const maxOffset = 130;
+    const rect = btn.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    const randomLeft = getRandomNumber(Math.max(0, window.innerWidth - w));
+    const randomTop = getRandomNumber(Math.max(0, window.innerHeight - h));
 
-    function handleMove(e) {
-      const rect = btn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const mx = e.clientX;
-      const my = e.clientY;
-      const dx = cx - mx;
-      const dy = cy - my;
-      const d = Math.hypot(dx, dy);
-      if (d < threshold && d > 1) {
-        const factor = runDistance / d;
-        let ox = dx * factor;
-        let oy = dy * factor;
-        ox = Math.max(-maxOffset, Math.min(maxOffset, ox));
-        oy = Math.max(-maxOffset, Math.min(maxOffset, oy));
-        setRunawayOffset({ x: ox, y: oy });
-      } else {
-        setRunawayOffset((prev) => ({
-          x: Math.abs(prev.x) < 1 ? 0 : prev.x * 0.8,
-          y: Math.abs(prev.y) < 1 ? 0 : prev.y * 0.8,
-        }));
-      }
+    if (runawayPositionRef.current) {
+      setRunawayPosition((prev) => (prev ? { ...prev, left: randomLeft, top: randomTop } : null));
+    } else {
+      setRunawayPosition({
+        left: rect.left,
+        top: rect.top,
+        width: w,
+        height: h,
+      });
+      setTimeout(() => {
+        setRunawayPosition({ left: randomLeft, top: randomTop, width: w, height: h });
+      }, 50);
     }
-    document.addEventListener('mousemove', handleMove);
-    return () => document.removeEventListener('mousemove', handleMove);
-  }, [revealed, page]);
+  }, [revealed, getRandomNumber]);
 
   useEffect(() => {
     if (!slug) return;
@@ -607,7 +606,14 @@ export default function ValentinePage() {
               >
                 {page.buttonText}
               </button>
-              <div className="valentine-runaway-wrap" aria-hidden>
+              <div
+                ref={runawayWrapRef}
+                className="valentine-runaway-wrap"
+                aria-hidden
+                onMouseEnter={handleRunawayMove}
+                onClick={handleRunawayMove}
+                role="presentation"
+              >
                 <span className="valentine-runaway-ghost">{page.buttonTextNo}</span>
                 <button
                   ref={runawayBtnRef}
@@ -616,8 +622,22 @@ export default function ValentinePage() {
                   style={{
                     borderColor: vars.secondary,
                     color: vars.primary,
-                    transform: `translate(${runawayOffset.x}px, ${runawayOffset.y}px)`,
+                    userSelect: 'none',
+                    pointerEvents: runawayPosition ? 'auto' : 'none',
+                    ...(runawayPosition
+                      ? {
+                          position: 'fixed',
+                          left: runawayPosition.left,
+                          top: runawayPosition.top,
+                          width: runawayPosition.width,
+                          height: runawayPosition.height,
+                          zIndex: 9999,
+                          transition: 'left 0.7s cubic-bezier(0, 0.55, 0.45, 1), top 0.7s cubic-bezier(0, 0.55, 0.45, 1)',
+                        }
+                      : {}),
                   }}
+                  onMouseEnter={handleRunawayMove}
+                  onClick={(e) => { e.preventDefault(); handleRunawayMove(); }}
                   disabled
                   aria-disabled="true"
                   tabIndex={-1}
@@ -905,6 +925,7 @@ export default function ValentinePage() {
         .valentine-runaway-wrap {
           position: relative;
           display: inline-block;
+          user-select: none;
         }
         .valentine-runaway-ghost {
           display: inline-block;
