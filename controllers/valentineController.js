@@ -210,33 +210,7 @@ export async function createValentineUrl(req, res) {
       createdByName: req.user.name || '',
     });
 
-    let emailSent = false;
-    let emailError = null;
-    if (emailTrimmed) {
-      const baseUrl = getBaseUrl(req);
-      const fullUrl = baseUrl ? `${baseUrl}/valentine/${doc.slug}` : `${req.headers?.origin || ''}/valentine/${doc.slug}`;
-      if (!fullUrl || fullUrl === '/valentine/' + doc.slug) {
-        emailError = 'Base URL not configured. Set NEXT_PUBLIC_APP_URL or VERCEL_URL in production.';
-        console.warn('Valentine create: no base URL for email link');
-      } else {
-        try {
-          await sendValentineLinkEmail(emailTrimmed, {
-            recipientName: doc.recipientName,
-            linkUrl: fullUrl,
-            theme: doc.theme,
-            themeColor: doc.themeColor,
-            emailTheme: doc.emailTheme || undefined,
-            subject: doc.emailSubject || undefined,
-            body: doc.emailBody || undefined,
-          });
-          emailSent = true;
-        } catch (err) {
-          emailError = err.message || 'Email send failed';
-          console.error('Valentine link email failed:', err.message);
-        }
-      }
-    }
-
+    // Email is sent only when the user clicks "Resend email", not on create or update.
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { valentineCredits: -1 },
     });
@@ -245,8 +219,6 @@ export async function createValentineUrl(req, res) {
     return jsonSuccess(res, 201, 'Valentine URL created', {
       valentineUrl: sanitizeForOwner(doc),
       fullUrl: baseUrl ? `${baseUrl}/valentine/${doc.slug}` : '',
-      emailSent,
-      ...(emailError && { emailError }),
     });
   } catch (error) {
     console.error('Error creating Valentine URL:', error);
@@ -494,40 +466,11 @@ export async function updateValentineUrl(req, res) {
       { new: true, runValidators: true }
     );
 
-    let emailSent = false;
-    let emailError = null;
-    const finalRecipientEmail = (doc.recipientEmail && typeof doc.recipientEmail === 'string' && doc.recipientEmail.trim()) ? doc.recipientEmail.trim().toLowerCase() : null;
-    if (finalRecipientEmail) {
-      const baseUrl = getBaseUrl(req) || req.headers?.origin || '';
-      const fullUrl = baseUrl ? `${baseUrl}/valentine/${doc.slug}` : '';
-      if (!fullUrl) {
-        emailError = 'Base URL not configured. Set NEXT_PUBLIC_APP_URL or VERCEL_URL in production.';
-        console.warn('Valentine update: no base URL for email link');
-      } else {
-        try {
-          await sendValentineLinkEmail(finalRecipientEmail, {
-            recipientName: doc.recipientName,
-            linkUrl: fullUrl,
-            theme: doc.theme,
-            themeColor: doc.themeColor,
-            emailTheme: doc.emailTheme || undefined,
-            subject: doc.emailSubject || undefined,
-            body: doc.emailBody || undefined,
-          });
-          emailSent = true;
-        } catch (err) {
-          emailError = err.message || 'Email send failed';
-          console.error('Valentine link email failed:', err.message);
-        }
-      }
-    }
-
+    // Email is sent only when the user clicks "Resend email", not on update.
     const baseUrl = getBaseUrl(req) || req.headers?.origin || '';
     return jsonSuccess(res, 200, 'Valentine URL updated', {
       valentineUrl: sanitizeForOwner(doc),
       fullUrl: baseUrl ? `${baseUrl}/valentine/${doc.slug}` : '',
-      emailSent,
-      ...(emailError && { emailError }),
     });
   } catch (error) {
     console.error('Error updating Valentine URL:', error);
@@ -559,7 +502,8 @@ export async function resendValentineEmail(req, res) {
     const hasUnlimitedResend = role === 'developer' || role === 'superadmin';
     if (!hasUnlimitedResend) {
       const resendCount = typeof doc.emailResendCount === 'number' ? doc.emailResendCount : 0;
-      const hasFreeResend = resendCount < 1;
+      const FREE_RESENDS_PER_LINK = 3;
+      const hasFreeResend = resendCount < FREE_RESENDS_PER_LINK;
       if (!hasFreeResend) {
         const user = await User.findById(req.user._id).select('valentineEmailCredits').lean();
         const emailCredits = user?.valentineEmailCredits != null ? Math.max(0, Number(user.valentineEmailCredits)) : 0;

@@ -269,17 +269,7 @@ export default function ValentineUrlManager({ user }) {
       if (data.success) {
         await fetchList();
         await fetchCredits();
-        const emailSent = data.data?.emailSent;
-        const emailError = data.data?.emailError;
-        if (emailSent) {
-          setSuccessMessage('Link saved. Email sent to the recipient.');
-        } else if (emailError) {
-          setSuccessMessage('Link saved. Email could not be sent—use "Resend email" on the link after saving.');
-          setError(emailError);
-          setTimeout(() => setError(''), 8000);
-        } else {
-          setSuccessMessage('Link saved.');
-        }
+        setSuccessMessage('Link saved. Use "Resend email" on the link to send it to the recipient.');
         setTimeout(() => setSuccessMessage(''), 5000);
         resetForm();
       } else {
@@ -465,11 +455,12 @@ export default function ValentineUrlManager({ user }) {
   const role = (user?.role || 'base_user').toLowerCase();
   const hasUnlimitedResend = role === 'developer' || role === 'superadmin';
   const isBaseUser = role === 'base_user';
+  const FREE_RESENDS_PER_LINK = 3;
   function canResend(item) {
     if (!item.recipientEmail || !item.recipientEmail.trim()) return false;
     if (hasUnlimitedResend) return true;
     const used = typeof item.emailResendCount === 'number' ? item.emailResendCount : 0;
-    return used < 1 || (emailCredits != null && emailCredits >= 1);
+    return used < FREE_RESENDS_PER_LINK || (emailCredits != null && emailCredits >= 1);
   }
 
   async function handleResendEmail(item) {
@@ -480,7 +471,7 @@ export default function ValentineUrlManager({ user }) {
     if (resendingId === item.id) return;
     if (!hasUnlimitedResend) {
       const used = typeof item.emailResendCount === 'number' ? item.emailResendCount : 0;
-      if (used >= 1 && (emailCredits == null || emailCredits < 1)) {
+      if (used >= FREE_RESENDS_PER_LINK && (emailCredits == null || emailCredits < 1)) {
         setShowEmailCreditsModal(true);
         return;
       }
@@ -670,7 +661,7 @@ export default function ValentineUrlManager({ user }) {
           <div className="valentine-modal">
             <h3 id="valentine-email-credits-title" className="valentine-modal-title">Request email resend credits</h3>
             <p className="valentine-modal-p">
-              You’ve used your free resend for this link (or you’re out of email credits). To resend again, request more email credits below. Base users get one free resend per link; after that, each resend uses 1 email credit.
+              You’ve used your 3 free resends for this link (or you’re out of email credits). To resend again, request more email credits below. Base users get 3 free resends per link; after that, each resend uses 1 email credit.
             </p>
             <p className="valentine-modal-p valentine-modal-pricing">
               <strong>10 email credits</strong> for <strong>$0.20 USD</strong> / <strong>Rs 20 PKR</strong>. Submit the request; after payment the developer will add credits to your account.
