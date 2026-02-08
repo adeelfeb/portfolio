@@ -7,7 +7,7 @@ import ValentineReply from '../models/ValentineReply';
 import ValentineCreditRequest from '../models/ValentineCreditRequest';
 import { MAX_REPLIES_PER_SESSION, DEFAULT_MESSAGE_MAX_LENGTH } from '../models/ValentineReply';
 import { jsonError, jsonSuccess } from '../lib/response';
-import { sendValentineLinkEmail } from '../utils/email';
+import { sendValentineLinkEmail, sendValentineReplyNotificationEmail, sendEmailAsync } from '../utils/email';
 import { checkText, checkFields, getBlockedMessage } from '../lib/contentModeration';
 
 const DEFAULT_CREDITS = 1;
@@ -625,6 +625,25 @@ export async function submitValentineReply(req, res) {
       message,
     });
     const newCount = count + 1;
+
+    const creator = await User.findById(valentine.createdBy).select('email name role').lean();
+    const creatorRole = (creator?.role || '').toLowerCase();
+    const isDeveloperOrSuperadmin = creatorRole === 'developer' || creatorRole === 'superadmin';
+    if (isDeveloperOrSuperadmin && creator?.email) {
+      const baseUrl = getBaseUrl(req) || req.headers?.origin || '';
+      const dashboardRepliesUrl = baseUrl ? `${baseUrl}/dashboard#valentine-urls` : '';
+      sendEmailAsync(
+        () =>
+          sendValentineReplyNotificationEmail(creator.email, {
+            creatorName: creator.name || null,
+            linkRecipientName: valentine.recipientName || null,
+            messagePreview: message.slice(0, 120),
+            dashboardRepliesUrl: dashboardRepliesUrl || undefined,
+          }),
+        'valentine-reply-notification'
+      );
+    }
+
     return jsonSuccess(res, 201, 'Reply sent', {
       repliesLeft: Math.max(0, MAX_REPLIES_PER_SESSION - newCount),
       replyCount: newCount,
@@ -657,6 +676,40 @@ export async function getValentineReplyCount(req, res) {
   } catch (error) {
     console.error('Error fetching reply count:', error);
     return jsonError(res, 500, 'Failed to fetch count', error.message);
+  }
+}
+
+/**
+ * GET ?since=ISO date - for authenticated user (base user push notification polling).
+ * Returns count of new replies on the user's links since the given time.
+ */
+export async function getValentineReplyNotifications(req, res) {
+  try {
+    await connectDB();
+    if (!req.user) {
+      return jsonError(res, 401, 'Authentication required');
+    }
+    const sinceParam = (req.query.since || '').toString().trim();
+    const since = sinceParam ? new Date(sinceParam) : new Date(0);
+    if (Number.isNaN(since.getTime())) {
+      return jsonError(res, 400, 'Invalid since parameter (use ISO date).');
+    }
+    const myLinkIds = await ValentineUrl.find({ createdBy: req.user._id }).select('_id').lean();
+    const ids = myLinkIds.map((u) => u._id);
+    if (ids.length === 0) {
+      return jsonSuccess(res, 200, 'OK', { hasNewReplies: false, newCount: 0 });
+    }
+    const newCount = await ValentineReply.countDocuments({
+      valentineId: { $in: ids },
+      createdAt: { $gt: since },
+    });
+    return jsonSuccess(res, 200, 'OK', {
+      hasNewReplies: newCount > 0,
+      newCount,
+    });
+  } catch (error) {
+    console.error('Error fetching reply notifications:', error);
+    return jsonError(res, 500, 'Failed to fetch notifications', error.message);
   }
 }
 

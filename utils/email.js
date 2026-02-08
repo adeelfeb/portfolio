@@ -577,3 +577,33 @@ export async function sendValentineLinkEmail(to, { recipientName, linkUrl, theme
   });
 }
 
+/**
+ * Send "new reply on your Valentine link" notification to the link creator (e.g. developer).
+ * Used when a recipient replies on a link; only sent if creator role is developer/superadmin.
+ * @param {string} to - Creator's email
+ * @param {Object} opts - { creatorName, linkRecipientName, messagePreview, dashboardRepliesUrl }
+ */
+export async function sendValentineReplyNotificationEmail(to, { creatorName, linkRecipientName, messagePreview, dashboardRepliesUrl }) {
+  const subject = 'New reply on your Valentine link';
+  const preview = (messagePreview && String(messagePreview).trim().slice(0, 120)) || '(no preview)';
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+    </head>
+    <body style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333; max-width: 560px; margin: 0 auto; padding: 20px;">
+      <p>${creatorName ? `Hi ${creatorName},` : 'Hi,'}</p>
+      <p>Someone replied on your Valentine link <strong>For: ${linkRecipientName || 'recipient'}</strong>.</p>
+      <p style="background: #f5f5f5; padding: 12px; border-radius: 8px; border-left: 4px solid #4f46e5;">${preview.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+      ${dashboardRepliesUrl ? `<p><a href="${dashboardRepliesUrl}" style="color: #4f46e5; font-weight: 600;">View reply in dashboard</a></p>` : ''}
+      <p style="font-size: 12px; color: #777;">This is an automated notification.</p>
+    </body>
+    </html>
+  `;
+  const textBody = `New reply on your Valentine link (For: ${linkRecipientName || 'recipient'}).\n\nPreview: ${preview}\n\n${dashboardRepliesUrl ? `View reply: ${dashboardRepliesUrl}` : ''}`;
+  return sendEmail({ to, subject, htmlBody, textBody });
+}
+

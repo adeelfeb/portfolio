@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { showNotification } from '../../utils/notifications';
 
 const THEMES = [
   { value: 'classic', label: 'Classic' },
@@ -162,10 +163,39 @@ export default function ValentineUrlManager({ user }) {
     decorations: [],
   });
 
+  const lastReplyCheckRef = useRef(new Date().toISOString());
+
   useEffect(() => {
     fetchList();
     fetchCredits();
   }, []);
+
+  useEffect(() => {
+    const isBaseUser = (user?.role || 'base_user').toLowerCase() === 'base_user';
+    if (!isBaseUser) return;
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/valentine/replies-notifications?since=${encodeURIComponent(lastReplyCheckRef.current)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        if (data.success && data.data?.hasNewReplies && data.data.newCount > 0) {
+          lastReplyCheckRef.current = new Date().toISOString();
+          const n = data.data.newCount;
+          showNotification('New reply on your Valentine link', {
+            body: n === 1 ? 'You have 1 new reply.' : `You have ${n} new replies.`,
+            tag: 'valentine-reply',
+          });
+        }
+      } catch (_) {}
+    };
+    const interval = setInterval(poll, 60000);
+    poll();
+    return () => clearInterval(interval);
+  }, [user?.role]);
 
   async function fetchCredits() {
     try {
