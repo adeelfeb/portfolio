@@ -8,6 +8,7 @@ import Link from 'next/link'
 const VALENTINES_DAY = new Date(2026, 1, 14) // Feb 14, 2026
 const CONTEST_MAX_LENGTH = 500
 const CONTEST_MIN_LENGTH = 20
+const CONTEST_STORAGE_KEY = 'valentine_contest_entry'
 
 // Floating heart for background decoration
 function FloatingHeart({ delay = 0, size = 24, x = '0%', y = '0%' }) {
@@ -51,6 +52,10 @@ export default function Valentine() {
   const [contestSubmitting, setContestSubmitting] = useState(false)
   const [contestSuccess, setContestSuccess] = useState(false)
   const [contestError, setContestError] = useState('')
+  /** True if this browser already submitted (read from localStorage). Null = not yet checked. */
+  const [contestAlreadySubmitted, setContestAlreadySubmitted] = useState(null)
+  /** Message saved in this browser after submit (for display when form is hidden). */
+  const [contestSubmittedMessage, setContestSubmittedMessage] = useState(null)
 
   const countdownOver = countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0
 
@@ -71,6 +76,27 @@ export default function Valentine() {
       })
       .catch(() => {})
     return () => { cancelled = true }
+  }, [])
+
+  // One message per browser: read localStorage on mount to hide form if already submitted
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = window.localStorage.getItem(CONTEST_STORAGE_KEY)
+      if (!raw) {
+        setContestAlreadySubmitted(false)
+        return
+      }
+      const data = JSON.parse(raw)
+      if (data && typeof data.message === 'string' && data.message.trim()) {
+        setContestAlreadySubmitted(true)
+        setContestSubmittedMessage(data.message.trim())
+      } else {
+        setContestAlreadySubmitted(false)
+      }
+    } catch {
+      setContestAlreadySubmitted(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -111,8 +137,16 @@ export default function Valentine() {
       })
       const data = await res.json()
       if (data.success) {
+        const saved = msg.slice(0, CONTEST_MAX_LENGTH)
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(CONTEST_STORAGE_KEY, JSON.stringify({ message: saved }))
+          }
+        } catch (_) {}
         setContestSuccess(true)
         setContestMessage('')
+        setContestAlreadySubmitted(true)
+        setContestSubmittedMessage(saved)
       } else {
         setContestError(data.message || 'Something went wrong. Please try again.')
       }
@@ -376,6 +410,17 @@ export default function Valentine() {
             )}
 
             {!countdownOver && (
+            contestAlreadySubmitted ? (
+              <div className="text-left max-w-[32rem] mx-auto">
+                <div className="p-6 rounded-2xl bg-white/95 border border-pink-200 shadow-md">
+                  <p className="text-sm font-semibold text-rose-600 uppercase tracking-wide mb-2">Your message</p>
+                  <p className="text-lg text-gray-800 leading-relaxed whitespace-pre-wrap mb-4">{contestSubmittedMessage || ''}</p>
+                  <p className="text-sm text-gray-600">
+                    You can only write one message per browser. Thank you for entering the contest!
+                  </p>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleContestSubmit} className="text-left max-w-[32rem] mx-auto">
               <label htmlFor="contest-message" className="block text-sm font-medium text-gray-700 mb-2">
                 Your message to your loved one
@@ -392,7 +437,7 @@ export default function Valentine() {
                 required
               />
               <p className="text-xs text-gray-500 mb-3">
-                {contestMessage.length}/{CONTEST_MAX_LENGTH} characters (min {CONTEST_MIN_LENGTH}). Messages are checked for appropriateness. Links and URLs are not allowed.
+                {contestMessage.length}/{CONTEST_MAX_LENGTH} characters (min {CONTEST_MIN_LENGTH}). Messages are checked for appropriateness. Links and URLs are not allowed. One message per browser.
               </p>
               {contestError && (
                 <p className="text-sm text-rose-600 mb-3" role="alert">
@@ -412,6 +457,7 @@ export default function Valentine() {
                 {contestSubmitting ? 'Submitting…' : 'Enter the contest'}
               </button>
             </form>
+            )
             )}
           </motion.div>
         </div>
