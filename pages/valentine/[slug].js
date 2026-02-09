@@ -277,7 +277,10 @@ export default function ValentinePage() {
     }, RUNAWAY_RETURN_MS);
   }, []);
 
-  // Runaway button: random position on mouseover/click, clamped to viewport; returns to original place after 3s
+  // Max distance (px) the button "floats" from current position — small drift, not full viewport
+  const RUNAWAY_FLOAT_PX = 90;
+
+  // Runaway button: small random offset from current position, clamped to viewport; returns after 3s
   const handleRunawayMove = useCallback(() => {
     if (revealed || typeof window === 'undefined') return;
     const btn = runawayBtnRef.current;
@@ -285,15 +288,17 @@ export default function ValentinePage() {
     const rect = btn.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const maxLeft = Math.max(VIEWPORT_INSET, vw - w - VIEWPORT_INSET);
-    const maxTop = Math.max(VIEWPORT_INSET, vh - h - VIEWPORT_INSET);
-    const randomLeft = VIEWPORT_INSET + getRandomNumber(Math.max(0, Math.floor(maxLeft - VIEWPORT_INSET)));
-    const randomTop = VIEWPORT_INSET + getRandomNumber(Math.max(0, Math.floor(maxTop - VIEWPORT_INSET)));
 
-    if (runawayPositionRef.current) {
-      setRunawayPosition((prev) => (prev ? { ...prev, left: randomLeft, top: randomTop } : null));
+    const current = runawayPositionRef.current;
+    const baseLeft = current ? current.left : rect.left;
+    const baseTop = current ? current.top : rect.top;
+    // Random offset in [-RUNAWAY_FLOAT_PX, +RUNAWAY_FLOAT_PX] so it only drifts a bit
+    const offsetX = (getRandomNumber(RUNAWAY_FLOAT_PX * 2) - RUNAWAY_FLOAT_PX);
+    const offsetY = (getRandomNumber(RUNAWAY_FLOAT_PX * 2) - RUNAWAY_FLOAT_PX);
+    const { left: newLeft, top: newTop } = clampRunawayPosition(baseLeft + offsetX, baseTop + offsetY, w, h);
+
+    if (current) {
+      setRunawayPosition((prev) => (prev ? { ...prev, left: newLeft, top: newTop } : null));
       scheduleRunawayReturn();
     } else {
       const clamped = clampRunawayPosition(rect.left, rect.top, w, h);
@@ -304,7 +309,7 @@ export default function ValentinePage() {
         height: h,
       });
       setTimeout(() => {
-        setRunawayPosition({ left: randomLeft, top: randomTop, width: w, height: h });
+        setRunawayPosition({ left: newLeft, top: newTop, width: w, height: h });
         scheduleRunawayReturn();
       }, 50);
     }
