@@ -926,6 +926,8 @@ export default function ValentinePage() {
           position: relative;
           display: inline-block;
           user-select: none;
+          width: fit-content;
+          flex: 0 0 auto;
         }
         .valentine-runaway-ghost {
           display: inline-block;
@@ -935,19 +937,29 @@ export default function ValentinePage() {
           visibility: hidden;
           pointer-events: none;
           white-space: nowrap;
+          min-width: 8.5rem;
         }
         .valentine-cta-runaway {
           position: absolute;
           left: 0;
           top: 0;
+          right: auto;
+          width: auto;
+          min-width: 0;
           transition: transform 0.15s ease-out;
           pointer-events: auto;
+          box-sizing: border-box;
         }
         .valentine-cta-no {
           background: transparent !important;
           border: 2px solid;
           cursor: not-allowed;
           opacity: 0.75;
+          width: 100%;
+          max-width: 100%;
+          white-space: nowrap;
+          padding: 0.875rem 2rem;
+          line-height: 1.25;
         }
         .valentine-cta-no:hover {
           transform: none;
