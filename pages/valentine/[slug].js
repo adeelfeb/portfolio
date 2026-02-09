@@ -444,10 +444,12 @@ export default function ValentinePage() {
     return () => { cancelled = true; };
   }, [revealed, slug, page]);
 
+  const unlimitedReplies = Boolean(page?.unlimitedReplies);
+
   async function sendReply(e) {
     e.preventDefault();
     const msg = replyMessage.trim();
-    if (!msg || replySending || repliesLeft < 1) return;
+    if (!msg || replySending || (repliesLeft < 1 && !unlimitedReplies)) return;
     const sessionId = getOrCreateSessionId();
     setReplySending(true);
     setReplySuccess(false);
@@ -739,7 +741,7 @@ export default function ValentinePage() {
                   <p className="valentine-message-text">You are loved.</p>
                 )}
               </div>
-              {repliesLeft > 0 && (
+              {(repliesLeft > 0 || unlimitedReplies) && (
                 <form className="valentine-reply-form" onSubmit={sendReply}>
                   <label htmlFor="valentine-reply-input" className="valentine-reply-label">
                     {page.replyPromptLabel || 'Write a message to the sender'}
@@ -756,7 +758,9 @@ export default function ValentinePage() {
                     style={{ borderColor: vars.secondary }}
                   />
                   <p className="valentine-reply-hint">
-                    {replyMessage.length}/{page.replyMaxLength || 500} characters · {repliesLeft} of 5 replies left
+                    {unlimitedReplies
+                      ? 'Unlimited replies from you! 💕'
+                      : `${replyMessage.length}/${page.replyMaxLength || 500} characters · ${repliesLeft} of 5 replies left`}
                   </p>
                   {replySuccess && <p className="valentine-reply-success" role="status">Message sent!</p>}
                   <button
@@ -769,7 +773,7 @@ export default function ValentinePage() {
                   </button>
                 </form>
               )}
-              {repliesLeft === 0 && (
+              {repliesLeft === 0 && !unlimitedReplies && (
                 <p className="valentine-reply-limit">You&apos;ve used all 5 replies for this visit. Thanks for your messages!</p>
               )}
             </>

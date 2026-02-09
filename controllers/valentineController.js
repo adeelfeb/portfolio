@@ -70,11 +70,11 @@ function sanitizeForOwner(valentine) {
   };
 }
 
-function sanitizeForPublic(valentine) {
+function sanitizeForPublic(valentine, options = {}) {
   if (!valentine) return null;
   const buttonTextNoRaw = valentine.buttonTextNo;
   const buttonTextNo = (typeof buttonTextNoRaw === 'string' && buttonTextNoRaw.trim()) ? buttonTextNoRaw.trim() : 'Maybe later';
-  return {
+  const page = {
     slug: valentine.slug,
     recipientName: valentine.recipientName,
     welcomeText: valentine.welcomeText,
@@ -87,6 +87,10 @@ function sanitizeForPublic(valentine) {
     replyPromptLabel: (valentine.replyPromptLabel && String(valentine.replyPromptLabel).trim()) ? valentine.replyPromptLabel.trim() : 'Write a message to the sender',
     replyMaxLength: typeof valentine.replyMaxLength === 'number' && valentine.replyMaxLength >= 100 ? Math.min(2000, valentine.replyMaxLength) : 500,
   };
+  if (options.unlimitedReplies) {
+    page.unlimitedReplies = true;
+  }
+  return page;
 }
 
 export async function getMyValentineUrls(req, res) {
@@ -571,8 +575,13 @@ export async function getValentineBySlug(req, res) {
     if (!doc) {
       return jsonError(res, 404, 'This link is invalid or has been removed');
     }
+    const creator = doc.createdBy
+      ? await User.findById(doc.createdBy).select('role').lean()
+      : null;
+    const creatorRole = (creator?.role || '').toLowerCase();
+    const unlimitedReplies = creatorRole === 'developer' || creatorRole === 'superadmin';
     return jsonSuccess(res, 200, 'OK', {
-      page: sanitizeForPublic(doc),
+      page: sanitizeForPublic(doc, { unlimitedReplies }),
     });
   } catch (error) {
     console.error('Error fetching Valentine by slug:', error);
@@ -615,8 +624,11 @@ export async function submitValentineReply(req, res) {
       return jsonError(res, 400, getBlockedMessage(), 'CONTENT_BLOCKED');
     }
     const valentineId = valentine._id;
+    const creator = await User.findById(valentine.createdBy).select('email name role').lean();
+    const creatorRole = (creator?.role || '').toLowerCase();
+    const unlimitedReplies = creatorRole === 'developer' || creatorRole === 'superadmin';
     const count = await ValentineReply.countDocuments({ valentineId, sessionId });
-    if (count >= MAX_REPLIES_PER_SESSION) {
+    if (!unlimitedReplies && count >= MAX_REPLIES_PER_SESSION) {
       return jsonError(res, 429, `You can send at most ${MAX_REPLIES_PER_SESSION} messages. Limit reached.`);
     }
     await ValentineReply.create({
@@ -625,10 +637,7 @@ export async function submitValentineReply(req, res) {
       message,
     });
     const newCount = count + 1;
-
-    const creator = await User.findById(valentine.createdBy).select('email name role').lean();
-    const creatorRole = (creator?.role || '').toLowerCase();
-    const isDeveloperOrSuperadmin = creatorRole === 'developer' || creatorRole === 'superadmin';
+    const isDeveloperOrSuperadmin = unlimitedReplies;
     if (isDeveloperOrSuperadmin && creator?.email) {
       const baseUrl = getBaseUrl(req) || req.headers?.origin || '';
       const dashboardRepliesUrl = baseUrl ? `${baseUrl}/dashboard#valentine-urls` : '';
@@ -645,8 +654,9 @@ export async function submitValentineReply(req, res) {
     }
 
     return jsonSuccess(res, 201, 'Reply sent', {
-      repliesLeft: Math.max(0, MAX_REPLIES_PER_SESSION - newCount),
+      repliesLeft: unlimitedReplies ? MAX_REPLIES_PER_SESSION : Math.max(0, MAX_REPLIES_PER_SESSION - newCount),
       replyCount: newCount,
+      ...(unlimitedReplies && { unlimitedReplies: true }),
     });
   } catch (error) {
     console.error('Error submitting Valentine reply:', error);
@@ -666,13 +676,20 @@ export async function getValentineReplyCount(req, res) {
     if (!slug || !sessionId) {
       return jsonSuccess(res, 200, 'OK', { replyCount: 0, repliesLeft: MAX_REPLIES_PER_SESSION });
     }
-    const valentine = await ValentineUrl.findOne({ slug }).select('_id').lean();
+    const valentine = await ValentineUrl.findOne({ slug }).select('_id createdBy').lean();
     if (!valentine) {
       return jsonSuccess(res, 200, 'OK', { replyCount: 0, repliesLeft: MAX_REPLIES_PER_SESSION });
     }
+    const creator = valentine.createdBy
+      ? await User.findById(valentine.createdBy).select('role').lean()
+      : null;
+    const creatorRole = (creator?.role || '').toLowerCase();
+    const unlimitedReplies = creatorRole === 'developer' || creatorRole === 'superadmin';
     const replyCount = await ValentineReply.countDocuments({ valentineId: valentine._id, sessionId });
-    const repliesLeft = Math.max(0, MAX_REPLIES_PER_SESSION - replyCount);
-    return jsonSuccess(res, 200, 'OK', { replyCount, repliesLeft });
+    const repliesLeft = unlimitedReplies ? MAX_REPLIES_PER_SESSION : Math.max(0, MAX_REPLIES_PER_SESSION - replyCount);
+    const payload = { replyCount, repliesLeft };
+    if (unlimitedReplies) payload.unlimitedReplies = true;
+    return jsonSuccess(res, 200, 'OK', payload);
   } catch (error) {
     console.error('Error fetching reply count:', error);
     return jsonError(res, 500, 'Failed to fetch count', error.message);

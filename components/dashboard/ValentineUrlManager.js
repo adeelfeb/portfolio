@@ -874,7 +874,12 @@ export default function ValentineUrlManager({ user }) {
                 placeholder="Write a message to the sender"
                 maxLength={120}
               />
-              <span className="valentine-hint">Label for the input where the recipient can send you a reply (max 5 replies per visit).</span>
+              <span className="valentine-hint">
+                Label for the input where the recipient can send you a reply (max 5 replies per visit).
+                {(user?.role === 'developer' || user?.role === 'superadmin') && (
+                  <span className="valentine-hint-unlimited"> Links you create allow unlimited replies.</span>
+                )}
+              </span>
             </div>
             <div className="valentine-form-group">
               <label htmlFor="valentine-reply-max">Max reply length (characters)</label>
