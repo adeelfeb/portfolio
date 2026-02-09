@@ -46,10 +46,13 @@ const INITIAL_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 }
 
 export default function Valentine() {
   const [countdown, setCountdown] = useState(INITIAL_COUNTDOWN)
+  const [featuredMessage, setFeaturedMessage] = useState(null)
   const [contestMessage, setContestMessage] = useState('')
   const [contestSubmitting, setContestSubmitting] = useState(false)
   const [contestSuccess, setContestSuccess] = useState(false)
   const [contestError, setContestError] = useState('')
+
+  const countdownOver = countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0
 
   useEffect(() => {
     setCountdown(getCountdown(VALENTINES_DAY))
@@ -58,16 +61,43 @@ export default function Valentine() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+    fetch('/api/valentine/contest/featured')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success && data.data?.hasFeatured && data.data?.message) {
+          setFeaturedMessage(data.data.message)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
     if (!contestError) return
     const id = setTimeout(() => setContestError(''), 8000)
     return () => clearTimeout(id)
   }, [contestError])
+
+  function containsUrl(text) {
+    if (!text || typeof text !== 'string') return false
+    const t = text.trim()
+    if (!t) return false
+    if (/https?:\/\//i.test(t)) return true
+    if (/\bwww\./i.test(t)) return true
+    if (/\b[a-z0-9][-a-z0-9]*\.(com|org|net|io|co|uk|me|info|biz)\b/i.test(t)) return true
+    return false
+  }
 
   async function handleContestSubmit(e) {
     e.preventDefault()
     const msg = contestMessage.trim()
     if (msg.length < CONTEST_MIN_LENGTH) {
       setContestError(`Please write at least ${CONTEST_MIN_LENGTH} characters.`)
+      return
+    }
+    if (containsUrl(msg)) {
+      setContestError('Messages cannot contain links or URLs. Please write a short romantic message only.')
       return
     }
     setContestSubmitting(true)
@@ -289,33 +319,62 @@ export default function Valentine() {
               <Gift className="w-4 h-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Valentine&apos;s Day — February 14, 2026</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-              Countdown to Valentine&apos;s Day
-            </h2>
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8">
-              <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
-                <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.days).padStart(2, '0')}</span>
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Days</span>
-              </div>
-              <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
-                <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.hours).padStart(2, '0')}</span>
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Hours</span>
-              </div>
-              <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
-                <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.minutes).padStart(2, '0')}</span>
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Min</span>
-              </div>
-              <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
-                <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.seconds).padStart(2, '0')}</span>
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Sec</span>
-              </div>
-            </div>
-            <p className="text-base sm:text-lg text-gray-700 mb-2 max-w-2xl mx-auto leading-relaxed">
-              The most romantic message will be featured on this page.
-            </p>
-            <p className="text-sm sm:text-base text-gray-600 mb-8 max-w-2xl mx-auto">
-              It will be chosen from all entries. Write a short message to your loved one below to enter the contest.
-            </p>
+
+            {countdownOver ? (
+              <>
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                  Happy Valentine&apos;s Day!
+                </h2>
+                {featuredMessage ? (
+                  <div className="max-w-2xl mx-auto mb-8 p-6 rounded-2xl bg-white/95 border border-pink-200 shadow-md text-left">
+                    <p className="text-sm font-semibold text-rose-600 uppercase tracking-wide mb-2">Featured message</p>
+                    <p className="text-lg text-gray-800 leading-relaxed whitespace-pre-wrap">{featuredMessage}</p>
+                  </div>
+                ) : (
+                  <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+                    We&apos;re still choosing a featured message. Check back soon—or enjoy the day with someone you love!
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                  Countdown to Valentine&apos;s Day
+                </h2>
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8">
+                  <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
+                    <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.days).padStart(2, '0')}</span>
+                    <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Days</span>
+                  </div>
+                  <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
+                    <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.hours).padStart(2, '0')}</span>
+                    <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Hours</span>
+                  </div>
+                  <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
+                    <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.minutes).padStart(2, '0')}</span>
+                    <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Min</span>
+                  </div>
+                  <div className="flex flex-col items-center min-w-[4rem] py-3 px-4 bg-white/90 border border-pink-200/60 rounded-xl shadow-sm">
+                    <span className="text-2xl font-bold text-rose-700 leading-tight">{String(countdown.seconds).padStart(2, '0')}</span>
+                    <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-rose-800 mt-1">Sec</span>
+                  </div>
+                </div>
+                {featuredMessage && (
+                  <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-white/90 border border-pink-200 text-left">
+                    <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide mb-1">Current featured message</p>
+                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">{featuredMessage}</p>
+                  </div>
+                )}
+                <p className="text-base sm:text-lg text-gray-700 mb-2 max-w-2xl mx-auto leading-relaxed">
+                  The most romantic message will be featured on this page.
+                </p>
+                <p className="text-sm sm:text-base text-gray-600 mb-8 max-w-2xl mx-auto">
+                  It will be chosen from all entries. Write a short message to your loved one below to enter the contest.
+                </p>
+              </>
+            )}
+
+            {!countdownOver && (
             <form onSubmit={handleContestSubmit} className="text-left max-w-[32rem] mx-auto">
               <label htmlFor="contest-message" className="block text-sm font-medium text-gray-700 mb-2">
                 Your message to your loved one
@@ -332,7 +391,7 @@ export default function Valentine() {
                 required
               />
               <p className="text-xs text-gray-500 mb-3">
-                {contestMessage.length}/{CONTEST_MAX_LENGTH} characters (min {CONTEST_MIN_LENGTH}). Messages are checked for appropriateness.
+                {contestMessage.length}/{CONTEST_MAX_LENGTH} characters (min {CONTEST_MIN_LENGTH}). Messages are checked for appropriateness. Links and URLs are not allowed.
               </p>
               {contestError && (
                 <p className="text-sm text-rose-600 mb-3" role="alert">
@@ -352,6 +411,7 @@ export default function Valentine() {
                 {contestSubmitting ? 'Submitting…' : 'Enter the contest'}
               </button>
             </form>
+            )}
           </motion.div>
         </div>
       </section>

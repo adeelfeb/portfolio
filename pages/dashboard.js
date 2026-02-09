@@ -12,6 +12,7 @@ import NewYearResolutionManager from '../components/dashboard/NewYearResolutionM
 import ValentineUrlManager from '../components/dashboard/ValentineUrlManager';
 import ValentineUrlMonitor from '../components/dashboard/ValentineUrlMonitor';
 import CreditRequestsPanel from '../components/dashboard/CreditRequestsPanel';
+import ContestResultsPanel from '../components/dashboard/ContestResultsPanel';
 import BackupPanel from '../components/dashboard/BackupPanel';
 import SupportPanel from '../components/dashboard/SupportPanel';
 import ResourcesPanel from '../components/dashboard/ResourcesPanel';
@@ -59,6 +60,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'user-management', label: 'User Management' },
     { key: 'blogs', label: 'Blogs' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'contest-results', label: 'Contest Results' },
     { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
@@ -75,6 +77,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'blogs', label: 'Blogs' },
     { key: 'portfolios', label: 'Portfolios' },
     { key: 'valentine-urls', label: 'Valentine Links' },
+    { key: 'contest-results', label: 'Contest Results' },
     { key: 'valentine-monitor', label: 'Valentine Monitor' },
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
@@ -166,6 +169,11 @@ const SECTION_DESCRIPTORS = {
     subtitle: 'Developer-only: view all Valentine links, creators, full details, and utilization trends. Read-only.',
     hideHeader: true,
     body: (user) => <ValentineUrlMonitor user={user} />,
+  },
+  'contest-results': {
+    subtitle: 'Manage Valentine contest entries: rank messages, set the featured message for the Valentine page.',
+    hideHeader: true,
+    body: (user) => <ContestResultsPanel user={user} />,
   },
   'credit-requests': {
     subtitle: (user) => {

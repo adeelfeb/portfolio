@@ -5,6 +5,7 @@ import ValentineUrl from '../models/ValentineUrl';
 import ValentineVisit from '../models/ValentineVisit';
 import ValentineReply from '../models/ValentineReply';
 import ValentineCreditRequest from '../models/ValentineCreditRequest';
+import ValentineContestEntry from '../models/ValentineContestEntry';
 import { MAX_REPLIES_PER_SESSION, DEFAULT_MESSAGE_MAX_LENGTH } from '../models/ValentineReply';
 import { jsonError, jsonSuccess } from '../lib/response';
 import { sendValentineLinkEmail, sendValentineReplyNotificationEmail, sendEmailAsync } from '../utils/email';
@@ -1113,5 +1114,114 @@ export async function getValentineAnalytics(req, res) {
   } catch (error) {
     console.error('Error fetching Valentine analytics:', error);
     return jsonError(res, 500, 'Failed to load analytics', error.message);
+  }
+}
+
+/** Public: get the featured contest message for the Valentine page */
+export async function getContestFeatured(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return jsonError(res, 405, 'Method not allowed');
+  }
+  try {
+    await connectDB();
+    const doc = await ValentineContestEntry.findOne({ featured: true })
+      .select('message')
+      .lean();
+    const hasFeatured = Boolean(doc?.message);
+    return jsonSuccess(res, 200, 'OK', {
+      hasFeatured,
+      message: hasFeatured ? doc.message : null,
+    });
+  } catch (error) {
+    console.error('Error fetching featured contest message:', error);
+    return jsonError(res, 500, 'Failed to load featured message', error.message);
+  }
+}
+
+/** Developer only: list all contest entries, sorted by rank then createdAt */
+export async function getContestEntries(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return jsonError(res, 405, 'Method not allowed');
+  }
+  try {
+    await connectDB();
+    const list = await ValentineContestEntry.find()
+      .sort({ rank: 1, createdAt: -1 })
+      .lean();
+    const entries = list.map((e) => ({
+      id: e._id.toString(),
+      message: e.message,
+      rank: e.rank ?? null,
+      featured: Boolean(e.featured),
+      createdAt: e.createdAt,
+    }));
+    return jsonSuccess(res, 200, 'Contest entries retrieved', { entries });
+  } catch (error) {
+    console.error('Error fetching contest entries:', error);
+    return jsonError(res, 500, 'Failed to fetch contest entries', error.message);
+  }
+}
+
+/** Developer only: update contest entry (rank, featured). When setting featured, unset others. */
+export async function updateContestEntry(req, res) {
+  if (req.method !== 'PATCH') {
+    res.setHeader('Allow', ['PATCH']);
+    return jsonError(res, 405, 'Method not allowed');
+  }
+  try {
+    await connectDB();
+    const id = req.query?.id;
+    if (!id) return jsonError(res, 400, 'Entry ID is required');
+    const body = req.body || {};
+    const setFeatured = body.featured === true;
+    let rank = undefined;
+    if (body.rank === null) rank = null;
+    else if (typeof body.rank === 'number' && !Number.isNaN(body.rank)) rank = Math.max(1, Math.floor(body.rank));
+    else if (typeof body.rank === 'string' && body.rank.trim() !== '') {
+      const n = parseInt(body.rank, 10);
+      if (!Number.isNaN(n)) rank = Math.max(1, n);
+    }
+
+    const entry = await ValentineContestEntry.findById(id);
+    if (!entry) return jsonError(res, 404, 'Contest entry not found');
+
+    if (setFeatured) {
+      await ValentineContestEntry.updateMany({ _id: { $ne: id } }, { $set: { featured: false } });
+      entry.featured = true;
+    }
+    if (rank !== undefined) entry.rank = rank;
+    await entry.save();
+
+    return jsonSuccess(res, 200, 'Contest entry updated', {
+      id: entry._id.toString(),
+      message: entry.message,
+      rank: entry.rank ?? null,
+      featured: Boolean(entry.featured),
+      createdAt: entry.createdAt,
+    });
+  } catch (error) {
+    console.error('Error updating contest entry:', error);
+    return jsonError(res, 500, 'Failed to update entry', error.message);
+  }
+}
+
+/** Developer only: delete contest entry */
+export async function deleteContestEntry(req, res) {
+  if (req.method !== 'DELETE') {
+    res.setHeader('Allow', ['DELETE']);
+    return jsonError(res, 405, 'Method not allowed');
+  }
+  try {
+    await connectDB();
+    const id = req.query?.id;
+    if (!id) return jsonError(res, 400, 'Entry ID is required');
+    const result = await ValentineContestEntry.findByIdAndDelete(id);
+    if (!result) return jsonError(res, 404, 'Contest entry not found');
+    return jsonSuccess(res, 200, 'Contest entry deleted');
+  } catch (error) {
+    console.error('Error deleting contest entry:', error);
+    return jsonError(res, 500, 'Failed to delete entry', error.message);
   }
 }
