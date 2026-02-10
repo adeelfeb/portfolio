@@ -1129,7 +1129,7 @@ export default function Dashboard({ user }) {
               min-height: 0;
             }
             .section-custom--chat {
-              padding: 0.5rem;
+              padding: 1rem 1.25rem;
               min-height: 0;
               flex: 1;
               display: flex;
@@ -1179,7 +1179,7 @@ export default function Dashboard({ user }) {
             max-height: calc(100vh - 5rem);
           }
           .section-custom--chat {
-            padding: 0.5rem;
+            padding: 0.75rem 1rem;
           }
           .section-custom--chat > * {
             min-height: 300px;

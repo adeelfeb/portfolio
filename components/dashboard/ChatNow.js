@@ -453,7 +453,7 @@ export default function ChatNow({ user, onUnreadChange }) {
           </ul>
         </aside>
 
-        <div className={styles.panel}>
+        <div className={`${styles.panel} ${selectedId ? styles.panelThread : ''}`}>
           {!selectedId ? (
             <div className={styles.placeholder}>
               Select a conversation to start messaging.
