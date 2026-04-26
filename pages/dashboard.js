@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import DashboardLayout from '../components/DashboardLayout';
 import SettingsPanel from '../components/dashboard/SettingsPanel';
 import AddOrigin from '../components/dashboard/AddOrigin';
-import UserOverviewTable from '../components/dashboard/UserOverviewTable';
+import OverviewPageBody from '../components/dashboard/OverviewPageBody';
 import ApiEndpointsPanel from '../components/dashboard/ApiEndpointsPanel';
 import BlogManager from '../components/dashboard/BlogManager';
 import PortfolioManager from '../components/dashboard/PortfolioManager';
@@ -21,6 +22,11 @@ import PrivacyPanel from '../components/dashboard/PrivacyPanel';
 import RequestsPanel from '../components/dashboard/RequestsPanel';
 import ChatNow from '../components/dashboard/ChatNow';
 import { getUserFromRequest } from '../lib/auth';
+
+const WhatsAppChatAnalysis = dynamic(
+  () => import('../components/dashboard/WhatsAppChatAnalysis'),
+  { ssr: false, loading: () => <p style={{ color: '#64748b' }}>Loading tool…</p> }
+);
 
 function serializeUser(user) {
   if (!user) return null;
@@ -85,6 +91,7 @@ const NAVIGATION_BY_ROLE = {
     { key: 'credit-requests', label: 'Credit Requests' },
     { key: 'requests', label: 'Requests' },
     { key: 'backup', label: 'Backup' },
+    { key: 'whatsapp-analysis', label: 'WhatsApp analysis' },
     { key: 'add-origin', label: 'Add Origin' },
     { key: 'api-endpoints', label: 'API Endpoints' },
     { key: 'help', label: 'Help' },
@@ -151,8 +158,14 @@ const SECTION_DESCRIPTORS = {
       if (normalizedRole === 'base_user') {
         return null;
       }
-      return <UserOverviewTable currentUser={user} />;
+      return <OverviewPageBody currentUser={user} />;
     },
+  },
+  'whatsapp-analysis': {
+    subtitle:
+      'Client-side only: upload an exported .txt or .zip. Your files are not sent to the server. Use for personal analytics in supported date formats.',
+    hideHeader: true,
+    body: () => <WhatsAppChatAnalysis />,
   },
   resolutions: {
     subtitle: 'Manage and track your New Year resolutions.',
