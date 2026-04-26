@@ -200,8 +200,10 @@ export default function DashboardLayout({
               <span className="brand-subtitle">{roleLabel}</span>
             </div>
           </div>
+        </div>
 
-          <nav className="nav" aria-label="Primary" style={{ padding: '0 0.85rem' }}>
+        <div className="sidebar-scroll">
+          <nav className="nav" aria-label="Primary">
             <ul className="nav-list">
               {items.map((item) => {
                 const isActive = item.key === activeNav;
@@ -232,27 +234,29 @@ export default function DashboardLayout({
               })}
             </ul>
           </nav>
+          <div className="sidebar-secondary-scroll" aria-label="Secondary">
+            <button
+              type="button"
+              className={`secondary-button secondary-button--settings${activeNav === 'settings' ? ' is-active' : ''}`}
+              onClick={() => {
+                onOpenSettings?.();
+                if (window.innerWidth <= 960) {
+                  setSidebarOpen(false);
+                }
+              }}
+            >
+              <span className="nav-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                </svg>
+              </span>
+              <span className="nav-label">SETTINGS</span>
+            </button>
+          </div>
         </div>
 
         <div className="sidebar-bottom" aria-label="Secondary" style={{ padding: '0.6rem 0.85rem 0.85rem' }}>
-          <button
-            type="button"
-            className={`secondary-button secondary-button--settings${activeNav === 'settings' ? ' is-active' : ''}`}
-            onClick={() => {
-              onOpenSettings?.();
-              if (window.innerWidth <= 960) {
-                setSidebarOpen(false);
-              }
-            }}
-          >
-            <span className="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-              </svg>
-            </span>
-            <span className="nav-label">SETTINGS</span>
-          </button>
           <button
             type="button"
             className="secondary-button secondary-button--logout"
@@ -370,6 +374,56 @@ export default function DashboardLayout({
           min-height: 0;
           position: relative;
           z-index: 1;
+        }
+
+        .sidebar-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          overflow-x: hidden;
+          position: relative;
+          z-index: 1;
+          display: grid;
+          align-content: start;
+          gap: 0.5rem;
+          padding: 0.15rem 0.4rem 0.75rem 0.85rem;
+          scroll-behavior: smooth;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(96, 165, 250, 0.55) rgba(15, 23, 42, 0.35);
+        }
+
+        .sidebar-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-track {
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.45), rgba(2, 6, 23, 0.55));
+          border-radius: 100px;
+          margin: 6px 0 10px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, rgba(96, 165, 250, 0.65) 0%, rgba(129, 140, 248, 0.45) 50%, rgba(192, 132, 252, 0.4) 100%);
+          border-radius: 100px;
+          border: 2px solid rgba(2, 6, 23, 0.35);
+          background-clip: padding-box;
+          box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, rgba(96, 165, 250, 0.85) 0%, rgba(129, 140, 248, 0.65) 100%);
+        }
+
+        .sidebar-secondary-scroll {
+          display: grid;
+          gap: 0.6rem;
+          margin-top: 0.25rem;
+          padding: 0.8rem 0 0.4rem;
+          border-top: 1px solid rgba(148, 163, 184, 0.14);
+          background: linear-gradient(180deg, rgba(2, 6, 23, 0.22) 0%, transparent 100%);
+          border-radius: 0 0 4px 4px;
         }
 
         .brand {
@@ -690,7 +744,6 @@ export default function DashboardLayout({
         }
 
         .sidebar-bottom {
-          margin-top: auto;
           display: grid;
           gap: 0.6rem;
           padding: 0;
@@ -854,6 +907,10 @@ export default function DashboardLayout({
             padding: 1.25rem;
           }
 
+          .sidebar-scroll {
+            padding: 0.1rem 0.5rem 0.9rem 1.25rem;
+          }
+
           .sidebar-top {
             padding-top: 1.25rem;
           }
@@ -972,6 +1029,10 @@ export default function DashboardLayout({
           .sidebar-top,
           .sidebar-bottom {
             padding: 1rem;
+          }
+
+          .sidebar-scroll {
+            padding: 0.1rem 0.45rem 0.85rem 1rem;
           }
         }
 
