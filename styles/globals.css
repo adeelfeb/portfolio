@@ -45,9 +45,9 @@ nav a:active {
   text-decoration: none !important;
 }
 
-/* Global link hover - only for non-nav links */
+/* Global link hover - keep no underline by default */
 a:hover:not(nav a) {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* Utility Classes */

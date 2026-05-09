@@ -61,7 +61,7 @@ export default function ContactForm({ showHeading = true }) {
   }
 
   return (
-    <section className="py-12 md:py-16 bg-gradient-to-b from-gray-50 to-white">
+    <section id="contact" className="py-12 md:py-14 bg-gradient-to-b from-gray-50 to-white scroll-mt-24">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0">
         {showHeading && (
           <motion.div
@@ -126,7 +126,7 @@ export default function ContactForm({ showHeading = true }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full min-w-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-base hover:shadow-xl hover:shadow-blue-500/50 hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full min-w-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2.5 sm:px-6 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:shadow-lg hover:shadow-blue-500/40 hover:scale-[1.01] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isSubmitting ? (
                 <>

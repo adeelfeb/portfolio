@@ -4,12 +4,9 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
+        {/* Intentionally avoid loading Google Fonts here.
+            App Router (`app/layout.js`) uses `next/font` for Poppins, which is optimized and non-blocking.
+            Pages Router will fall back to system fonts unless a route explicitly loads a font. */}
       </Head>
       <body>
         <Main />

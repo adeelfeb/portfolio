@@ -90,7 +90,7 @@ export default function Navbar() {
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/services', label: 'Services' },
-    { href: '/valentine', label: 'Valentine', isValentine: true },
+    { href: '/whatsapp-chat-analysis', label: 'Chat Analytics', isZap: true },
     { href: '/blogs', label: 'Blog' },
     { href: '/portfolio', label: 'Portfolio' },
   ]
@@ -102,8 +102,8 @@ export default function Navbar() {
       transition={{ duration: 0.8, ease: 'easeOut' }}
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className={`navbar rounded-2xl px-4 sm:px-6 py-3 sm:py-4 transition-all duration-300 ${
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+        <div className={`navbar rounded-2xl px-4 sm:px-6 py-2 sm:py-2.5 transition-all duration-300 ${
           isScrolled
             ? 'bg-white/95 backdrop-blur-md shadow-lg'
             : 'bg-white/90 backdrop-blur-sm shadow-md'
@@ -113,7 +113,7 @@ export default function Navbar() {
             <div className="flex flex-1 justify-start min-w-0">
               <Link 
                 href="/" 
-                className="text-xl sm:text-2xl font-bold no-underline hover:scale-110 transition-transform duration-300 inline-block"
+                className="text-lg sm:text-xl font-bold no-underline hover:scale-[1.03] transition-transform duration-300 inline-block tracking-tight"
               >
                 <span>
                   <span className="text-blue-600">Design</span>
@@ -130,17 +130,17 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 text-sm font-medium transition-all duration-200 relative no-underline ${
+                    className={`px-2.5 py-1.5 text-sm font-medium transition-all duration-200 relative no-underline whitespace-nowrap ${
                       isActive(item.href)
-                        ? 'text-rose-600 font-semibold'
-                        : item.isValentine 
-                          ? 'text-rose-600 font-semibold hover:text-rose-700 bg-rose-50 rounded-lg hover:bg-rose-100 border border-rose-100'
+                        ? 'text-emerald-700 font-semibold'
+                        : item.isZap
+                          ? 'text-emerald-700 font-semibold hover:text-emerald-800 bg-emerald-50 rounded-lg hover:bg-emerald-100 border border-emerald-100'
                           : 'text-gray-700 hover:text-blue-600'
                     }`}
                   >
                     <span className="relative z-10">{item.label}</span>
                     {isActive(item.href) && (
-                      <span className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${item.isValentine ? 'bg-rose-500' : 'bg-blue-600'}`}></span>
+                      <span className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${item.isZap ? 'bg-emerald-500' : 'bg-blue-600'}`}></span>
                     )}
                   </Link>
                 ))}
@@ -154,17 +154,17 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-2 py-2 text-xs font-medium transition-all duration-200 relative no-underline ${
+                    className={`px-2 py-1.5 text-xs font-medium transition-all duration-200 relative no-underline whitespace-nowrap ${
                       isActive(item.href)
-                        ? 'text-rose-600 font-semibold'
-                        : item.isValentine 
-                          ? 'text-rose-600 font-semibold hover:text-rose-700 bg-rose-50 rounded-lg hover:bg-rose-100'
+                        ? 'text-emerald-700 font-semibold'
+                        : item.isZap
+                          ? 'text-emerald-700 font-semibold hover:text-emerald-800 bg-emerald-50 rounded-lg hover:bg-emerald-100'
                           : 'text-gray-700 hover:text-blue-600'
                     }`}
                   >
                     <span className="relative z-10">{item.label}</span>
                     {isActive(item.href) && (
-                      <span className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${item.isValentine ? 'bg-rose-500' : 'bg-blue-600'}`}></span>
+                      <span className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${item.isZap ? 'bg-emerald-500' : 'bg-blue-600'}`}></span>
                     )}
                   </Link>
                 ))}
@@ -177,7 +177,7 @@ export default function Navbar() {
             <div className="hidden lg:block">
               <Link
                 href="/contact"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 no-underline"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:shadow-md hover:scale-[1.03] transition-all duration-200 no-underline"
               >
                 Contact
               </Link>
@@ -187,7 +187,7 @@ export default function Navbar() {
             <div className="hidden md:block lg:hidden">
               <Link
                 href="/contact"
-                className="px-4 py-2 text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 no-underline"
+                className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 no-underline"
               >
                 Contact
               </Link>
@@ -245,9 +245,9 @@ export default function Navbar() {
                     href={item.href}
                     className={`block px-3 py-2 text-base font-medium transition-all duration-200 rounded-lg no-underline ${
                       isActive(item.href)
-                        ? 'text-rose-600 font-semibold bg-rose-50'
-                        : item.isValentine 
-                          ? 'text-rose-600 font-semibold bg-rose-50 hover:bg-rose-100'
+                        ? 'text-emerald-700 font-semibold bg-emerald-50'
+                        : item.isZap
+                          ? 'text-emerald-700 font-semibold bg-emerald-50 hover:bg-emerald-100'
                           : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                     }`}
                     onClick={() => setIsMenuOpen(false)}

@@ -79,6 +79,11 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
+                  <a href="/whatsapp-chat-analysis" className="hover:text-white transition-colors cursor-pointer">
+                    Chat Analytics
+                  </a>
+                </li>
+                <li>
                   <a href="/new-year-resolution" className="hover:text-white transition-colors cursor-pointer">
                     New Year Resolution
                   </a>
@@ -130,6 +135,27 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-gray-400">
             <p>© {currentYear} Design n Dev. All rights reserved.</p>
+            <p className="mt-2 text-sm text-gray-500">
+              Designed with help from{' '}
+              <span className="text-gray-400">Sadia Tariq</span>
+              {' — '}
+              <a
+                href="mailto:sadiaatariq162@gmail.com"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                sadiaatariq162@gmail.com
+              </a>
+              {' · '}
+              <a
+                href="https://github.com/sadiaatariq162-hue"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                GitHub
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>
