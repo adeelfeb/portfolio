@@ -48,25 +48,26 @@ function DeferredSection({ component: Component, skeletonMinHeight }) {
   return <div ref={ref}>{isInView ? <Component /> : <SectionSkeleton minHeight={skeletonMinHeight} />}</div>
 }
 
-const Reviews = dynamic(() => import('./Reviews'), { ssr: false })
-const ContactForm = dynamic(() => import('./ContactForm'), { ssr: false })
 const ValueProp = dynamic(() => import('./ValueProp'), { ssr: false })
 const Services = dynamic(() => import('./Services'), { ssr: false })
-const TechStack = dynamic(() => import('./TechStack'), { ssr: false })
+const FeaturedWork = dynamic(() => import('./FeaturedWork'), { ssr: false })
 const Process = dynamic(() => import('./Process'), { ssr: false })
+const Reviews = dynamic(() => import('./Reviews'), { ssr: false })
+const TechStack = dynamic(() => import('./TechStack'), { ssr: false })
+const ContactForm = dynamic(() => import('./ContactForm'), { ssr: false })
 const Footer = dynamic(() => import('./Footer'), { ssr: false })
 
 export default function HomeSections() {
   return (
     <>
-      <DeferredSection component={Reviews} skeletonMinHeight={520} />
-      <DeferredSection component={ContactForm} skeletonMinHeight={520} />
+      <DeferredSection component={ContactForm} skeletonMinHeight={560} />
       <DeferredSection component={ValueProp} skeletonMinHeight={560} />
       <DeferredSection component={Services} skeletonMinHeight={760} />
-      <DeferredSection component={TechStack} skeletonMinHeight={520} />
+      <DeferredSection component={FeaturedWork} skeletonMinHeight={640} />
       <DeferredSection component={Process} skeletonMinHeight={700} />
+      <DeferredSection component={Reviews} skeletonMinHeight={520} />
+      <DeferredSection component={TechStack} skeletonMinHeight={520} />
       <DeferredSection component={Footer} skeletonMinHeight={900} />
     </>
   )
 }
-

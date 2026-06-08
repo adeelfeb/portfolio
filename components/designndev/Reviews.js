@@ -79,57 +79,68 @@ const reviews = [
   },
 ]
 
+const AVATAR_COLORS = [
+  'bg-blue-600',
+  'bg-purple-600',
+  'bg-emerald-600',
+  'bg-amber-600',
+  'bg-rose-600',
+  'bg-indigo-600',
+  'bg-cyan-600',
+  'bg-orange-600',
+  'bg-teal-600',
+]
+
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function getAvatarColor(name) {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
 export default function Reviews() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // Check if device is mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        // Cycle through all reviews
-        return (prevIndex + 1) % reviews.length
-      })
-    }, 5000) // Change reviews every 5 seconds
-
+      setCurrentIndex((prev) => (prev + 1) % reviews.length)
+    }, 5000)
     return () => clearInterval(interval)
   }, [])
 
-  // Get visible reviews - show 1 on mobile, 3 on desktop
   const getVisibleReviews = () => {
-    const reviewsToShow = []
     const numToShow = isMobile ? 1 : 3
-    
-    for (let i = 0; i < numToShow; i++) {
-      const index = (currentIndex + i) % reviews.length
-      reviewsToShow.push(reviews[index])
-    }
-    return reviewsToShow
+    return [...Array(numToShow)].map((_, i) => reviews[(currentIndex + i) % reviews.length])
   }
 
   const visibleReviews = getVisibleReviews()
 
   return (
-    <section id="work" className="pt-6 pb-10 bg-gradient-to-b from-white to-gray-50 scroll-mt-24">
+    <section id="reviews" aria-label="Client reviews" className="py-14 md:py-20 bg-white scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-7"
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10"
         >
+          <p className="text-sm font-medium tracking-widest uppercase text-blue-600 mb-2">Testimonials</p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             Client Reviews
           </h2>
@@ -142,43 +153,45 @@ export default function Reviews() {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.45, ease: 'easeInOut' }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {visibleReviews.map((review) => (
+              {visibleReviews.map((review, cardIndex) => (
                 <div
                   key={review.id}
-                  className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col"
+                  className={`bg-gray-50 rounded-2xl p-6 border border-gray-200 flex flex-col ${
+                    cardIndex === 0 && !isMobile ? 'ring-1 ring-blue-200' : ''
+                  }`}
                 >
-                  {/* Header with name, country, and rating */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {review.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {review.country} • {review.timeAgo}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${getAvatarColor(review.name)}`}
+                    >
+                      {getInitials(review.name)}
                     </div>
-                    {/* Star Rating */}
-                    <div className="flex items-center gap-1 mt-2">
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                        />
-                      ))}
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{review.name}</h3>
+                      <p className="text-xs text-gray-500">
+                        {review.country} · {review.timeAgo}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Review Text */}
-                  <p className="text-gray-700 leading-relaxed text-sm md:text-base flex-grow">
-                    {review.review}
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+
+                  <p
+                    className={`text-gray-700 leading-relaxed flex-grow ${
+                      cardIndex === 0 && !isMobile ? 'text-base md:text-lg' : 'text-sm md:text-base'
+                    }`}
+                  >
+                    &ldquo;{review.review}&rdquo;
                   </p>
                 </div>
               ))}
@@ -186,16 +199,13 @@ export default function Reviews() {
           </AnimatePresence>
         </div>
 
-        {/* Indicator dots */}
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-2 mt-8">
           {reviews.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'w-8 bg-blue-600'
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
+                index === currentIndex ? 'w-8 bg-blue-600' : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
               aria-label={`Go to review ${index + 1}`}
             />

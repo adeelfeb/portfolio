@@ -1,7 +1,16 @@
 import { Poppins } from 'next/font/google'
 import '../styles/globals.css'
+import {
+  SITE_NAME,
+  SITE_URL,
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  DEFAULT_OG_IMAGE,
+  absoluteUrl,
+} from '../lib/seo'
 
-const poppins = Poppins({ 
+const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
@@ -9,19 +18,41 @@ const poppins = Poppins({
 })
 
 export const metadata = {
-  title: 'Design n Dev | Expert Full-Stack Web Development & Next.js Solutions',
-  description: 'Turn your business idea into reality with Design n Dev. We specialize in fast, scalable custom development using Next.js, MERN Stack, and Node.js for startups and enterprises.',
-  keywords: 'Next.js development, MERN stack agency, Startup MVP development, Full-stack web development, React development, Node.js development',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
   icons: {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
   openGraph: {
-    title: 'Design n Dev | Expert Full-Stack Web Development & Next.js Solutions',
-    description: 'Turn your business idea into reality with Design n Dev. We specialize in fast, scalable custom development using Next.js, MERN Stack, and Node.js for startups and enterprises.',
-    url: 'https://designndev.com',
-    siteName: 'Design n Dev',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: absoluteUrl('/'),
+    siteName: SITE_NAME,
     type: 'website',
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} — Full-Stack Web Development`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 }
 
@@ -34,4 +65,3 @@ export default function RootLayout({ children }) {
     </html>
   )
 }
-

@@ -64,6 +64,11 @@ const nextConfig = {
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+    dangerouslyAllowSVG: true,
   },
 
   webpack: (config, { isServer, dev }) => {

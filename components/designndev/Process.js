@@ -1,46 +1,46 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Search, Palette, Code2, Rocket } from 'lucide-react'
+
+const steps = [
+  {
+    title: 'Discovery & Strategy',
+    description: 'You share your business idea. We map out technical requirements.',
+    number: '01',
+    tint: 'bg-blue-50 border-blue-100',
+  },
+  {
+    title: 'Design & Architecture',
+    description: 'We structure your site using the best stack (e.g., Next.js for speed).',
+    number: '02',
+    tint: 'bg-purple-50 border-purple-100',
+  },
+  {
+    title: 'Agile Development',
+    description: 'We build your custom website in sprints with regular updates.',
+    number: '03',
+    tint: 'bg-emerald-50 border-emerald-100',
+  },
+  {
+    title: 'Launch & Scale',
+    description: 'We deploy with optimized SEO settings and provide growth support.',
+    number: '04',
+    tint: 'bg-amber-50 border-amber-100',
+  },
+]
 
 export default function Process() {
-  const steps = [
-    {
-      icon: Search,
-      title: 'Discovery & Strategy',
-      description: 'You share your business idea. We map out technical requirements.',
-      number: '01',
-    },
-    {
-      icon: Palette,
-      title: 'Design & Architecture',
-      description: 'We structure your site using the best stack (e.g., Next.js for speed).',
-      number: '02',
-    },
-    {
-      icon: Code2,
-      title: 'Agile Development',
-      description: 'We build your custom website in sprints with regular updates.',
-      number: '03',
-    },
-    {
-      icon: Rocket,
-      title: 'Launch & Scale',
-      description: 'We deploy with optimized SEO settings and provide growth support.',
-      number: '04',
-    },
-  ]
-
   return (
-    <section id="process" className="py-14 md:py-20 bg-white scroll-mt-24">
+    <section id="process" aria-label="Our process" className="py-14 md:py-20 bg-stone-50 scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-10 md:mb-12"
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12 md:mb-16"
         >
+          <p className="text-sm font-medium tracking-widest uppercase text-blue-600 mb-2">How we work</p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             From Concept to Launch
           </h2>
@@ -49,39 +49,36 @@ export default function Process() {
           </p>
         </motion.div>
 
-        <div className="relative">
-          {/* Timeline line - hidden on mobile, visible on desktop */}
-          <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
+        <div className="relative max-w-4xl mx-auto">
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gray-200 -translate-x-1/2" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+          <div className="space-y-8 md:space-y-12">
             {steps.map((step, index) => {
-              const Icon = step.icon
+              const isLeft = index % 2 === 0
               return (
                 <motion.div
                   key={step.number}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="relative"
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                  className={`relative flex flex-col md:flex-row items-center gap-6 ${
+                    isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
+                  }`}
                 >
-                  {/* Step Number Badge */}
-                  <div className="absolute -top-4 left-0 w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg z-10">
-                    {step.number}
+                  <div className={`flex-1 w-full ${isLeft ? 'md:text-right md:pr-10' : 'md:text-left md:pl-10'}`}>
+                    <div className={`inline-block rounded-2xl border p-6 ${step.tint} max-w-md ${isLeft ? 'md:ml-auto' : ''}`}>
+                      <span className="text-xs font-bold tracking-widest text-gray-400">{step.number}</span>
+                      <h3 className="text-xl font-bold text-gray-900 mt-1 mb-2">{step.title}</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">{step.description}</p>
+                    </div>
                   </div>
 
-                  {/* Card */}
-                  <div className="pt-8 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 h-full">
-                    <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-6">
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {step.description}
-                    </p>
+                  <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-blue-600 items-center justify-center z-10 shadow-sm">
+                    <span className="text-xs font-bold text-blue-600">{step.number}</span>
                   </div>
+
+                  <div className="flex-1 hidden md:block" />
                 </motion.div>
               )
             })}
@@ -91,5 +88,3 @@ export default function Process() {
     </section>
   )
 }
-
-
