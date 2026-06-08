@@ -10,6 +10,7 @@ export default function ContactForm({ showHeading = true }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    projectDetails: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -49,7 +50,7 @@ export default function ContactForm({ showHeading = true }) {
 
       if (response.ok) {
         setSubmitStatus({ type: 'success', message: data.message || 'Thank you! We will get back to you soon.' })
-        setFormData({ name: '', email: '' })
+        setFormData({ name: '', email: '', projectDetails: '' })
       } else {
         setSubmitStatus({ type: 'error', message: data.message || 'Something went wrong. Please try again.' })
       }
@@ -119,6 +120,23 @@ export default function ContactForm({ showHeading = true }) {
                 required
                 className="w-full min-w-0 max-w-full box-border px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-900 text-base"
                 placeholder="your.email@example.com"
+              />
+            </div>
+
+            {/* Project Details Field */}
+            <div className="min-w-0">
+              <label htmlFor="projectDetails" className="block text-sm font-medium text-gray-700 mb-2">
+                Project Details
+              </label>
+              <textarea
+                id="projectDetails"
+                name="projectDetails"
+                value={formData.projectDetails}
+                onChange={handleChange}
+                rows={4}
+                maxLength={2000}
+                className="w-full min-w-0 max-w-full box-border px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-900 text-base resize-y"
+                placeholder="Tell us about your project — goals, timeline, budget, or any other details..."
               />
             </div>
 

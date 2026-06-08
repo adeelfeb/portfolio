@@ -15,6 +15,12 @@ const ContactSubmissionSchema = new mongoose.Schema(
       lowercase: true,
       maxlength: 320,
     },
+    projectDetails: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
   },
   {
     timestamps: true,

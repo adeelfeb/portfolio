@@ -9,7 +9,7 @@ import { requireRecaptcha } from '../../lib/recaptcha';
 /**
  * Contact form endpoint
  * POST /api/contact
- * Body: { "name": "John Doe", "email": "john@example.com", "recaptchaToken"?: "..." }
+ * Body: { "name": "John Doe", "email": "john@example.com", "projectDetails"?: "...", "recaptchaToken"?: "..." }
  */
 export default async function handler(req, res) {
   if (await applyCors(req, res)) return;
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const ok = await requireRecaptcha(req, res, jsonError);
   if (!ok) return;
 
-  const { name, email } = req.body || {};
+  const { name, email, projectDetails } = req.body || {};
 
   // Validation
   if (!name || !email) {
@@ -40,6 +40,9 @@ export default async function handler(req, res) {
     return jsonError(res, 400, 'Invalid email format');
   }
 
+  const projectDetailsStr =
+    typeof projectDetails === 'string' ? projectDetails.trim().slice(0, 2000) : '';
+
   try {
     const subject = `New Contact Form Submission from ${nameStr}`;
     
@@ -56,6 +59,7 @@ export default async function handler(req, res) {
           <h2 style="color: #333; margin-top: 0;">New Contact Form Submission</h2>
           <p><strong>Name:</strong> ${nameStr}</p>
           <p><strong>Email:</strong> ${emailStr}</p>
+          ${projectDetailsStr ? `<p><strong>Project Details:</strong></p><p style="white-space: pre-wrap;">${projectDetailsStr}</p>` : ''}
           <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
           <p style="font-size: 12px; color: #777;">This is an automated message from the contact form on designndev.com</p>
         </div>
@@ -68,7 +72,7 @@ New Contact Form Submission
 
 Name: ${nameStr}
 Email: ${emailStr}
-
+${projectDetailsStr ? `\nProject Details:\n${projectDetailsStr}\n` : ''}
 ---
 This is an automated message from the contact form on designndev.com
     `;
@@ -86,7 +90,11 @@ This is an automated message from the contact form on designndev.com
     // Save to database for dashboard viewing (non-blocking)
     try {
       await connectDB();
-      await ContactSubmission.create({ name: nameStr, email: emailStr });
+      await ContactSubmission.create({
+        name: nameStr,
+        email: emailStr,
+        projectDetails: projectDetailsStr,
+      });
     } catch (dbErr) {
       logger.warn('Contact submission save to DB failed:', dbErr.message);
     }

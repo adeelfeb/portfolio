@@ -109,6 +109,9 @@ export default function RequestsPanel() {
                           {c.email}
                         </a>
                       </div>
+                      {c.projectDetails ? (
+                        <p className="requests-panel-card-message">{c.projectDetails}</p>
+                      ) : null}
                       <span className="requests-panel-card-date">
                         <Calendar size={14} />
                         {formatDate(c.createdAt)}

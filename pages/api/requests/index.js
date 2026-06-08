@@ -48,6 +48,7 @@ export default async function handler(req, res) {
       type: 'contact',
       name: c.name,
       email: c.email,
+      projectDetails: c.projectDetails || '',
       createdAt: c.createdAt,
     }));
 
