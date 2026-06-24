@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star } from 'lucide-react'
+import { Star, MessageSquare } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 const reviews = [
@@ -27,7 +27,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '2 months ago',
-    review: `The portfolio website exceeded my expectations. Modern, fast, and fully optimized for SEO. Delivered efficiently within budget. Extremely satisfied!`,
+    review: `The portfolio website exceeded my expectations. Modern, fast, and fully optimized for SEO. Extremely satisfied!`,
   },
   {
     id: 4,
@@ -35,7 +35,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '3 months ago',
-    review: `Adeel built an excellent full-stack tourism website with Next.js, MongoDB, and Tailwind CSS. Very cooperative and guided us through everything. The custom admin dashboard works perfectly. Highly recommend!`,
+    review: `Adeel built an excellent full-stack tourism website with Next.js, MongoDB, and Tailwind. Very cooperative and guided us through everything. Highly recommend!`,
   },
   {
     id: 5,
@@ -43,7 +43,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '3 months ago',
-    review: `Outstanding work! Fixed and optimized our database connection and API integration with complete professionalism. Identified and fixed additional issues proactively. Top-notch code quality!`,
+    review: `Outstanding work! Fixed and optimized our database connection and API integration with complete professionalism. Top-notch code quality!`,
   },
   {
     id: 6,
@@ -51,7 +51,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '3 months ago',
-    review: `Excellent experience! Delivered high-quality work on time with clear communication. Very professional and skilled. Would definitely hire again!`,
+    review: `Excellent experience! Delivered high-quality work on time with clear communication. Very professional. Would hire again!`,
   },
   {
     id: 7,
@@ -59,7 +59,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '3 months ago',
-    review: `Developed and deployed a full-stack Next.js portfolio website perfectly. Modern, responsive, SEO optimized. Deployment on DigitalOcean works flawlessly. Highly professional!`,
+    review: `Developed and deployed a full-stack Next.js portfolio website perfectly. Modern, responsive, SEO optimized. Highly professional!`,
   },
   {
     id: 8,
@@ -67,7 +67,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '3 months ago',
-    review: `Super impressed! Communication was smooth and professional. Delivered a clean, modern, and super fast Next.js site. Shared detailed progress updates throughout. Highly recommended!`,
+    review: `Super impressed! Communication was smooth and professional. Delivered a clean, modern, and super fast Next.js site. Highly recommended!`,
   },
   {
     id: 9,
@@ -75,7 +75,7 @@ const reviews = [
     country: 'Pakistan',
     rating: 5,
     timeAgo: '4 months ago',
-    review: `Fast, professional and very cooperative. Highly recommended.`,
+    review: `Fast, professional, and very cooperative. Highly recommended.`,
   },
 ]
 
@@ -131,21 +131,24 @@ export default function Reviews() {
   const visibleReviews = getVisibleReviews()
 
   return (
-    <section id="reviews" aria-label="Client reviews" className="py-14 md:py-20 bg-white scroll-mt-24">
+    <section id="reviews" aria-label="Client reviews" className="py-10 md:py-16 bg-gradient-to-b from-white to-stone-50 relative scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-10"
+          className="text-center mb-8"
         >
-          <p className="text-sm font-medium tracking-widest uppercase text-blue-600 mb-2">Testimonials</p>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full mb-3">
+            <MessageSquare className="w-3.5 h-3.5" />
+            Testimonials
+          </div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
             Client Reviews
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            See what our clients have to say about our development and deployment services
+          <p className="text-base text-gray-500 max-w-2xl mx-auto">
+            What our clients say about working with us
           </p>
         </motion.div>
 
@@ -162,8 +165,8 @@ export default function Reviews() {
               {visibleReviews.map((review, cardIndex) => (
                 <div
                   key={review.id}
-                  className={`bg-gray-50 rounded-2xl p-6 border border-gray-200 flex flex-col ${
-                    cardIndex === 0 && !isMobile ? 'ring-1 ring-blue-200' : ''
+                  className={`bg-white rounded-2xl p-6 border border-gray-200 flex flex-col hover:shadow-md transition-shadow ${
+                    cardIndex === 0 && !isMobile ? 'ring-1 ring-rose-200 shadow-sm' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-4">
@@ -186,11 +189,7 @@ export default function Reviews() {
                     ))}
                   </div>
 
-                  <p
-                    className={`text-gray-700 leading-relaxed flex-grow ${
-                      cardIndex === 0 && !isMobile ? 'text-base md:text-lg' : 'text-sm md:text-base'
-                    }`}
-                  >
+                  <p className="text-gray-700 leading-relaxed flex-grow text-sm md:text-base">
                     &ldquo;{review.review}&rdquo;
                   </p>
                 </div>
@@ -199,13 +198,13 @@ export default function Reviews() {
           </AnimatePresence>
         </div>
 
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="flex justify-center gap-2 mt-6">
           {reviews.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex ? 'w-8 bg-blue-600' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                index === currentIndex ? 'w-8 bg-rose-500' : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
               aria-label={`Go to review ${index + 1}`}
             />

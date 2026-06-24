@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Cpu } from 'lucide-react'
 
 const technologies = [
   { name: 'React.js', Icon: ReactIcon },
@@ -20,25 +21,29 @@ const technologies = [
 
 export default function TechStack() {
   return (
-    <section id="tech-stack" aria-label="Technology stack" className="py-14 md:py-20 bg-slate-900 scroll-mt-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="tech-stack" aria-label="Technology stack" className="py-10 md:py-16 bg-gradient-to-b from-slate-900 to-slate-950 relative scroll-mt-24">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-10 md:mb-12"
+          className="text-center mb-8 md:mb-10"
         >
-          <p className="text-sm font-medium tracking-widest uppercase text-blue-400 mb-2">Stack</p>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-blue-400 bg-blue-950/50 px-3 py-1.5 rounded-full mb-3 border border-blue-800/30">
+            <Cpu className="w-3.5 h-3.5" />
+            Stack
+          </div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
             Powered by Modern Technology
           </h2>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            We use cutting-edge tools and frameworks to build scalable, performant applications
+          <p className="text-base text-gray-400 max-w-2xl mx-auto">
+            Cutting-edge tools for scalable applications
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4 md:gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3 md:gap-4">
           {technologies.map((tech, index) => (
             <motion.div
               key={tech.name}
@@ -47,7 +52,7 @@ export default function TechStack() {
               viewport={{ once: true }}
               transition={{ duration: 0.35, delay: index * 0.04 }}
               title={tech.name}
-              className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+              className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-300"
             >
               <tech.Icon className="w-8 h-8 text-white/90 group-hover:scale-110 transition-transform" />
               <span className="text-xs text-gray-400 text-center leading-tight group-hover:text-gray-300">

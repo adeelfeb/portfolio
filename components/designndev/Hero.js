@@ -9,7 +9,7 @@ export default function Hero() {
     <section
       id="home"
       aria-label="Introduction"
-      className="relative min-h-[72vh] flex items-center pt-8 md:pt-12 bg-slate-950 overflow-hidden grain-overlay"
+      className="relative min-h-[65vh] flex items-center pt-8 md:pt-12 bg-slate-950 overflow-hidden grain-overlay"
     >
       <Image
         src="/images/hero-texture.webp"
@@ -24,13 +24,13 @@ export default function Hero() {
 
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/95 z-0" />
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-12 md:py-16">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 md:py-14">
         <div className="relative max-w-3xl">
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-sm font-medium tracking-widest uppercase text-blue-400/90 mb-4"
+            className="text-sm font-medium tracking-widest uppercase text-blue-400/90 mb-3"
           >
             Full-stack web development
           </motion.p>
@@ -39,7 +39,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-[1.08] tracking-tight"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 sm:mb-4 leading-[1.08] tracking-tight"
           >
             Your Vision.{' '}
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -51,17 +51,16 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.25 }}
-            className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed max-w-2xl"
+            className="text-base sm:text-lg md:text-xl text-gray-300 mb-5 sm:mb-6 leading-relaxed max-w-2xl"
           >
-            <strong className="text-white">Full‑stack website development</strong>, integrations, fixes, and ongoing support.
-            We build and maintain production websites — clear scope, clean delivery.
+            <strong className="text-white">Full‑stack web development</strong> — production sites, clear scope, clean delivery.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start items-start sm:items-center"
+            className="flex flex-col sm:flex-row gap-3 justify-start items-start sm:items-center"
           >
             <a
               href="/contact"
@@ -82,9 +81,9 @@ export default function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.55 }}
-            className="mt-6 text-sm text-gray-400"
+            className="mt-4 text-sm text-gray-400"
           >
-            Trusted by clients worldwide — 50+ five-star reviews on Fiverr
+            50+ five-star reviews on Fiverr
           </motion.p>
         </div>
       </div>

@@ -60,14 +60,14 @@ const Footer = dynamic(() => import('./Footer'), { ssr: false })
 export default function HomeSections() {
   return (
     <>
-      <DeferredSection component={ContactForm} skeletonMinHeight={560} />
-      <DeferredSection component={ValueProp} skeletonMinHeight={560} />
-      <DeferredSection component={Services} skeletonMinHeight={760} />
-      <DeferredSection component={FeaturedWork} skeletonMinHeight={640} />
-      <DeferredSection component={Process} skeletonMinHeight={700} />
-      <DeferredSection component={Reviews} skeletonMinHeight={520} />
-      <DeferredSection component={TechStack} skeletonMinHeight={520} />
-      <DeferredSection component={Footer} skeletonMinHeight={900} />
+      <DeferredSection component={ContactForm} skeletonMinHeight={500} />
+      <DeferredSection component={ValueProp} skeletonMinHeight={480} />
+      <DeferredSection component={Services} skeletonMinHeight={660} />
+      <DeferredSection component={FeaturedWork} skeletonMinHeight={560} />
+      <DeferredSection component={Process} skeletonMinHeight={600} />
+      <DeferredSection component={Reviews} skeletonMinHeight={480} />
+      <DeferredSection component={TechStack} skeletonMinHeight={440} />
+      <DeferredSection component={Footer} skeletonMinHeight={780} />
     </>
   )
 }

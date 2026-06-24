@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { Send, Loader2, Mail, Clock, ArrowRight } from 'lucide-react'
+import { Send, Loader2, Mail, Clock, ArrowRight, MessageSquare } from 'lucide-react'
 import { useRecaptcha } from '../../utils/useRecaptcha'
 
 export default function ContactForm({ showHeading = true }) {
@@ -56,35 +56,39 @@ export default function ContactForm({ showHeading = true }) {
   }
 
   return (
-    <section id="contact" aria-label="Contact" className="py-14 md:py-20 bg-stone-50 scroll-mt-24">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0">
+    <section id="contact" aria-label="Contact" className="py-10 md:py-16 bg-gradient-to-b from-slate-50 to-white relative scroll-mt-24">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-blue-50/60 via-transparent to-transparent pointer-events-none" />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0 relative">
         {showHeading && (
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-10"
+            className="text-center mb-8"
           >
-            <p className="text-sm font-medium tracking-widest uppercase text-blue-600 mb-2">Contact</p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full mb-3">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Contact
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
               Get In Touch
             </h2>
-            <p className="text-base sm:text-lg text-gray-600">
-              Have a project in mind? Let&apos;s discuss how we can help bring your vision to life.
+            <p className="text-base text-gray-500">
+              Have a project? Let&apos;s talk.
             </p>
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 shadow-sm"
+            className="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
           >
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                 <input
@@ -123,7 +127,7 @@ export default function ContactForm({ showHeading = true }) {
                   rows={4}
                   maxLength={2000}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 resize-y"
-                  placeholder="Tell us about your project — goals, timeline, budget, or any other details..."
+                  placeholder="Tell us about your project — goals, timeline, budget..."
                 />
               </div>
 
@@ -160,37 +164,38 @@ export default function ContactForm({ showHeading = true }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2 rounded-2xl border border-gray-200 bg-slate-900 text-white p-6 md:p-8 grain-overlay relative overflow-hidden"
+            className="lg:col-span-2 rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-900 to-blue-950 text-white p-6 md:p-8 relative overflow-hidden"
           >
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10">
-              <h3 className="text-lg font-bold mb-6">Why reach out directly?</h3>
-              <ul className="space-y-5">
+              <h3 className="text-lg font-bold mb-5">Let&apos;s talk</h3>
+              <ul className="space-y-4">
                 <li className="flex gap-3">
                   <Clock className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">Quick response</p>
-                    <p className="text-sm text-gray-400 mt-0.5">We typically reply within 24 hours on business days.</p>
+                    <p className="text-sm text-gray-400 mt-0.5">We reply within 24 hours.</p>
                   </div>
                 </li>
                 <li className="flex gap-3">
                   <Mail className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">hello@designndev.com</p>
-                    <p className="text-sm text-gray-400 mt-0.5">Or use the form — we read every message.</p>
+                    <p className="text-sm text-gray-400 mt-0.5">We read every message.</p>
                   </div>
                 </li>
               </ul>
 
-              <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="mt-6 pt-5 border-t border-white/10">
                 <p className="text-sm text-gray-400 mb-3">Prefer Fiverr?</p>
                 <a
                   href="https://www.fiverr.com/s/EgQz3ey"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors group"
                 >
                   Hire us on Fiverr
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
               </div>
             </div>
