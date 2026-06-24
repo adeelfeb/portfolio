@@ -14,9 +14,6 @@ npm install --production=false
 
 echo "🏗 Building application..."
 npm run build
-
-echo "🚀 Starting/restarting PM2 process..."
-pm2 restart portfolio || pm2 start npm --name "portfolio" -- start -- -p 8000
-pm2 save
+pm2 start npm --name portfolio -- start -- -p 8000
 
 echo "✅ Deployment completed!"
