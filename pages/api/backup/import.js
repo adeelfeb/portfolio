@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
   try {
     const data = await parseImportFile(buffer, format);
-    const results = await applyImport(data);
+    const results = await applyImport(data, user._id);
 
     const summary = {};
     let totalInserted = 0;
