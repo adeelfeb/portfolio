@@ -1,16 +1,8 @@
-import { useState, useEffect } from 'react';
+'use client'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-// Category mapping for navigation items
-const getNavCategory = (key) => {
-  const hr = ['overview', 'blogs', 'portfolios', 'add-origin'];
-  const valentine = ['valentine-urls', 'messages'];
-  const all = ['api-endpoints', 'user-management', 'resources', 'support', 'help', 'requests', 'privacy', 'updates', 'activity', 'resolutions', 'whatsapp-analysis'];
-  if (valentine.includes(key)) return 'valentine';
-  if (hr.includes(key)) return 'hr';
-  return 'all';
-};
+const SIDEBAR_COLLAPSE_KEY = 'ix-sidebar-collapsed'
 
-// Icon mapping for navigation items
 const getNavIcon = (key) => {
   const icons = {
     'overview': (
@@ -117,15 +109,35 @@ const getNavIcon = (key) => {
         <path d="M17 10v6"></path>
       </svg>
     ),
-  };
+    'settings': (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+      </svg>
+    ),
+  }
   return icons[key] || (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"></circle>
       <line x1="12" y1="8" x2="12" y2="12"></line>
       <line x1="12" y1="16" x2="12.01" y2="16"></line>
     </svg>
-  );
-};
+  )
+}
+
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return ''
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  const mins = Math.floor(diffMs / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
 
 export default function DashboardLayout({
   user,
@@ -138,934 +150,418 @@ export default function DashboardLayout({
   chatUnreadCount = 0,
   children,
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const roleLabel = user?.role ? user.role.replace(/_/g, ' ') : 'User';
-  const items = Array.isArray(navItems) ? navItems : [];
-  const messagesUnread = typeof chatUnreadCount === 'number' ? chatUnreadCount : 0;
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifLoading, setNotifLoading] = useState(false)
+  const sidebarRef = useRef(null)
+  const settingsRef = useRef(null)
+  const notifRef = useRef(null)
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const displayName = user?.name || 'User'
+  const userRole = (user?.role || '').toLowerCase()
+  const items = Array.isArray(navItems) ? navItems : []
+  const messagesUnread = typeof chatUnreadCount === 'number' ? chatUnreadCount : 0
 
-  // Close sidebar when clicking outside on mobile
+  // Load collapsed state from localStorage
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 960) {
-        setSidebarOpen(false);
-      }
-    };
+    try {
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSE_KEY)
+      if (stored !== null) setCollapsed(JSON.parse(stored))
+    } catch {}
+  }, [])
 
-    const handleClickOutside = (e) => {
-      if (sidebarOpen && window.innerWidth <= 960) {
-        const sidebar = document.querySelector('.sidebar');
-        const toggle = document.querySelector('.sidebar-toggle');
-        if (sidebar && toggle && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
-          setSidebarOpen(false);
-        }
-      }
-    };
+  // Save collapsed state
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSE_KEY, JSON.stringify(collapsed))
+    } catch {}
+  }, [collapsed])
 
-    window.addEventListener('resize', handleResize);
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [sidebarOpen]);
+  // ESC key handling
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        setSidebarOpen(false)
+        setSettingsOpen(false)
+        setNotificationsOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [])
+
+  // Body overflow lock when mobile sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [sidebarOpen])
+
+  // Click outside handlers
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
+        setSettingsOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotificationsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications')
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(Array.isArray(data) ? data : data.notifications || [])
+      }
+    } catch {}
+  }, [])
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications/unread-count')
+      if (res.ok) {
+        const data = await res.json()
+        setUnreadCount(data.count || 0)
+      }
+    } catch {}
+  }, [])
+
+  // Poll unread count every 15s
+  useEffect(() => {
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 15000)
+    return () => clearInterval(interval)
+  }, [fetchUnreadCount])
+
+  // Fetch full notifications when dropdown opens
+  useEffect(() => {
+    if (notificationsOpen) {
+      setNotifLoading(true)
+      fetchNotifications().finally(() => setNotifLoading(false))
+    }
+  }, [notificationsOpen, fetchNotifications])
+
+  const handleNotificationClick = async (notif) => {
+    if (!notif.read) {
+      try {
+        await fetch(`/api/notifications/${notif._id || notif.id}`, { method: 'PUT' })
+        setNotifications(prev => prev.map(n => (n._id || n.id) === (notif._id || notif.id) ? { ...n, read: true } : n))
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      } catch {}
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    try {
+      await fetch('/api/notifications/mark-all-read', { method: 'PUT' })
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
+    } catch {}
+  }
+
+  const toggleCollapse = () => setCollapsed(c => !c)
 
   return (
-    <div className="dashboard-shell">
-      <button 
-        className="sidebar-toggle" 
-        onClick={toggleSidebar}
-        aria-label="Toggle sidebar"
-        aria-expanded={sidebarOpen}
-      >
-        <span className="hamburger-icon">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-      </button>
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-      <aside className={`sidebar ${sidebarOpen ? 'is-open' : ''}`}>
-        <div className="sidebar-top">
-          <div className="brand" aria-label="Application" style={{ padding: '0.8rem 0.85rem 0.6rem' }}>
-            <div className="brand-mark">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="#3B82F6"/>
-                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="#9333EA"/>
-                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="#9333EA"/>
-                <rect x="13" y="13" width="8" height="8" rx="1.5" fill="#3B82F6"/>
-              </svg>
-            </div>
-            <div className="brand-text">
-              <span className="brand-title">
-                <span className="brand-title-blue">Design</span>
-                <span className="brand-title-separator"> n </span>
-                <span className="brand-title-purple">Dev</span>
-              </span>
-              <span className="brand-subtitle">{roleLabel}</span>
-            </div>
+    <div className="ix-page">
+      {/* TopBar */}
+      <header className="ix-topbar">
+        <div className="ix-topbar-left">
+          {/* Collapse toggle (desktop only) */}
+          <button
+            className="ix-topbar-collapse"
+            onClick={toggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {collapsed ? (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="15" y2="6"></line>
+                  <line x1="3" y1="18" x2="15" y2="18"></line>
+                </>
+              )}
+            </svg>
+          </button>
+          {/* Burger menu (mobile only) */}
+          <button
+            className="ix-topbar-burger"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div className="ix-topbar-center">
+          <div className="flex items-center gap-2">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <defs>
+                <linearGradient id="ewLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="50%" stopColor="#16a34a" />
+                  <stop offset="100%" stopColor="#15803d" />
+                </linearGradient>
+              </defs>
+              <rect width="40" height="40" rx="10" fill="url(#ewLogoGrad)" />
+              <path d="M12 28C12 28 10 14 24 10C24 10 26 26 12 28Z" fill="white" opacity="0.95" />
+              <path d="M18 26C18 26 17 18 26 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" fill="none" />
+            </svg>
+            <span className="font-subheading font-semibold text-sm text-gray-800 hidden sm:block">
+              <span className="text-emerald-600">Design</span>
+              <span className="text-gray-500"> n </span>
+              <span className="text-purple-600">Dev</span>
+            </span>
+            <span className="text-gray-400 text-xs font-subheading hidden md:inline">|</span>
+            <span className="text-gray-500 text-xs font-subheading hidden md:inline capitalize">{displayName}</span>
           </div>
         </div>
 
-        <div className="sidebar-scroll">
-          <nav className="nav" aria-label="Primary">
-            <ul className="nav-list">
-              {items.map((item) => {
-                const isActive = item.key === activeNav;
-                const category = getNavCategory(item.key);
-                return (
-                  <li key={item.key} className="nav-list-item">
-                    <button
-                      type="button"
-                      className={`nav-button nav-button--${category}${isActive ? ' is-active' : ''}`}
-                      aria-current={isActive ? 'page' : undefined}
-                      onClick={() => {
-                        onNavSelect?.(item.key);
-                        if (window.innerWidth <= 960) {
-                          setSidebarOpen(false);
-                        }
-                      }}
-                    >
-                      <span className="nav-icon">{getNavIcon(item.key)}</span>
-                      <span className="nav-label">{item.label}</span>
-                      {item.key === 'messages' && messagesUnread > 0 && (
-                        <span className="nav-badge" aria-label={`${messagesUnread} unread`}>
-                          {messagesUnread > 99 ? '99+' : messagesUnread}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-          <div className="sidebar-secondary-scroll" aria-label="Secondary">
+        <div className="ix-topbar-right">
+          {/* Notifications */}
+          <div ref={notifRef} className="relative">
             <button
-              type="button"
-              className={`secondary-button secondary-button--settings${activeNav === 'settings' ? ' is-active' : ''}`}
+              className="ix-notif-trigger"
+              onClick={() => { setNotificationsOpen(o => !o); setSettingsOpen(false) }}
+              aria-label="Notifications"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              {unreadCount > 0 && (
+                <span className="ix-notif-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              )}
+            </button>
+            {notificationsOpen && (
+              <div className="ix-notif-dropdown">
+                <div className="ix-notif-header">
+                  <span className="font-subheading font-semibold text-sm text-gray-800">Notifications</span>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-xs text-emerald-600 hover:text-emerald-700 font-subheading">
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div className="ix-notif-list">
+                  {notifLoading ? (
+                    <div className="ix-notif-empty">Loading...</div>
+                  ) : notifications.length === 0 ? (
+                    <div className="ix-notif-empty">No notifications</div>
+                  ) : (
+                    notifications.slice(0, 20).map((notif, i) => (
+                      <div
+                        key={notif._id || notif.id || i}
+                        className={`ix-notif-item ${!notif.read ? 'bg-emerald-50/50' : ''}`}
+                        onClick={() => handleNotificationClick(notif)}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          notif.type === 'submitted' ? 'bg-blue-100 text-blue-600' :
+                          notif.type === 'resolved' ? 'bg-emerald-100 text-emerald-600' :
+                          notif.type === 'rejected' ? 'bg-red-100 text-red-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 font-subheading truncate">{notif.message || notif.title || 'Notification'}</p>
+                          <p className="text-xs text-gray-400 font-subheading">{formatRelativeTime(notif.createdAt || notif.date)}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Settings */}
+          <div ref={settingsRef} className="relative">
+            <button
+              className="ix-settings-trigger"
+              onClick={() => { setSettingsOpen(o => !o); setNotificationsOpen(false) }}
+              aria-label="Settings"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+              </svg>
+            </button>
+            {settingsOpen && (
+              <div className="ix-settings-dropdown">
+                <div className="ix-settings-header">
+                  <div className="flex items-center gap-3">
+                    <div className="ix-settings-avatar">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-subheading font-semibold text-sm text-gray-800">{displayName}</p>
+                      <p className="font-subheading text-xs text-gray-500 capitalize">{userRole.replace(/_/g, ' ')}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="ix-settings-body">
+                  <button className="ix-settings-item" onClick={() => { onOpenSettings?.(); setSettingsOpen(false) }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    My Profile
+                  </button>
+                  {userRole === 'superadmin' && (
+                    <button className="ix-settings-item" onClick={() => { setSettingsOpen(false) }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+                      System Settings
+                    </button>
+                  )}
+                  <button className="ix-settings-item" onClick={() => setSettingsOpen(false)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Help & Support
+                  </button>
+                  <div className="ix-settings-divider"></div>
+                  <button className="ix-settings-item ix-settings-item--danger" onClick={() => { onLogout?.(); setSettingsOpen(false) }} disabled={isLoggingOut}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Shell: sidebar + content */}
+      <div className={`ix-shell${collapsed ? ' ix-shell--collapsed' : ''}`}>
+        {sidebarOpen && <div className="ix-overlay ix-overlay--visible" onClick={() => setSidebarOpen(false)} />}
+
+        {/* Left Sidebar */}
+        <aside ref={sidebarRef} className={`ix-sidebar${sidebarOpen ? ' ix-sidebar--open' : ''}${collapsed ? ' ix-sidebar--collapsed' : ''}`}>
+          <div className="ix-sidebar-brand">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <defs>
+                <linearGradient id="ewLogoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="50%" stopColor="#16a34a" />
+                  <stop offset="100%" stopColor="#15803d" />
+                </linearGradient>
+              </defs>
+              <rect width="40" height="40" rx="10" fill="url(#ewLogoGrad2)" />
+              <path d="M12 28C12 28 10 14 24 10C24 10 26 26 12 28Z" fill="white" opacity="0.95" />
+              <path d="M18 26C18 26 17 18 26 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" fill="none" />
+            </svg>
+            <span className="font-subheading font-semibold text-sm text-gray-800">
+              <span className="text-emerald-600">Design</span>
+              <span className="text-gray-500"> n </span>
+              <span className="text-purple-600">Dev</span>
+            </span>
+          </div>
+
+          <nav className="ix-sidebar-nav">
+            {items.map((item) => {
+              const isActive = item.key === activeNav
+              return (
+                <button
+                  key={item.key}
+                  className={`ix-nav-btn${isActive ? ' ix-nav-btn--active' : ''}`}
+                  onClick={() => {
+                    onNavSelect?.(item.key)
+                    if (window.innerWidth < 1180) setSidebarOpen(false)
+                  }}
+                >
+                  {getNavIcon(item.key)}
+                  <span>{item.label}</span>
+                  {item.key === 'messages' && messagesUnread > 0 && (
+                    <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {messagesUnread > 99 ? '99+' : messagesUnread}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          <div className="ix-sidebar-footer">
+            <button
+              className={`ix-nav-btn${activeNav === 'settings' ? ' ix-nav-btn--active' : ''}`}
               onClick={() => {
-                onOpenSettings?.();
-                if (window.innerWidth <= 960) {
-                  setSidebarOpen(false);
-                }
+                onOpenSettings?.()
+                if (window.innerWidth < 1180) setSidebarOpen(false)
               }}
             >
-              <span className="nav-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-                </svg>
-              </span>
-              <span className="nav-label">SETTINGS</span>
+              {getNavIcon('settings')}
+              <span>Settings</span>
             </button>
-          </div>
-        </div>
-
-        <div className="sidebar-bottom" aria-label="Secondary" style={{ padding: '0.6rem 0.85rem 0.85rem' }}>
-          <button
-            type="button"
-            className="secondary-button secondary-button--logout"
-            onClick={onLogout}
-            disabled={isLoggingOut}
-          >
-            <span className="nav-icon">
+            <button
+              className="ix-nav-btn text-red-600 hover:bg-red-50"
+              onClick={onLogout}
+              disabled={isLoggingOut}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
-            </span>
-            <span className="nav-label">{isLoggingOut ? 'LOGGING OUT…' : 'LOGOUT'}</span>
+              <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <main className="ix-content">
+          <div className="ix-content-scroll">{children}</div>
+        </main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="ix-bottom-nav">
+        <div className="ix-bottom-nav-scroll">
+          {items.slice(0, 5).map((item) => {
+            const isActive = item.key === activeNav
+            return (
+              <button
+                key={item.key}
+                className={`ix-bottom-nav-btn${isActive ? ' ix-bottom-nav-btn--active' : ''}`}
+                onClick={() => onNavSelect?.(item.key)}
+              >
+                {getNavIcon(item.key)}
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+          <button
+            className="ix-bottom-nav-btn"
+            onClick={() => { setSidebarOpen(true) }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <span>More</span>
           </button>
         </div>
-      </aside>
-
-      <main className="content">
-        <div className="content-inner">{children}</div>
-      </main>
-
-      <style jsx>{`
-        .dashboard-shell {
-          height: 100vh;
-          display: flex;
-          background: var(--dashboard-surface, #f8fafc);
-          color: var(--dashboard-foreground, #0f172a);
-          overflow: hidden;
-          position: relative;
-        }
-
-        .sidebar-toggle {
-          display: none;
-          position: fixed;
-          top: 1rem;
-          right: 1rem;
-          z-index: 1001;
-          background: #ffffff;
-          color: #0f172a;
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          border-radius: 12px;
-          padding: 0.75rem;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          width: 48px;
-          height: 48px;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .sidebar-toggle:hover {
-          transform: scale(1.05);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .sidebar-toggle:active {
-          transform: scale(0.98);
-        }
-
-        .hamburger-icon {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          width: 24px;
-          height: 18px;
-        }
-
-        .hamburger-icon span {
-          display: block;
-          width: 100%;
-          height: 2px;
-          background: #0f172a;
-          border-radius: 2px;
-          transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .sidebar {
-          width: min(236px, 21vw);
-          background: linear-gradient(180deg, #1a0a10 0%, #1e0f18 35%, #1a1324 70%, #132344 100%);
-          color: #e2e8f0;
-          display: flex;
-          flex-direction: column;
-          flex-shrink: 0;
-          height: 100%;
-          padding: 0;
-          border-right: 1px solid rgba(225, 29, 72, 0.18);
-          box-shadow: 16px 0 42px rgba(30, 10, 18, 0.45);
-          transition: transform 0.3s ease;
-          position: relative;
-          overflow: hidden;
-          isolation: isolate;
-        }
-
-        .sidebar::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(circle at 20% 10%, rgba(225, 29, 72, 0.2), transparent 55%),
-            radial-gradient(circle at 25% -10%, rgba(59, 130, 246, 0.28), transparent 60%),
-            radial-gradient(circle at 85% 0%, rgba(244, 63, 94, 0.12), transparent 65%),
-            linear-gradient(180deg, rgba(225, 29, 72, 0.06), transparent 50%);
-          opacity: 0.98;
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .sidebar-top {
-          display: flex;
-          flex-direction: column;
-          padding: 0;
-          gap: 1.05rem;
-          min-height: 0;
-          position: relative;
-          z-index: 1;
-        }
-
-        .sidebar-scroll {
-          flex: 1;
-          min-height: 0;
-          overflow-y: auto;
-          overflow-x: hidden;
-          position: relative;
-          z-index: 1;
-          display: grid;
-          align-content: start;
-          gap: 0.5rem;
-          padding: 0.15rem 0.4rem 0.75rem 0.85rem;
-          scroll-behavior: smooth;
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(96, 165, 250, 0.55) rgba(15, 23, 42, 0.35);
-        }
-
-        .sidebar-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .sidebar-scroll::-webkit-scrollbar-track {
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.45), rgba(2, 6, 23, 0.55));
-          border-radius: 100px;
-          margin: 6px 0 10px;
-        }
-
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, rgba(96, 165, 250, 0.65) 0%, rgba(129, 140, 248, 0.45) 50%, rgba(192, 132, 252, 0.4) 100%);
-          border-radius: 100px;
-          border: 2px solid rgba(2, 6, 23, 0.35);
-          background-clip: padding-box;
-          box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
-        }
-
-        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(180deg, rgba(96, 165, 250, 0.85) 0%, rgba(129, 140, 248, 0.65) 100%);
-        }
-
-        .sidebar-secondary-scroll {
-          display: grid;
-          gap: 0.6rem;
-          margin-top: 0.25rem;
-          padding: 0.8rem 0 0.4rem;
-          border-top: 1px solid rgba(148, 163, 184, 0.14);
-          background: linear-gradient(180deg, rgba(2, 6, 23, 0.22) 0%, transparent 100%);
-          border-radius: 0 0 4px 4px;
-        }
-
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 0.9rem;
-        }
-
-        .brand-mark {
-          width: 2.75rem;
-          height: 2.75rem;
-          border-radius: 12px;
-          background: rgba(15, 23, 42, 0.4);
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(148, 197, 253, 0.2);
-          box-shadow: 0 8px 16px rgba(15, 23, 42, 0.3);
-          flex-shrink: 0;
-        }
-        .brand-mark svg {
-          width: 20px;
-          height: 20px;
-        }
-
-        .brand-text {
-          display: flex;
-          flex-direction: column;
-          line-height: 1.2;
-        }
-
-        .brand-title {
-          font-weight: 700;
-          font-size: 0.85rem;
-          letter-spacing: 0.02em;
-          display: flex;
-          align-items: center;
-          line-height: 1.2;
-        }
-        .brand-title-blue {
-          color: #60a5fa;
-        }
-        .brand-title-separator {
-          color: rgba(226, 232, 240, 0.6);
-          margin: 0 0.15rem;
-        }
-        .brand-title-purple {
-          color: #a78bfa;
-        }
-
-        .brand-subtitle {
-          font-size: 0.72rem;
-          color: rgba(226, 232, 240, 0.75);
-          text-transform: capitalize;
-        }
-
-        .nav-list {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          padding: 0;
-          margin: 0;
-        }
-
-        .nav-button {
-          width: 100%;
-          text-align: left;
-          padding: 0.85rem 1rem;
-          border-radius: 18px;
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.45));
-          color: #eef2ff;
-          font-size: 0.9rem;
-          font-weight: 500;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          position: relative;
-          box-shadow: 0 18px 32px rgba(2, 6, 23, 0.35);
-          backdrop-filter: blur(8px);
-        }
-
-        .nav-button:hover,
-        .nav-button:focus-visible {
-          outline: none;
-          background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(15, 23, 42, 0.6));
-          border-color: rgba(96, 165, 250, 0.5);
-          transform: translateX(4px);
-          box-shadow: 0 24px 40px rgba(2, 6, 23, 0.5);
-          color: #fff;
-        }
-
-        .nav-button.is-active {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(30, 64, 175, 0.55));
-          border-color: rgba(147, 197, 253, 0.6);
-          color: #fff;
-        }
-
-        .nav-button.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: #60a5fa;
-          border-radius: 0 4px 4px 0;
-        }
-
-        /* Marketing team - Purple/Pink theme */
-        .nav-button--marketing {
-          background: linear-gradient(135deg, rgba(147, 51, 234, 0.32), rgba(129, 140, 248, 0.18));
-          color: #f5e8ff;
-          border-color: rgba(216, 180, 254, 0.45);
-        }
-
-        .nav-button--marketing:hover,
-        .nav-button--marketing:focus-visible {
-          outline: none;
-          background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(129, 140, 248, 0.28));
-          transform: translateX(4px);
-          box-shadow: 0 20px 38px rgba(147, 51, 234, 0.35);
-          color: #fff;
-        }
-
-        .nav-button--marketing.is-active {
-          background: linear-gradient(135deg, rgba(192, 132, 252, 0.55), rgba(168, 85, 247, 0.4));
-          box-shadow: inset 0 0 0 1px rgba(216, 180, 254, 0.7), 0 6px 20px rgba(168, 85, 247, 0.3);
-          color: #fff;
-        }
-
-        .nav-button--marketing.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: #7c3aed;
-          border-radius: 0 4px 4px 0;
-        }
-        
-        .nav-button--marketing.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.6));
-        }
-
-        /* HR team - Blue theme */
-        .nav-button--hr {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.18));
-          color: #e0edff;
-          border-color: rgba(147, 197, 253, 0.45);
-        }
-
-        .nav-button--hr:hover,
-        .nav-button--hr:focus-visible {
-          outline: none;
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(37, 99, 235, 0.3));
-          transform: translateX(4px);
-          box-shadow: 0 20px 38px rgba(37, 99, 235, 0.35);
-          color: #f8fbff;
-        }
-
-        .nav-button--hr.is-active {
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.55), rgba(37, 99, 235, 0.45));
-          box-shadow: inset 0 0 0 1px rgba(191, 219, 254, 0.7), 0 6px 20px rgba(59, 130, 246, 0.3);
-          color: #fff;
-        }
-
-        .nav-button--hr.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: #2563eb;
-          border-radius: 0 4px 4px 0;
-        }
-        
-        .nav-button--hr.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.6));
-        }
-
-        /* All users - Teal/Green theme */
-        .nav-button--all {
-          background: linear-gradient(135deg, rgba(45, 212, 191, 0.28), rgba(14, 165, 233, 0.18));
-          color: #ecfdf5;
-          border-color: rgba(153, 246, 228, 0.45);
-        }
-
-        .nav-button--all:hover,
-        .nav-button--all:focus-visible {
-          outline: none;
-          background: linear-gradient(135deg, rgba(45, 212, 191, 0.45), rgba(14, 165, 233, 0.28));
-          transform: translateX(4px);
-          box-shadow: 0 20px 38px rgba(13, 148, 136, 0.35);
-          color: #f0fdfa;
-        }
-
-        .nav-button--all.is-active {
-          background: linear-gradient(135deg, rgba(94, 234, 212, 0.55), rgba(45, 212, 191, 0.4));
-          box-shadow: inset 0 0 0 1px rgba(153, 246, 228, 0.7), 0 6px 20px rgba(45, 212, 191, 0.3);
-          color: #042f2e;
-        }
-
-        .nav-button--all.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: #14b8a6;
-          border-radius: 0 4px 4px 0;
-        }
-        
-        .nav-button--all.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.6));
-        }
-
-        /* Valentine Links - Rose/Valentine theme */
-        .nav-button--valentine {
-          background: linear-gradient(135deg, rgba(225, 29, 72, 0.28), rgba(190, 18, 60, 0.18));
-          color: #ffe4e9;
-          border-color: rgba(253, 164, 175, 0.4);
-        }
-
-        .nav-button--valentine:hover,
-        .nav-button--valentine:focus-visible {
-          outline: none;
-          background: linear-gradient(135deg, rgba(244, 63, 94, 0.45), rgba(225, 29, 72, 0.3));
-          transform: translateX(4px);
-          box-shadow: 0 20px 38px rgba(225, 29, 72, 0.35);
-          border-color: rgba(253, 164, 175, 0.55);
-          color: #fff5f7;
-        }
-
-        .nav-button--valentine.is-active {
-          background: linear-gradient(135deg, rgba(251, 113, 133, 0.5), rgba(225, 29, 72, 0.45));
-          box-shadow: inset 0 0 0 1px rgba(253, 164, 175, 0.6), 0 6px 20px rgba(225, 29, 72, 0.3);
-          color: #fff;
-          border-color: rgba(253, 164, 175, 0.6);
-        }
-
-        .nav-button--valentine.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: linear-gradient(180deg, #f43f5e, #e11d48);
-          border-radius: 0 4px 4px 0;
-          box-shadow: 0 0 8px rgba(225, 29, 72, 0.5);
-        }
-
-        .nav-button--valentine.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(251, 113, 133, 0.7));
-          color: #fff;
-        }
-
-        .nav-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          width: 20px;
-          height: 20px;
-          opacity: 0.9;
-          transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
-          color: currentColor;
-        }
-
-        .nav-button:hover .nav-icon,
-        .nav-button.is-active .nav-icon {
-          opacity: 1;
-          transform: scale(1.15);
-        }
-        
-        .nav-button.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
-        }
-
-        .nav-label {
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-size: 0.875rem;
-          font-weight: 600;
-          transition: color 0.25s ease;
-        }
-
-        .nav-button.is-active .nav-label {
-          font-weight: 700;
-        }
-
-        .nav-badge {
-          flex-shrink: 0;
-          min-width: 20px;
-          height: 20px;
-          padding: 0 6px;
-          border-radius: 999px;
-          background: linear-gradient(135deg, #e11d48, #be123c);
-          color: #fff;
-          font-size: 0.7rem;
-          font-weight: 700;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          margin-left: auto;
-          box-shadow: 0 2px 6px rgba(225, 29, 72, 0.4);
-        }
-
-        .sidebar-bottom {
-          display: grid;
-          gap: 0.6rem;
-          padding: 0;
-          position: relative;
-          z-index: 1;
-        }
-
-        .secondary-button {
-          width: 100%;
-          text-align: left;
-          padding: 0.8rem 1rem;
-          border-radius: 16px;
-          border: 1px solid rgba(148, 163, 184, 0.18);
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.4));
-          color: #e2e8f0;
-          font-size: 0.875rem;
-          font-weight: 500;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          position: relative;
-          box-shadow: 0 16px 28px rgba(2, 6, 23, 0.35);
-          backdrop-filter: blur(6px);
-        }
-
-        .secondary-button .nav-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          width: 20px;
-          height: 20px;
-          opacity: 0.9;
-          transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
-          color: currentColor;
-        }
-
-        .secondary-button .nav-label {
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-size: 0.875rem;
-          font-weight: 600;
-          transition: color 0.25s ease;
-        }
-
-        .secondary-button:hover .nav-icon,
-        .secondary-button.is-active .nav-icon {
-          opacity: 1;
-          transform: scale(1.15);
-        }
-        
-        .secondary-button.is-active .nav-icon {
-          filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
-        }
-
-        .secondary-button:hover,
-        .secondary-button:focus-visible {
-          outline: none;
-          transform: translateX(4px);
-          box-shadow: 0 22px 38px rgba(2, 6, 23, 0.45);
-          background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(15, 23, 42, 0.55));
-          border-color: rgba(96, 165, 250, 0.5);
-          color: #fff;
-        }
-
-        .secondary-button--settings:hover,
-        .secondary-button--settings:focus-visible {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(30, 64, 175, 0.45));
-          color: #f8fbff;
-        }
-
-        .secondary-button--settings.is-active {
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.55), rgba(59, 130, 246, 0.4));
-          box-shadow: inset 0 0 0 1px rgba(191, 219, 254, 0.7), 0 6px 20px rgba(59, 130, 246, 0.3);
-          color: #fff;
-        }
-
-        .secondary-button--settings.is-active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: #2563eb;
-          border-radius: 0 4px 4px 0;
-        }
-
-        .secondary-button--settings.is-active .nav-label {
-          font-weight: 700;
-        }
-
-        .secondary-button--logout {
-          background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(248, 113, 113, 0.2));
-          color: #fee2e2;
-          box-shadow: inset 0 0 0 1px rgba(254, 202, 202, 0.4);
-          border-color: rgba(254, 202, 202, 0.4);
-        }
-
-        .secondary-button--logout:hover,
-        .secondary-button--logout:focus-visible {
-          background: linear-gradient(135deg, rgba(248, 113, 113, 0.45), rgba(239, 68, 68, 0.35));
-          box-shadow: inset 0 0 0 1px rgba(254, 202, 202, 0.55), 0 6px 20px rgba(239, 68, 68, 0.3);
-          color: #fff5f5;
-        }
-
-        .secondary-button--logout:disabled {
-          cursor: wait;
-          opacity: 0.7;
-          transform: none;
-        }
-
-        .content {
-          flex: 1;
-          display: flex;
-          min-height: 0;
-        }
-
-        .content-inner {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          padding: 0 3rem 2.5rem 3rem;
-          overflow-y: auto;
-          gap: 2rem;
-        }
-
-        @media (max-width: 960px) {
-          .sidebar-toggle {
-            display: flex;
-          }
-
-          .dashboard-shell {
-            flex-direction: column;
-            height: 100vh;
-          }
-
-          .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: min(280px, 85vw);
-            height: 100vh;
-            z-index: 1000;
-            transform: translateX(-100%);
-            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-            overflow-y: auto;
-            overflow-x: hidden;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-
-          .sidebar.is-open {
-            transform: translateX(0);
-          }
-
-          .sidebar-top,
-          .sidebar-bottom {
-            padding: 1.25rem;
-          }
-
-          .sidebar-scroll {
-            padding: 0.1rem 0.5rem 0.9rem 1.25rem;
-          }
-
-          .sidebar-top {
-            padding-top: 1.25rem;
-          }
-
-          .nav-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .nav-button {
-            padding: 0.7rem 0.85rem;
-            font-size: 0.875rem;
-          }
-
-          .nav-icon {
-            width: 18px;
-            height: 18px;
-          }
-
-          .secondary-button {
-            width: 100%;
-            padding: 0.7rem 0.85rem;
-            font-size: 0.875rem;
-          }
-
-          .secondary-button .nav-icon {
-            width: 18px;
-            height: 18px;
-          }
-
-          .content-inner {
-            padding: 2rem 1.5rem 3rem;
-            margin-top: 0;
-            padding-top: 4.5rem;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow-x: hidden;
-          }
-
-          .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .sidebar-toggle {
-            top: 0.75rem;
-            right: 0.75rem;
-            width: 44px;
-            height: 44px;
-            padding: 0.65rem;
-            border-radius: 10px;
-          }
-
-          .content-inner {
-            padding: 1.5rem 1rem 2rem;
-            padding-top: 4rem;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow-x: hidden;
-          }
-
-          .sidebar {
-            width: min(260px, 90vw);
-          }
-
-          .nav-button {
-            padding: 0.65rem 0.8rem;
-            font-size: 0.85rem;
-            gap: 0.65rem;
-          }
-
-          .nav-icon {
-            width: 16px;
-            height: 16px;
-          }
-
-          .secondary-button {
-            padding: 0.65rem 0.8rem;
-            font-size: 0.85rem;
-            gap: 0.65rem;
-          }
-
-          .secondary-button .nav-icon {
-            width: 16px;
-            height: 16px;
-          }
-
-          .brand-mark {
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 10px;
-          }
-
-          .sidebar-top,
-          .sidebar-bottom {
-            padding: 1rem;
-          }
-
-          .sidebar-scroll {
-            padding: 0.1rem 0.45rem 0.85rem 1rem;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .nav-button {
-            padding: 0.6rem 0.75rem;
-            font-size: 0.8rem;
-            gap: 0.6rem;
-          }
-
-          .nav-label {
-            font-size: 0.8rem;
-          }
-
-          .secondary-button {
-            padding: 0.6rem 0.75rem;
-            font-size: 0.8rem;
-            gap: 0.6rem;
-          }
-
-          .secondary-button .nav-label {
-            font-size: 0.8rem;
-          }
-        }
-      `}</style>
+      </nav>
     </div>
-  );
+  )
 }

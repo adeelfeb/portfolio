@@ -1,4 +1,4 @@
-import { Poppins } from 'next/font/google'
+import { Poppins, Cormorant_Garamond } from 'next/font/google'
 import '../styles/globals.css'
 import {
   SITE_NAME,
@@ -14,7 +14,14 @@ const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  weight: ['300', '400', '500', '600', '700'],
+})
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-serif',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata = {
@@ -58,9 +65,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={poppins.variable}>
-      <body className={`${poppins.className} antialiased bg-white`}>
-        {children}
+    <html lang="en" className={`${poppins.variable} ${cormorant.variable}`} suppressHydrationWarning>
+      <body className={`${poppins.className} antialiased relative min-h-screen`} suppressHydrationWarning>
+        {/* Static full-viewport background */}
+        <div
+          className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-gray-100"
+          style={{ backgroundImage: 'url(/images/hero-texture.webp)' }}
+          aria-hidden
+        />
+        <div className="relative z-10 min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   )

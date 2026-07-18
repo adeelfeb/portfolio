@@ -1,6 +1,12 @@
 import Navbar from '../components/designndev/Navbar'
-import Hero from '../components/designndev/Hero'
-import HomeSections from '../components/designndev/HomeSections.client'
+import SiteHero from '../components/designndev/SiteHero'
+import ProblemSection from '../components/designndev/ProblemSection'
+import HowItWorksSection from '../components/designndev/HowItWorksSection'
+import GoalsSection from '../components/designndev/GoalsSection'
+import TargetUsersSection from '../components/designndev/TargetUsersSection'
+import PartnershipFormSection from '../components/designndev/PartnershipFormSection'
+import Footer from '../components/designndev/Footer'
+import TextureOverlay from '../components/designndev/TextureOverlay'
 import { buildPageMetadata, buildHomeJsonLd } from '../lib/seo'
 
 export const metadata = buildPageMetadata({
@@ -33,10 +39,18 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }}
       />
-      <main className="min-h-screen bg-white">
+      <main className="relative min-h-screen">
+        <TextureOverlay />
         <Navbar />
-        <Hero />
-        <HomeSections />
+        <div className="relative w-full mx-auto">
+          <SiteHero />
+          <ProblemSection />
+          <HowItWorksSection />
+          <GoalsSection />
+          <TargetUsersSection />
+          <PartnershipFormSection />
+        </div>
+        <Footer />
       </main>
     </>
   )
