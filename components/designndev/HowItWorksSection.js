@@ -5,20 +5,20 @@ export default function HowItWorksSection() {
   const steps = [
     {
       number: '01',
-      title: 'Report an Issue',
-      description: 'Snap a photo and submit a waste report through our simple mobile-friendly form.',
+      title: 'Discovery & Scope',
+      description: 'We map your goals, users, and integrations so the project starts with a clear, actionable plan.',
       color: 'bg-teal-500',
     },
     {
       number: '02',
-      title: 'Track Progress',
-      description: 'Follow your report in real-time as authorities review and take action.',
+      title: 'Build & Integrate',
+      description: 'We develop your web app or SaaS, connect APIs, automate workflows, and ensure clean architecture.',
       color: 'bg-blue-500',
     },
     {
       number: '03',
-      title: 'See Results',
-      description: 'Get notified when the issue is resolved and see the impact of your contribution.',
+      title: 'Launch & Optimize',
+      description: 'We deploy, monitor performance, and iterate so your product grows with your business.',
       color: 'bg-purple-500',
     },
   ]
@@ -34,10 +34,10 @@ export default function HowItWorksSection() {
           className="text-center mb-16"
         >
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-gray-900 mb-4">
-            How It Works
+            How We Work
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto font-subheading">
-            Three simple steps to make a real difference in your community.
+            A transparent process designed to take your idea from concept to live product.
           </p>
         </motion.div>
 

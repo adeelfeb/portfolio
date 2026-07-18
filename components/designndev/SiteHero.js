@@ -38,7 +38,7 @@ export default function SiteHero() {
           transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
           className="text-gray-300 text-lg md:text-xl max-w-2xl mb-8 font-subheading leading-relaxed"
         >
-          Full-stack web development — production sites, clear scope, clean delivery. Specializing in Next.js, MongoDB, and modern API integrations.
+          Full-stack web development for SaaS, web apps, and growing businesses. We build production-ready products, automate workflows, and integrate AI, APIs, and third-party tools that help you scale.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

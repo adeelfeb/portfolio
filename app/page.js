@@ -22,7 +22,7 @@ export default function Home() {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: 'Design n Dev Web Development Services',
-    description: 'Full-stack web development, Next.js solutions, CMS, e-commerce, and API integration services.',
+    description: 'Full-stack web development, SaaS products, AI engineering, automation, and API integration services.',
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: '5.0',

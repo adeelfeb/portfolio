@@ -28,7 +28,7 @@ export default function PartnershipFormSection() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          subject: `Partnership Inquiry from ${formData.organization || 'Individual'}`,
+          subject: `Project Inquiry from ${formData.organization || 'Individual'}`,
           message: `Organization: ${formData.organization}\n\n${formData.message}`,
         }),
       })
@@ -61,10 +61,10 @@ export default function PartnershipFormSection() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-gray-900 mb-6">
-              Partner With Us
+              Let&apos;s Build Together
             </h2>
             <p className="text-gray-600 text-lg font-subheading mb-8 leading-relaxed">
-              Join our mission to create cleaner, healthier communities. We welcome partnerships with municipalities, NGOs, and organizations committed to environmental sustainability.
+              Tell us about your web app, SaaS, automation, or integration project. We turn ideas into production-ready software that helps your business grow.
             </p>
 
             <div className="space-y-4">
@@ -74,7 +74,7 @@ export default function PartnershipFormSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-gray-700 font-subheading">Access to real-time environmental data</p>
+                <p className="text-gray-700 font-subheading">Full-stack web & SaaS development</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -82,7 +82,7 @@ export default function PartnershipFormSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-gray-700 font-subheading">Custom analytics and reporting dashboards</p>
+                <p className="text-gray-700 font-subheading">Third-party API integrations & automation</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -90,7 +90,7 @@ export default function PartnershipFormSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-gray-700 font-subheading">API integration with existing systems</p>
+                <p className="text-gray-700 font-subheading">AI engineering & workflow optimization</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -98,7 +98,7 @@ export default function PartnershipFormSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-gray-700 font-subheading">Community engagement tools and support</p>
+                <p className="text-gray-700 font-subheading">Clear scope, clean delivery & ongoing support</p>
               </div>
             </div>
           </motion.div>
@@ -167,7 +167,7 @@ export default function PartnershipFormSection() {
                     value={formData.message}
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all resize-none"
-                    placeholder="Tell us about your partnership interest..."
+                    placeholder="Tell us about your project, goals, and integrations..."
                   />
                 </div>
                 <button
