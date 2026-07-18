@@ -15,7 +15,7 @@ const features = [
     icon: TrendingUp,
     title: 'SEO Optimized',
     description: 'Built to rank on Google from day one',
-    color: 'from-emerald-500 to-teal-500',
+    color: 'from-teal-500 to-teal-500',
   },
   {
     icon: Target,

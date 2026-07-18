@@ -8,7 +8,7 @@ export default function BrowserMockup({ src, alt, title, className = '' }) {
       <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-200/90 border-b border-gray-300/60">
         <span className="w-2.5 h-2.5 rounded-full bg-red-400/90" />
         <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
+        <span className="w-2.5 h-2.5 rounded-full bg-teal-400/90" />
         <div className="flex-1 mx-2 h-5 rounded-md bg-white/70 border border-gray-300/50 flex items-center px-2">
           <span className="text-[10px] text-gray-500 truncate">{title || 'designndev.com'}</span>
         </div>
@@ -34,7 +34,7 @@ function CodeEditorFallback() {
           ))}
         </div>
         <div className="flex-1 space-y-2">
-          <p><span className="text-purple-400">export</span> <span className="text-blue-300">default</span> <span className="text-amber-200">function</span> <span className="text-emerald-300">App</span>() {'{'}</p>
+          <p><span className="text-purple-400">export</span> <span className="text-blue-300">default</span> <span className="text-amber-200">function</span> <span className="text-teal-300">App</span>() {'{'}</p>
           <p className="pl-4"><span className="text-purple-400">return</span> (</p>
           <p className="pl-8 text-gray-400">&lt;<span className="text-blue-300">main</span> className=<span className="text-amber-200">&quot;app&quot;</span>&gt;</p>
           <p className="pl-12 text-gray-500">{'// your project, built right'}</p>

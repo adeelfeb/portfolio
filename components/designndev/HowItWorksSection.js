@@ -7,7 +7,7 @@ export default function HowItWorksSection() {
       number: '01',
       title: 'Report an Issue',
       description: 'Snap a photo and submit a waste report through our simple mobile-friendly form.',
-      color: 'bg-emerald-500',
+      color: 'bg-teal-500',
     },
     {
       number: '02',

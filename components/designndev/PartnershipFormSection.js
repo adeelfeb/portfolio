@@ -69,32 +69,32 @@ export default function PartnershipFormSection() {
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <p className="text-gray-700 font-subheading">Access to real-time environmental data</p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <p className="text-gray-700 font-subheading">Custom analytics and reporting dashboards</p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <p className="text-gray-700 font-subheading">API integration with existing systems</p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -122,7 +122,7 @@ export default function PartnershipFormSection() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
                     placeholder="Your name"
                   />
                 </div>
@@ -137,7 +137,7 @@ export default function PartnershipFormSection() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -151,7 +151,7 @@ export default function PartnershipFormSection() {
                     name="organization"
                     value={formData.organization}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
                     placeholder="Your organization"
                   />
                 </div>
@@ -166,7 +166,7 @@ export default function PartnershipFormSection() {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-subheading focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all resize-none"
                     placeholder="Tell us about your partnership interest..."
                   />
                 </div>
@@ -179,7 +179,7 @@ export default function PartnershipFormSection() {
                 </button>
               </div>
               {responseMessage && (
-                <p className={`mt-4 text-sm text-center font-subheading ${status === 'error' ? 'text-red-600' : 'text-emerald-600'}`} role="status">
+                <p className={`mt-4 text-sm text-center font-subheading ${status === 'error' ? 'text-red-600' : 'text-teal-600'}`} role="status">
                   {responseMessage}
                 </p>
               )}

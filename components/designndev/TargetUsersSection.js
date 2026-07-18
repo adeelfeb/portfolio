@@ -60,7 +60,7 @@ export default function TargetUsersSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-all duration-300 text-center"
             >
-              <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto mb-5">
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mx-auto mb-5">
                 {user.icon}
               </div>
               <h3 className="font-subheading text-xl font-semibold text-gray-900 mb-3">

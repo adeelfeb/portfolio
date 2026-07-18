@@ -61,7 +61,7 @@ export default function ProblemSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300"
             >
-              <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-5">
+              <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600 mb-5">
                 {problem.icon}
               </div>
               <h3 className="font-subheading text-xl font-semibold text-gray-900 mb-3">

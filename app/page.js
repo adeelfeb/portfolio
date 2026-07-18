@@ -1,9 +1,11 @@
 import Navbar from '../components/designndev/Navbar'
 import SiteHero from '../components/designndev/SiteHero'
+import FreelanceLinks from '../components/designndev/FreelanceLinks'
 import ProblemSection from '../components/designndev/ProblemSection'
 import HowItWorksSection from '../components/designndev/HowItWorksSection'
 import GoalsSection from '../components/designndev/GoalsSection'
 import TargetUsersSection from '../components/designndev/TargetUsersSection'
+import Reviews from '../components/designndev/Reviews'
 import PartnershipFormSection from '../components/designndev/PartnershipFormSection'
 import Footer from '../components/designndev/Footer'
 import TextureOverlay from '../components/designndev/TextureOverlay'
@@ -44,10 +46,12 @@ export default function Home() {
         <Navbar />
         <div className="relative w-full mx-auto">
           <SiteHero />
+          <FreelanceLinks />
           <ProblemSection />
           <HowItWorksSection />
           <GoalsSection />
           <TargetUsersSection />
+          <Reviews />
           <PartnershipFormSection />
         </div>
         <Footer />

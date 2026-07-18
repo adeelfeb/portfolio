@@ -59,7 +59,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 text-gray-700 hover:text-emerald-600 rounded-lg transition-colors"
+                  className="p-2 text-gray-700 hover:text-teal-600 rounded-lg transition-colors"
                   aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -72,7 +72,7 @@ export default function Navbar() {
                 </button>
                 <Link
                   href="/about-us"
-                  className="hidden lg:block text-sm font-medium text-gray-600 hover:text-emerald-600 no-underline"
+                  className="hidden lg:block text-sm font-medium text-gray-600 hover:text-teal-600 no-underline"
                 >
                   About Us
                 </Link>
@@ -81,7 +81,7 @@ export default function Navbar() {
               <div className="flex justify-center">
                 <Link href="/" className="flex items-center no-underline hover:opacity-90">
                   <span className="text-lg sm:text-xl font-bold tracking-tight">
-                    <span className="text-emerald-600">Design</span>
+                    <span className="text-teal-600">Design</span>
                     <span className="text-gray-700"> n </span>
                     <span className="text-purple-600">Dev</span>
                   </span>
@@ -89,7 +89,7 @@ export default function Navbar() {
               </div>
               {/* Right: Sign In / Sign Up */}
               <div className="hidden sm:flex justify-end items-center gap-2">
-                <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-emerald-600 no-underline py-2 px-3">
+                <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-teal-600 no-underline py-2 px-3">
                   Sign In
                 </Link>
                 <Link href="/signup" className="btn-fc-primary text-sm py-2 px-4 no-underline">
@@ -125,7 +125,7 @@ export default function Navbar() {
                   <li key={item.label}>
                     <Link
                       href={item.href}
-                      className={`block py-4 px-2 text-2xl md:text-4xl font-semibold no-underline border-b border-gray-100 ${isActive(item.href) ? 'text-emerald-600' : 'text-gray-900 hover:text-emerald-600'}`}
+                      className={`block py-4 px-2 text-2xl md:text-4xl font-semibold no-underline border-b border-gray-100 ${isActive(item.href) ? 'text-teal-600' : 'text-gray-900 hover:text-teal-600'}`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {item.label}

@@ -317,20 +317,8 @@ export default function DashboardLayout({
 
         <div className="ix-topbar-center">
           <div className="flex items-center gap-2">
-            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-              <defs>
-                <linearGradient id="ewLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#22c55e" />
-                  <stop offset="50%" stopColor="#16a34a" />
-                  <stop offset="100%" stopColor="#15803d" />
-                </linearGradient>
-              </defs>
-              <rect width="40" height="40" rx="10" fill="url(#ewLogoGrad)" />
-              <path d="M12 28C12 28 10 14 24 10C24 10 26 26 12 28Z" fill="white" opacity="0.95" />
-              <path d="M18 26C18 26 17 18 26 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" fill="none" />
-            </svg>
             <span className="font-subheading font-semibold text-sm text-gray-800 hidden sm:block">
-              <span className="text-emerald-600">Design</span>
+              <span className="text-teal-600">Design</span>
               <span className="text-gray-500"> n </span>
               <span className="text-purple-600">Dev</span>
             </span>
@@ -360,7 +348,7 @@ export default function DashboardLayout({
                 <div className="ix-notif-header">
                   <span className="font-subheading font-semibold text-sm text-gray-800">Notifications</span>
                   {unreadCount > 0 && (
-                    <button onClick={handleMarkAllRead} className="text-xs text-emerald-600 hover:text-emerald-700 font-subheading">
+                    <button onClick={handleMarkAllRead} className="text-xs text-teal-600 hover:text-teal-700 font-subheading">
                       Mark all read
                     </button>
                   )}
@@ -374,12 +362,12 @@ export default function DashboardLayout({
                     notifications.slice(0, 20).map((notif, i) => (
                       <div
                         key={notif._id || notif.id || i}
-                        className={`ix-notif-item ${!notif.read ? 'bg-emerald-50/50' : ''}`}
+                        className={`ix-notif-item ${!notif.read ? 'bg-teal-50/50' : ''}`}
                         onClick={() => handleNotificationClick(notif)}
                       >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                           notif.type === 'submitted' ? 'bg-blue-100 text-blue-600' :
-                          notif.type === 'resolved' ? 'bg-emerald-100 text-emerald-600' :
+                          notif.type === 'resolved' ? 'bg-teal-100 text-teal-600' :
                           notif.type === 'rejected' ? 'bg-red-100 text-red-600' :
                           'bg-gray-100 text-gray-600'
                         }`}>
@@ -458,20 +446,8 @@ export default function DashboardLayout({
         {/* Left Sidebar */}
         <aside ref={sidebarRef} className={`ix-sidebar${sidebarOpen ? ' ix-sidebar--open' : ''}${collapsed ? ' ix-sidebar--collapsed' : ''}`}>
           <div className="ix-sidebar-brand">
-            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-              <defs>
-                <linearGradient id="ewLogoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#22c55e" />
-                  <stop offset="50%" stopColor="#16a34a" />
-                  <stop offset="100%" stopColor="#15803d" />
-                </linearGradient>
-              </defs>
-              <rect width="40" height="40" rx="10" fill="url(#ewLogoGrad2)" />
-              <path d="M12 28C12 28 10 14 24 10C24 10 26 26 12 28Z" fill="white" opacity="0.95" />
-              <path d="M18 26C18 26 17 18 26 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" fill="none" />
-            </svg>
             <span className="font-subheading font-semibold text-sm text-gray-800">
-              <span className="text-emerald-600">Design</span>
+              <span className="text-teal-600">Design</span>
               <span className="text-gray-500"> n </span>
               <span className="text-purple-600">Dev</span>
             </span>

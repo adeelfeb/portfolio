@@ -25,8 +25,8 @@ const steps = [
     title: 'Development',
     description: 'Build in sprints with regular updates and reviews.',
     number: '03',
-    color: 'from-emerald-500 to-teal-500',
-    tint: 'bg-emerald-50 border-emerald-100',
+    color: 'from-teal-500 to-teal-500',
+    tint: 'bg-teal-50 border-teal-100',
   },
   {
     icon: Rocket,
